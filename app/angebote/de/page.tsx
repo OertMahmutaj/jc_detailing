@@ -22,7 +22,7 @@ export default function GermanOffersPage() {
         </HeroIntro>
       </section>
 
-      <LightGroup className="offer-grid">
+      <LightGroup className="offer-grid offers-page-grid">
         {germanOffers.map((offer) => (
           <LightItem key={offer.title}>
             <article className="offer-card">
