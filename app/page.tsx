@@ -75,7 +75,16 @@ export default function Home() {
     <PageEntry>
       <section id="top" className="hero">
         <div className="video-background" aria-hidden="true">
-          <video autoPlay loop muted playsInline preload="metadata">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            disablePictureInPicture
+            disableRemotePlayback
+            controlsList="nodownload nofullscreen noremoteplayback"
+          >
             <source src="/hero_vid_web.mp4" type="video/mp4" />
           </video>
         </div>
