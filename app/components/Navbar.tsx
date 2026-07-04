@@ -1,10 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { MouseEvent } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, px } from "framer-motion";
 import { CalendarCheck, ChevronDown } from "lucide-react";
 
 const navItems = [
@@ -129,11 +130,12 @@ export function Navbar() {
     <>
       <header className="site-header">
         <Link className="brand" href="/#top" onClick={(event) => handleNavClick("/#top", event)}>
-          <span className="brand-mark">JC</span>
-          <span>
-            <strong>JC Detailing</strong>
-            <small>Luzern</small>
-          </span>
+          {/* <span className="brand-mark">JC</span> */}
+          <p>
+            <Image className="nav-logo" width={350} height={150} src="/logo.png" alt="logo" />
+            {/* <strong>JC Detailing</strong>
+            <small>Luzern</small> */}
+          </p>
         </Link>
 
         <nav className="desktop-nav" aria-label="Hauptnavigation">

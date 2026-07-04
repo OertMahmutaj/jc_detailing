@@ -17,6 +17,7 @@ import {
   PageEntry,
 } from "./components/StudioMotion";
 import { germanOffers, serviceItems } from "./data/site";
+import Image from "next/image";
 
 const bookingUrl = "https://detailr.co/book/jcdetailing-dpx3";
 
@@ -73,6 +74,7 @@ const faqs = [
 export default function Home() {
   return (
     <PageEntry>
+      {/* <Image className="nav-logo" width={350} height={150} src="/logo.png" alt="logo" /> */}
       <section id="top" className="hero">
         <div className="video-background" aria-hidden="true">
           <video
