@@ -91,7 +91,7 @@ export async function getGoogleReviews(): Promise<GoogleReviewsResult> {
     return {
       rating: data.result?.rating ?? null,
       total: data.result?.user_ratings_total ?? 0,
-      reviews: (data.result?.reviews ?? []).slice(0, 6),
+      reviews: data.result?.reviews ?? [],
       url: data.result?.url ?? googleMapsUrl,
     };
   } catch {

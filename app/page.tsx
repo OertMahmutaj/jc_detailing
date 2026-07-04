@@ -6,8 +6,8 @@ import {
   ChevronDown,
   Mail,
 } from "lucide-react";
-import { ReviewMarquee } from "./components/ReviewMarquee";
 import { BeforeAfterSlider } from "./components/BeforeAfterSlider";
+import { GoogleReviewWidget } from "./components/GoogleReviewWidget";
 import {
   HeroIntro,
   HeroItem,
@@ -17,7 +17,6 @@ import {
   PageEntry,
 } from "./components/StudioMotion";
 import { germanOffers, serviceItems } from "./data/site";
-import Image from "next/image";
 
 const bookingUrl = "https://detailr.co/book/jcdetailing-dpx3";
 
@@ -49,17 +48,16 @@ const faqs = [
     question: "Wie ist der Unterschied zwischen einer normalen Autowaesche und Detailing?",
     answer: `Eine Autowäsche entfernt oberflächlichen Schmutz in kurzer Zeit.
   Car Detailing hingegen ist ein zeitintensiver, präziser Prozess, bei dem:
- 
+
     Lackdefekte (Kratzer, Swirls) entfernt werden.
     Hochwertige Pflegeprodukte verwendet werden.
     Jedes Detail im Innenraum und Aussen gereinigt wird.
-  
-  Kurz gesagt: Waschen ist Reinigung – Detailing ist Pflege & Werterhalt.`
+
+  Kurz gesagt: Waschen ist Reinigung – Detailing ist Pflege & Werterhalt.`,
   },
   {
     question: "Wie oft sollte man sein Auto detailen lassen?",
-    answer:
-      `Die Dauer hängt vom Zustand des Fahrzeugs und dem gewünschten Service ab -
+    answer: `Die Dauer hängt vom Zustand des Fahrzeugs und dem gewünschten Service ab -
 
     Innenreinigung: ca. 3–8 Stunden.
 
@@ -68,13 +66,12 @@ const faqs = [
     Lackkorrektur & Versiegelung: ca. 1-2 Tage.
 
     Wir nehmen uns bewusst Zeit, um perfekte Ergebnisse ohne Kompromisse zu liefern.`,
-  }
+  },
 ];
 
 export default function Home() {
   return (
     <PageEntry>
-      {/* <Image className="nav-logo" width={350} height={150} src="/logo.png" alt="logo" /> */}
       <section id="top" className="hero">
         <div className="video-background" aria-hidden="true">
           <video
@@ -99,7 +96,9 @@ export default function Home() {
           </HeroItem>
 
           <HeroItem>
-            <h1>JC <span>Detailing</span></h1>
+            <h1>
+              JC <span>Detailing</span>
+            </h1>
           </HeroItem>
 
           <HeroItem>
@@ -251,11 +250,9 @@ export default function Home() {
         </LightGroup>
       </section>
 
-      <ReviewMarquee />
-
       <section className="section">
         <LightReveal className="section-heading">
-          <span>06</span>
+          <span>05</span>
           <h2>FAQ</h2>
         </LightReveal>
 
@@ -295,6 +292,8 @@ export default function Home() {
           </div>
         </LightReveal>
       </section>
+
+      <GoogleReviewWidget />
     </PageEntry>
   );
 }

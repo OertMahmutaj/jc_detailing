@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { MouseEvent } from "react";
-import { AnimatePresence, motion, px } from "framer-motion";
-import { CalendarCheck, ChevronDown } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { CalendarCheck, ChevronDown, Languages } from "lucide-react";
 
 const navItems = [
   { label: "Startseite", href: "/#top" },
@@ -59,17 +59,28 @@ const navItems = [
 
 const menuEase = [0.22, 1, 0.36, 1] as const;
 const bookingUrl = "https://detailr.co/book/jcdetailing-dpx3";
+const languageOptions = [
+  { label: "DE", name: "Deutsch", href: "/de" },
+  { label: "EN", name: "English", href: "/en" },
+  { label: "FR", name: "Francais", href: "/fr" },
+  { label: "IT", name: "Italiano", href: "/it" },
+];
 
 export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileNavActive, setMobileNavActive] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [languageOpen, setLanguageOpen] = useState(false);
   const [dropdownCycle, setDropdownCycle] = useState(0);
+  const activeLanguage =
+    languageOptions.find((language) => pathname === language.href || pathname.startsWith(`${language.href}/`)) ??
+    languageOptions[0];
 
   function closeMenu() {
     setMobileOpen(false);
     setOpenDropdown(null);
+    setLanguageOpen(false);
   }
 
   function handleNavClick(href: string, event: MouseEvent<HTMLAnchorElement>) {
@@ -122,7 +133,11 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    document.body.classList.toggle("menu-open", mobileOpen && mobileNavActive);
+    const menuIsOpen = mobileOpen && mobileNavActive;
+
+    document.body.classList.toggle("menu-open", menuIsOpen);
+    window.dispatchEvent(new CustomEvent("jc-mobile-menu-change", { detail: { open: menuIsOpen } }));
+
     return () => document.body.classList.remove("menu-open");
   }, [mobileOpen, mobileNavActive]);
 
@@ -210,6 +225,50 @@ export function Navbar() {
             <CalendarCheck size={15} />
             Termin buchen
           </a>
+
+          <div className="language-selector">
+            <motion.button
+              className="language-button"
+              type="button"
+              onClick={() => setLanguageOpen((open) => !open)}
+              aria-label="Sprache waehlen"
+              aria-expanded={languageOpen}
+              whileTap={{ scale: 0.96 }}
+            >
+              <Languages size={15} />
+              {activeLanguage.label}
+              <motion.span
+                animate={{ rotate: languageOpen ? 180 : 0 }}
+                transition={{ duration: 0.22, ease: menuEase }}
+              >
+                <ChevronDown size={13} />
+              </motion.span>
+            </motion.button>
+
+            <AnimatePresence>
+              {languageOpen && (
+                <motion.div
+                  className="language-menu"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.22, ease: menuEase }}
+                >
+                  {languageOptions.map((language) => (
+                    <Link
+                      className={language.label === activeLanguage.label ? "is-active" : ""}
+                      href={language.href}
+                      key={language.label}
+                      onClick={closeMenu}
+                    >
+                      <span>{language.label}</span>
+                      <small>{language.name}</small>
+                    </Link>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         <motion.button
@@ -285,6 +344,29 @@ export function Navbar() {
                   ))}
                 </motion.div>
               ))}
+
+              <motion.div
+                className="mobile-nav-group mobile-language-group"
+                variants={{
+                  open: { opacity: 1, y: 0 },
+                  closed: { opacity: 0, y: 14 },
+                }}
+                transition={{ duration: 0.28, ease: menuEase }}
+              >
+                <span>Sprache</span>
+                <div>
+                  {languageOptions.map((language) => (
+                    <Link
+                      className={language.label === activeLanguage.label ? "is-active" : ""}
+                      href={language.href}
+                      key={language.label}
+                      onClick={closeMenu}
+                    >
+                      {language.label}
+                    </Link>
+                  ))}
+                </div>
+              </motion.div>
             </motion.div>
           </motion.div>
         )}

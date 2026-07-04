@@ -1,9 +1,7 @@
 // app/angebote/de/page.tsx
 
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { HeroIntro, HeroItem, LightGroup, LightItem, PageEntry } from "../../components/StudioMotion";
-import { germanOffers } from "../../data/site";
+import { GermanOffersGrid } from "../../components/GermanOffersGrid";
+import { HeroIntro, HeroItem, PageEntry } from "../../components/StudioMotion";
 
 export default function GermanOffersPage() {
   return (
@@ -22,21 +20,7 @@ export default function GermanOffersPage() {
         </HeroIntro>
       </section>
 
-      <LightGroup className="offer-grid offers-page-grid">
-        {germanOffers.map((offer) => (
-          <LightItem key={offer.title}>
-            <article className="offer-card">
-              <h2>{offer.title}</h2>
-              <strong>{offer.price}</strong>
-              <p>{offer.text}</p>
-              <Link href="/#contact">
-                Anfrage senden
-                <ArrowRight size={16} />
-              </Link>
-            </article>
-          </LightItem>
-        ))}
-      </LightGroup>
+      <GermanOffersGrid />
     </PageEntry>
   );
 }

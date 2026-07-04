@@ -85,19 +85,78 @@ export const serviceItems = Object.values(services);
 
 export const germanOffers = [
   {
-    title: "Innenreinigung komplett",
+    title: "Komplett Innenreinigung",
     price: "ab 209 CHF",
     text: "Gruendliche Reinigung und Pflege des gesamten Innenraums.",
+    details: [
+      "Gruendliche Staubsaugung von Fussraum, Sitzen und Kofferraum.",
+      "Intensive Reinigung und Pflege aller Kunststoffoberflaechen inklusive schuetzendem Finish.",
+      "Tiefenreinigung der Sitze inklusive Shampoo- und Fleckenbehandlung.",
+      "Professionelle Teppichtiefenreinigung und streifenfreie Scheibenreinigung innen.",
+      "Dampfreinigung zur hygienischen Desinfektion des Innenraums.",
+      "Schonende Reinigung und Pflege von Leder- und Alcantaraflaechen.",
+    ],
   },
   {
-    title: "Aussenreinigung komplett",
+    title: "Komplett Aussenreinigung",
     price: "ab 109 CHF",
     text: "Schonende Handwaesche, Felgenreinigung und gepflegtes Finish.",
+    details: [
+      "Gruendliche Vorwaesche mit Snow Foam zur schonenden Schmutzloesung.",
+      "Sorgfaeltige Handwaesche mit hochwertigen Reinigungsmitteln.",
+      "Schonende Trocknung des gesamten Fahrzeugs.",
+      "Intensive Felgenreinigung inklusive Entfernung von Bremsstaub.",
+      "Entfernung von Insektenrueckstaenden an Front und Spiegeln.",
+      "Reinigung der Tuerfalze, Einstiegsbereiche, Embleme und schwer zugaenglichen Details.",
+    ],
   },
   {
-    title: "Komplettaufbereitung",
+    title: "Komplett Aufbereitung",
     price: "auf Anfrage",
     text: "Innen und aussen kombiniert fuer ein frisches Gesamtbild.",
+    details: [
+      "Kombination aus Innenreinigung und Aussenreinigung fuer ein vollstaendiges Ergebnis.",
+      "Ideal fuer Fahrzeuge, die sichtbar aufgefrischt und gepflegt werden sollen.",
+      "Materialschonende Reinigung innen und aussen mit hochwertigem Finish.",
+      "Finale Kontrolle vor der Uebergabe.",
+      "Der genaue Umfang wird je nach Fahrzeuggroesse und Zustand vor Ort abgestimmt.",
+    ],
+  },
+  {
+    title: "Erhaltungspflege",
+    price: "ab 69 CHF",
+    text: "Regelmaessige Pflege fuer bereits aufbereitete oder gepflegte Fahrzeuge.",
+    details: [
+      "Voraussetzung: Das Fahrzeug wurde zuvor durch JC Detailing aufbereitet oder befindet sich in gepflegtem Zustand.",
+      "Innenpflege ab 129 CHF mit Staubsaugen, Armaturenbrett, Mittelkonsole und Kunststoffoberflaechen.",
+      "Tuerfalze, Einstiegsbereiche und Tuerverkleidungen werden sauber nachgepflegt.",
+      "Aussenpflege ab 69 CHF mit Snow Foam, Handwaesche, schonender Trocknung und Felgenreinigung.",
+      "Ideal, um den hochwertigen Zustand regelmaessig zu erhalten.",
+    ],
+  },
+  {
+    title: "Add-ons",
+    price: "ab 30 CHF",
+    text: "Zusatzleistungen wie Tierhaarentfernung, Kofferraum Deep Clean und Sitzreinigung.",
+    details: [
+      "Tierhaarentfernung ab CHF 50 fuer hartnaeckige Tierhaare.",
+      "Kofferraum Deep Clean ab CHF 40 fuer eine gruendliche Reinigung des Kofferraums.",
+      "Sitze Tiefenreinigung ab CHF 80 fuer hygienische Polsterreinigung.",
+      "Dachhimmel Reinigung ab CHF 50 fuer empfindliche Dachhimmel-Oberflaechen.",
+      "Fussmatten intensiv ab CHF 30 fuer tiefengereinigte Fussmatten.",
+    ],
+  },
+  {
+    title: "Politur & Keramik",
+    price: "ab 399 CHF",
+    text: "Lackkorrektur, Hochglanz-Finish und langfristiger Keramikschutz.",
+    details: [
+      "Polish Paket 1 Step ab 399 CHF fuer Glanz, leichte Kratzerentfernung und reduzierte Swirls.",
+      "Polish Paket 2 Step ab 599 CHF mit Cut und Finish fuer deutlich verbesserte Lackoptik.",
+      "Keramik Paket ab 1090 CHF inklusive Lackvorbereitung, Politur, Entfettung und Keramikversiegelung.",
+      "Vorteile: tiefer Glanz, hydrophober Effekt, UV- und Umweltschutz.",
+      "Der finale Arbeitsumfang und Preis werden nach professioneller Begutachtung festgelegt.",
+    ],
   },
 ];
 
