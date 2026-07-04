@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
-import type { Service } from "../data/site";
+import type { Service } from "../../data/site";
 import {
   HeroIntro,
   HeroItem,

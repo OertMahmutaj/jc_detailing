@@ -2,7 +2,7 @@
 
 import type { Metadata } from "next";
 import { ServiceDetail } from "../../components/ServiceDetail";
-import { services } from "../../data/site";
+import { services } from "@/app/data/site";
 
 export const metadata: Metadata = {
   title: "Aussenreinigung | JC Detailing",

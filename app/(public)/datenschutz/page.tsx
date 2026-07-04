@@ -1,7 +1,7 @@
 // app/datenschutz/page.tsx
 
 import type { Metadata } from "next";
-import { LegalPage } from "../components/LegalPage";
+import { LegalPage } from "../(public)/components/LegalPage";
 
 export const metadata: Metadata = {
   title: "Datenschutz | JC Detailing",

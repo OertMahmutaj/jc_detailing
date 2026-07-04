@@ -3,7 +3,7 @@
 import { ArrowRight, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { LightGroup, LightItem } from "./StudioMotion";
-import { germanOffers } from "../data/site";
+import { germanOffers } from "../../data/site";
 
 type GermanOffer = (typeof germanOffers)[number];
 

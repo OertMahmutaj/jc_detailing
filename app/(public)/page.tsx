@@ -16,7 +16,7 @@ import {
   LightReveal,
   PageEntry,
 } from "./components/StudioMotion";
-import { germanOffers, serviceItems } from "./data/site";
+import { germanOffers, serviceItems } from "../data/site";
 
 const bookingUrl = "/buchen";
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Instagram, MapPin, MessageCircle, Music2, Navigation } from "lucide-react";
-import { directionsUrl, mapEmbedUrl } from "../data/site";
+import { directionsUrl, mapEmbedUrl } from "../../data/site";
 
 const whatsappUrl = "https://wa.me/41772683388";
 const tiktokUrl = "https://www.tiktok.com/";

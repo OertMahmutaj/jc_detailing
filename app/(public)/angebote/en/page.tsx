@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { HeroIntro, HeroItem, LightGroup, LightItem, PageEntry } from "../../components/StudioMotion";
-import { englishOffers } from "../../data/site";
+import { englishOffers } from "../../../data/site";
 
 export default function EnglishOffersPage() {
   return (

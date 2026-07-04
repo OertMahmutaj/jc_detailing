@@ -147,7 +147,7 @@ export function Navbar() {
         <Link className="brand" href="/#top" onClick={(event) => handleNavClick("/#top", event)}>
           {/* <span className="brand-mark">JC</span> */}
           <p>
-            <Image className="nav-logo" width={350} height={150} src="/logo.png" alt="logo" />
+            <Image className="nav-logo" priority width={350} height={150} src="/logo.png" alt="logo" />
             {/* <strong>JC Detailing</strong>
             <small>Luzern</small> */}
           </p>

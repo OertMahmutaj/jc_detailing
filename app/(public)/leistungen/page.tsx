@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { HeroIntro, HeroItem, LightGroup, LightItem, PageEntry } from "../components/StudioMotion";
+import { HeroIntro, HeroItem, LightGroup, LightItem, PageEntry } from "../(public)/components/StudioMotion";
 import { serviceItems } from "../data/site";
 
 export default function LeistungenPage() {
