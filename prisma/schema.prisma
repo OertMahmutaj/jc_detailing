@@ -1,0 +1,100 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  // URLs are now handled in prisma.config.ts
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PAID
+  OVERDUE
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   
+  name      String
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Client {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  phone     String
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+}
+
+model Service {
+  id              String    @id @default(uuid())
+  name            String    
+  basePrice       Float     
+  durationMinutes Int       
+  bookings        Booking[]
+}
+
+model VehicleCategory {
+  id            String    @id @default(uuid())
+  name          String    
+  priceModifier Float     
+  bookings      Booking[]
+}
+
+model AddOn {
+  id                 String    @id @default(uuid())
+  name               String    
+  price              Float     
+  additionalDuration Int       
+  bookings           Booking[] @relation("BookingToAddOns")
+}
+
+model Booking {
+  id                String          @id @default(uuid())
+  dateTime          DateTime        
+  endTime           DateTime        
+  status            BookingStatus   @default(PENDING)
+  vehicleModel      String          
+  notes             String?
+  imageUrls         String[]        
+
+  clientId          String
+  client            Client          @relation(fields: [clientId], references: [id])
+  serviceId         String
+  service           Service         @relation(fields: [serviceId], references: [id])
+  vehicleCategoryId String
+  vehicleCategory   VehicleCategory @relation(fields: [vehicleCategoryId], references: [id])
+  addOns            AddOn[]         @relation("BookingToAddOns")
+  invoice           Invoice?
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique 
+  issuedAt      DateTime      @default(now())
+  dueDate       DateTime
+  totalAmount   Float         
+  status        InvoiceStatus @default(UNPAID)
+  pdfUrl        String?       
+
+  bookingId     String        @unique
+  booking       Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}

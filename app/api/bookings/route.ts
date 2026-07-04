@@ -1,17 +1,32 @@
+// app/api/bookings/route.ts
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
+
+// 1. Initialize Prisma 7 Native Driver Client
+const pool = new pg.Pool({
+  connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL,
+});
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
+
 type BookingPayload = {
   name?: string;
   email?: string;
   phone?: string;
-  service?: string;
   vehicle?: string;
-  condition?: string;
   date?: string;
   time?: string;
   message?: string;
+  serviceId?: string;
+  vehicleCategoryId?: string;
+  addOnIds?: string[];
+  totalPrice?: number;
 };
 
-const ownerEmail = process.env.BOOKING_OWNER_EMAIL ?? "jcdetailinglucerne@gmail.com";
-const fromEmail = process.env.BOOKING_FROM_EMAIL ?? "JC Detailing <onboarding@resend.dev>";
+const ownerEmail =
+  process.env.BOOKING_OWNER_EMAIL ?? "oert64@gmail.com";
+const fromEmail =
+  process.env.BOOKING_FROM_EMAIL ?? "JC Detailing <onboarding@resend.dev>";
 
 function clean(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -22,34 +37,25 @@ function requiredFields(payload: BookingPayload) {
     payload.name,
     payload.email,
     payload.phone,
-    payload.service,
     payload.vehicle,
-    payload.condition,
     payload.date,
     payload.time,
+    payload.serviceId,
+    payload.vehicleCategoryId,
   ].every((value) => clean(value).length > 0);
 }
 
-function bookingSummary(payload: Required<BookingPayload>) {
-  return [
-    `Name: ${payload.name}`,
-    `E-Mail: ${payload.email}`,
-    `Telefon: ${payload.phone}`,
-    `Leistung: ${payload.service}`,
-    `Fahrzeug: ${payload.vehicle}`,
-    `Zustand: ${payload.condition}`,
-    `Wunschdatum: ${payload.date}`,
-    `Wunschzeit: ${payload.time}`,
-    `Nachricht: ${payload.message || "-"}`,
-  ].join("\n");
-}
-
-async function sendEmail({ to, subject, text }: { to: string; subject: string; text: string }) {
+async function sendEmail({
+  to,
+  subject,
+  text,
+}: {
+  to: string;
+  subject: string;
+  text: string;
+}) {
   const key = process.env.RESEND_API_KEY;
-
-  if (!key) {
-    throw new Error("Missing RESEND_API_KEY");
-  }
+  if (!key) throw new Error("Missing RESEND_API_KEY");
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -57,48 +63,76 @@ async function sendEmail({ to, subject, text }: { to: string; subject: string; t
       Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      from: fromEmail,
-      to,
-      subject,
-      text,
-    }),
+    body: JSON.stringify({ from: fromEmail, to, subject, text }),
   });
 
-  if (!response.ok) {
-    throw new Error("Email provider rejected the request");
-  }
+  if (!response.ok) throw new Error("Email provider rejected the request");
 }
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as BookingPayload;
-    const payload = {
+
+    // Look for this block inside your POST function and add the || "" defaults:
+    const payload: BookingPayload = {
       name: clean(body.name),
       email: clean(body.email),
       phone: clean(body.phone),
-      service: clean(body.service),
       vehicle: clean(body.vehicle),
-      condition: clean(body.condition),
       date: clean(body.date),
       time: clean(body.time),
       message: clean(body.message),
+      serviceId: clean(body.serviceId || ""), // Enforce absolute string fallback
+      vehicleCategoryId: clean(body.vehicleCategoryId || ""), // Enforce absolute string fallback
+      addOnIds: body.addOnIds || [],
+      totalPrice: body.totalPrice ?? 0,
     };
 
+    // 2. Validate new field requirements structure
     if (!requiredFields(payload)) {
-      return Response.json({ message: "Bitte alle Pflichtfelder ausfuellen." }, { status: 400 });
+      return Response.json(
+        { message: "Bitte alle Pflichtfelder ausfuellen." },
+        { status: 400 },
+      );
     }
 
-    const summary = bookingSummary(payload);
+    // 3. Look up the human-readable names from your Supabase DB using the IDs
+    const [dbService, dbCategory, dbAddOns] = await Promise.all([
+      prisma.service.findUnique({ where: { id: payload.serviceId } }),
+      prisma.vehicleCategory.findUnique({
+        where: { id: payload.vehicleCategoryId },
+      }),
+      prisma.addOn.findMany({ where: { id: { in: payload.addOnIds } } }),
+    ]);
 
+    const serviceName = dbService?.name ?? "Unbekanntes Paket";
+    const categoryName = dbCategory?.name ?? "Unbekannte Größe";
+    const addOnNames = dbAddOns.map((a) => a.name).join(", ") || "Keine";
+
+    // 4. Construct the summary layout for emails
+    const summary = [
+      `Name: ${payload.name}`,
+      `E-Mail: ${payload.email}`,
+      `Telefon: ${payload.phone}`,
+      `Leistung: ${serviceName}`,
+      `Fahrzeuggrösse: ${categoryName}`,
+      `Zusatzleistungen (Extras): ${addOnNames}`,
+      `Fahrzeugmodell: ${payload.vehicle}`,
+      `Wunschdatum: ${payload.date}`,
+      `Wunschtime: ${payload.time}`,
+      `Voraussichtlicher Preis: CHF ${payload.totalPrice?.toFixed(2)}`,
+      `Nachricht: ${payload.message || "-"}`,
+    ].join("\n");
+
+    // 5. Fire off confirmation emails
     await sendEmail({
       to: ownerEmail,
-      subject: `Neue Buchungsanfrage: ${payload.service}`,
+      subject: `Neue Buchungsanfrage: ${serviceName}`,
       text: `Neue Buchungsanfrage ueber die Website:\n\n${summary}`,
     });
 
     await sendEmail({
-      to: payload.email,
+      to: payload.email || "", // Added || "" to satisfy the strict string checker
       subject: "JC Detailing - Deine Anfrage ist eingegangen",
       text:
         `Hallo ${payload.name}\n\n` +
@@ -108,9 +142,13 @@ export async function POST(request: Request) {
     });
 
     return Response.json({ message: "Anfrage gesendet." });
-  } catch {
+  } catch (err) {
+    console.error("Backend Booking Error:", err);
     return Response.json(
-      { message: "Die Anfrage konnte nicht gesendet werden. Bitte versuche es spaeter erneut." },
+      {
+        message:
+          "Die Anfrage konnte nicht gesendet werden. Bitte versuche es spaeter erneut.",
+      },
       { status: 500 },
     );
   }
