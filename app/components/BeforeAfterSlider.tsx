@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { CSSProperties } from "react";
+import Image from "next/image";
 
 type BeforeAfterSliderProps = {
   after: string;
@@ -17,10 +18,22 @@ export function BeforeAfterSlider({ after, before, index }: BeforeAfterSliderPro
       className="before-after"
       style={{ "--split": `${position}%` } as CSSProperties}
     >
-      <img className="before-after-image" src={after} alt={`Nachher ${index}`} />
+      <Image
+        className="before-after-image"
+        src={after}
+        alt={`Nachher ${index}`}
+        fill
+        sizes="(max-width: 768px) 100vw, 50vw"
+      />
 
       <div className="before-after-before">
-        <img className="before-after-image" src={before} alt={`Vorher ${index}`} />
+        <Image
+          className="before-after-image"
+          src={before}
+          alt={`Vorher ${index}`}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+        />
       </div>
 
       <div className="before-after-label before">Vorher</div>
