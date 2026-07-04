@@ -58,7 +58,7 @@ const navItems = [
 ];
 
 const menuEase = [0.22, 1, 0.36, 1] as const;
-const bookingUrl = "https://detailr.co/book/jcdetailing-dpx3";
+const bookingUrl = "/buchen";
 const languageOptions = [
   { label: "DE", name: "Deutsch", href: "/de" },
   { label: "EN", name: "English", href: "/en" },
@@ -221,10 +221,10 @@ export function Navbar() {
         </nav>
 
         <div className="header-actions">
-          <a className="ghost-button" href={bookingUrl} target="_blank" rel="noopener noreferrer">
+          <Link className="ghost-button" href={bookingUrl} onClick={closeMenu}>
             <CalendarCheck size={15} />
             Termin buchen
-          </a>
+          </Link>
 
           <div className="language-selector">
             <motion.button
@@ -344,6 +344,19 @@ export function Navbar() {
                   ))}
                 </motion.div>
               ))}
+
+              <motion.div
+                className="mobile-nav-group"
+                variants={{
+                  open: { opacity: 1, y: 0 },
+                  closed: { opacity: 0, y: 14 },
+                }}
+                transition={{ duration: 0.28, ease: menuEase }}
+              >
+                <Link href={bookingUrl} onClick={closeMenu}>
+                  Termin buchen
+                </Link>
+              </motion.div>
 
               <motion.div
                 className="mobile-nav-group mobile-language-group"

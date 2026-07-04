@@ -18,7 +18,7 @@ import {
 } from "./components/StudioMotion";
 import { germanOffers, serviceItems } from "./data/site";
 
-const bookingUrl = "https://detailr.co/book/jcdetailing-dpx3";
+const bookingUrl = "/buchen";
 
 const galleryComparisons = [
   { before: "/before_1.jpeg", after: "/after_1.jpeg" },
@@ -110,10 +110,10 @@ export default function Home() {
 
           <HeroItem>
             <div className="hero-buttons">
-              <a className="ghost-button" href={bookingUrl} target="_blank" rel="noopener noreferrer">
+              <Link className="ghost-button" href={bookingUrl}>
                 <CalendarCheck size={18} />
                 Termin buchen
-              </a>
+              </Link>
 
               <Link className="ghost-button" href="/leistungen">
                 Leistungen ansehen
@@ -280,10 +280,10 @@ export default function Home() {
           </div>
 
           <div className="contact-actions">
-            <a className="ghost-button" href={bookingUrl} target="_blank" rel="noopener noreferrer">
+            <Link className="ghost-button" href={bookingUrl}>
               <CalendarCheck size={18} />
               Termin buchen
-            </a>
+            </Link>
 
             <a className="ghost-button" href="mailto:info@jcdetailing.ch">
               <Mail size={18} />
