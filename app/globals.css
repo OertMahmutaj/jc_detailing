@@ -1716,7 +1716,7 @@ details p {
   border: 0;
   border-radius: 8px;
   display: block;
-  filter: grayscale(1);
+  filter: grayscale(0.25);
   height: 230px;
   max-width: 100%;
   width: 100%;
