@@ -14,20 +14,10 @@ const generateTimeSlots = () => {
   for (let hour = 8; hour <= 19; hour++) {
     const formattedHour = hour.toString().padStart(2, "0");
     slots.push(`${formattedHour}:00`);
-    if (hour !== 19 || true) { // Include 19:30
-      slots.push(`${formattedHour}:30`);
-    }
+    slots.push(`${formattedHour}:30`);
   }
   return slots;
 };
-
-// Get today's date in YYYY-MM-DD format
-const today = new Date().toISOString().split("T")[0];
-
-// Limit selections to exactly 1 year from today to prevent crazy input bugs
-const nextYear = new Date();
-nextYear.setFullYear(nextYear.getFullYear() + 1);
-const maxDate = nextYear.toISOString().split("T")[0];
 
 const TIME_SLOTS = generateTimeSlots();
 
@@ -47,10 +37,15 @@ export function BookingForm() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedAddOns, setSelectedAddOns] = useState<AddOn[]>([]);
 
-  // NEW: Date and Time State
+  // Date and Time State
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string>("");
 
+  // 🔒 NEW: Availability Sync Arrays
+  const [blockedSlots, setBlockedSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  // Initial Configuration Fetch Sequence
   useEffect(() => {
     async function fetchData() {
       try {
@@ -68,6 +63,26 @@ export function BookingForm() {
     fetchData();
   }, []);
 
+  // 🔍 NEW: Fetch blocked slots when user updates selectedDate
+  useEffect(() => {
+    if (!selectedDate) return;
+
+    async function checkAvailability() {
+      setLoadingSlots(true);
+      try {
+        const res = await fetch(`/api/availability?date=${selectedDate}`);
+        const data = await res.json();
+        setBlockedSlots(data.blockedSlots || []);
+      } catch (err) {
+        console.error("Error reading slots:", err);
+      } finally {
+        setLoadingSlots(false);
+      }
+    }
+
+    checkAvailability();
+  }, [selectedDate]);
+
   const handleAddOnToggle = (addOn: AddOn) => {
     setSelectedAddOns((prev) =>
       prev.find((item) => item.id === addOn.id)
@@ -84,7 +99,6 @@ export function BookingForm() {
   };
 
   const handleNextStep = () => {
-    // Validate Step 3 before allowing the user to move to Step 4
     if (step === 3 && (!selectedDate || !selectedTime)) {
       setMessage("Bitte wähle ein Datum und eine Uhrzeit aus.");
       return;
@@ -100,16 +114,18 @@ export function BookingForm() {
 
     const formData = new FormData(event.currentTarget);
     const formPayload = Object.fromEntries(formData.entries());
+    const combinedDateTime = new Date(`${selectedDate}T${selectedTime}:00`);
 
-    // Build complete payload including the state-saved date and time
     const fullPayload = {
-      ...formPayload,
+      name: formPayload.name,
+      email: formPayload.email,
+      phone: formPayload.phone,
+      vehicleModel: formPayload.vehicle,
+      notes: formPayload.message,
+      dateTime: combinedDateTime.toISOString(),
       serviceId: selectedService?.id,
       vehicleCategoryId: selectedCategory?.id,
       addOnIds: selectedAddOns.map((a) => a.id),
-      totalPrice: calculateTotal(),
-      date: selectedDate, // Added missing date
-      time: selectedTime, // Added missing time
     };
 
     try {
@@ -128,8 +144,7 @@ export function BookingForm() {
       setStatus("success");
       setMessage("Danke. Deine Anfrage wurde gesendet und du erhältst eine Bestätigung per E-Mail.");
 
-      // Reset State
-      // event.currentTarget.reset();
+      // Reset State Safely
       setSelectedAddOns([]);
       setSelectedDate("");
       setSelectedTime("");
@@ -149,9 +164,6 @@ export function BookingForm() {
       </div>
     );
   }
-
-  // Get today's date in YYYY-MM-DD format to prevent past date selection
-  const today = new Date().toISOString().split("T")[0];
 
   return (
     <form className="booking-form" onSubmit={handleSubmit}>
@@ -250,7 +262,6 @@ export function BookingForm() {
         </div>
       )}
 
-      {/* STEP 3: Inline Calendar Grid & Time Slot Selector */}
       {step === 3 && (
         <div className="booking-field booking-field-wide">
           <label style={{ marginBottom: "1rem", display: "block", fontWeight: "bold" }}>
@@ -258,10 +269,9 @@ export function BookingForm() {
           </label>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-
+            
             {/* 1. CUSTOM INLINE CALENDAR GRID */}
             <div style={{ border: "1px solid rgba(255,255,255,0.15)", borderRadius: "8px", padding: "1rem", background: "rgba(0,0,0,0.02)" }}>
-              {/* Calendar Header with Month Toggle */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
                 <button
                   type="button"
@@ -292,28 +302,23 @@ export function BookingForm() {
                 </button>
               </div>
 
-              {/* Days of Week Row Headers */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", textAlign: "center", fontWeight: "bold", fontSize: "0.8rem", opacity: 0.5, marginBottom: "0.5rem" }}>
                 <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
               </div>
 
-              {/* Days Matrix Grid */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px" }}>
                 {(() => {
                   const year = currentMonthDate.getFullYear();
                   const month = currentMonthDate.getMonth();
 
-                  // First day of the month offset
                   const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
                   const totalDays = new Date(year, month + 1, 0).getDate();
                   const cells = [];
 
-                  // Blank spacer cells for previous month alignment
                   for (let i = 0; i < firstDayIndex; i++) {
                     cells.push(<div key={`empty-${i}`} />);
                   }
 
-                  // Real clickable day cells
                   const todayObj = new Date();
                   todayObj.setHours(0, 0, 0, 0);
 
@@ -329,7 +334,7 @@ export function BookingForm() {
                         onClick={() => {
                           if (!isPast) {
                             setSelectedDate(dateString);
-                            setSelectedTime(""); // Wipe out previously chosen hours slot
+                            setSelectedTime("");
                           }
                         }}
                         style={{
@@ -361,32 +366,48 @@ export function BookingForm() {
                 <p style={{ fontSize: "0.85rem", opacity: 0.7, marginBottom: "0.75rem" }}>
                   Verfügbare Uhrzeiten am {new Date(selectedDate).toLocaleDateString('de-CH')}:
                 </p>
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
-                  gap: "0.5rem"
-                }}>
-                  {TIME_SLOTS.map((slot) => (
-                    <div
-                      key={slot}
-                      onClick={() => setSelectedTime(slot)}
-                      style={{
-                        padding: "0.6rem 0",
-                        textAlign: "center",
-                        fontWeight: "bold",
-                        fontSize: "0.9rem",
-                        border: selectedTime === slot ? "2px solid var(--accent-color, #0070f3)" : "1px solid rgba(255,255,255,0.15)",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        background: selectedTime === slot ? "rgba(0,112,243,0.1)" : "transparent",
-                        color: selectedTime === slot ? "var(--accent-color, #0070f3)" : "inherit",
-                        transition: "all 0.2s ease"
-                      }}
-                    >
-                      {slot}
-                    </div>
-                  ))}
-                </div>
+                {loadingSlots ? (
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", padding: "1rem 0", fontSize: "0.9rem", opacity: 0.7 }}>
+                    <Loader2 style={{ animation: "spin 1s linear infinite" }} size={16} /> Zeiten werden geprüft...
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: "0.5rem" }}>
+                    {TIME_SLOTS.map((slot) => {
+                      const isBlocked = blockedSlots.includes(slot);
+                      const isSelected = selectedTime === slot;
+
+                      return (
+                        <div
+                          key={slot}
+                          onClick={() => {
+                            if (!isBlocked) setSelectedTime(slot);
+                          }}
+                          style={{
+                            padding: "0.6rem 0",
+                            textAlign: "center",
+                            fontWeight: "bold",
+                            fontSize: "0.9rem",
+                            borderRadius: "6px",
+                            transition: "all 0.2s ease",
+                            cursor: isBlocked ? "not-allowed" : "pointer",
+                            pointerEvents: isBlocked ? "none" : "auto", 
+                            opacity: isBlocked ? 0.25 : 1,
+                            textDecoration: isBlocked ? "line-through" : "none",
+                            backgroundColor: isBlocked ? "rgba(255,255,255,0.05)" : isSelected ? "rgba(0,112,243,0.1)" : "transparent",
+                            border: isSelected 
+                              ? "2px solid var(--accent-color, #0070f3)" 
+                              : isBlocked 
+                                ? "1px solid rgba(255,0,0,0.15)" 
+                                : "1px solid rgba(255,255,255,0.15)",
+                            color: isSelected ? "var(--accent-color, #0070f3)" : "inherit",
+                          }}
+                        >
+                          {slot}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
