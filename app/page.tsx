@@ -23,7 +23,7 @@ const bookingUrl = "https://detailr.co/book/jcdetailing-dpx3";
 
 const galleryComparisons = [
   { before: "/before_1.jpeg", after: "/after_1.jpeg" },
-  { before: "/before_2.avif", after: "/after_2.avif" },
+  { before: "/before_2.jpeg", after: "/after_2.jpeg" },
   { before: "/before_3.avif", after: "/after_3.avif" },
 ];
 
