@@ -204,7 +204,7 @@ export function Navbar() {
         </nav>
 
         <div className="header-actions">
-          <a className="booking-link" href={bookingUrl} target="_blank" rel="noopener noreferrer">
+          <a className="ghost-button" href={bookingUrl} target="_blank" rel="noopener noreferrer">
             <CalendarCheck size={15} />
             Termin buchen
           </a>

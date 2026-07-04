@@ -97,7 +97,7 @@ export default function Home() {
           </HeroItem>
 
           <HeroItem>
-            <h1>JC Detailing</h1>
+            <h1>JC <span>Detailing</span></h1>
           </HeroItem>
 
           <HeroItem>
@@ -109,7 +109,7 @@ export default function Home() {
 
           <HeroItem>
             <div className="hero-buttons">
-              <a className="primary-button" href={bookingUrl} target="_blank" rel="noopener noreferrer">
+              <a className="ghost-button" href={bookingUrl} target="_blank" rel="noopener noreferrer">
                 <CalendarCheck size={18} />
                 Termin buchen
               </a>
@@ -281,12 +281,12 @@ export default function Home() {
           </div>
 
           <div className="contact-actions">
-            <a href={bookingUrl} target="_blank" rel="noopener noreferrer">
+            <a className="ghost-button" href={bookingUrl} target="_blank" rel="noopener noreferrer">
               <CalendarCheck size={18} />
               Termin buchen
             </a>
 
-            <a href="mailto:info@jcdetailing.ch">
+            <a className="ghost-button" href="mailto:info@jcdetailing.ch">
               <Mail size={18} />
               Nachricht senden
             </a>

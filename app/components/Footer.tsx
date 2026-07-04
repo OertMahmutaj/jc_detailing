@@ -41,7 +41,7 @@ export function Footer() {
               <MessageCircle size={16} />
               WhatsApp
             </a>
-            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.instagram.com/jcdetailinglucerne?igsh=amJoendmanBiMWVr&utm_source=qr" target="_blank" rel="noopener noreferrer">
               <Instagram size={16} />
               Instagram
             </a>

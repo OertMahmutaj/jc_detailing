@@ -1,14 +1,17 @@
 :root {
   --ink: #f7f2e8;
-  --muted: #a7a099;
-  --paper: #050607;
-  --panel: #101112;
-  --line: rgba(218, 174, 98, 0.2);
-  --dark: #030405;
-  --soft-dark: #0b0d0f;
-  --gold: #d8aa60;
-  --gold-soft: #f0d49b;
-  --cream: #f4efe5;
+  --muted: #acaaa9;
+  --paper: #000000;
+  --panel: #000000;
+  --line: rgba(255, 255, 255, 0.986);
+  --dark: #000000;
+  --soft-dark: #000000;
+  /* --gold: #d8aa60; */
+  --gold: #fcfcfc;
+  /* --gold-soft: #f0d49b; */
+  --gold-soft: #ecedf1;
+  /* --cream: #f4efe5; */
+  --cream: #000000;
   --white: #ffffff;
 }
 
@@ -77,7 +80,7 @@ iframe {
   grid-template-columns: 132px 1fr auto;
   height: 48px;
   left: 0;
-  position: fixed;
+  position: absolute;
   right: 0;
   top: 0;
   width: 100%;
@@ -86,7 +89,7 @@ iframe {
 
 .brand {
   align-items: center;
-  background: rgba(251, 250, 246, 0.96);
+  background: rgba(241, 239, 237, 0.96);
   color: var(--dark);
   display: flex;
   font-family: Georgia, serif;
@@ -120,13 +123,13 @@ iframe {
 .nav-dropdown {
   backdrop-filter: blur(16px) saturate(135%);
   background:
-    radial-gradient(circle at 18% 0, rgba(216, 170, 96, 0.16), transparent 12rem),
-    linear-gradient(180deg, rgba(12, 13, 14, 0.92), rgba(5, 6, 7, 0.82));
-  border: 1px solid rgba(216, 170, 96, 0.22);
+    radial-gradient(circle at 18% 0, rgba(247, 246, 244, 0.521), transparent 12rem),
+    linear-gradient(180deg, rgba(199, 209, 219, 0.92), rgba(5, 6, 7, 0.82));
+  border: 1px solid rgba(241, 237, 231, 0.815);
   border-radius: 0;
   box-shadow:
-    0 28px 80px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 28px 80px rgba(226, 221, 221, 0.5),
+    inset 0 1px 0 rgba(221, 216, 216, 0.05);
   color: var(--ink);
   display: grid;
   gap: 4px;
@@ -154,7 +157,7 @@ iframe {
 }
 
 .nav-dropdown a::before {
-  background: linear-gradient(180deg, var(--gold-soft), rgba(216, 170, 96, 0));
+  /* background: linear-gradient(180deg, var(--gold-soft), rgba(216, 170, 96, 0)); */
   content: "";
   inset: 12px auto 12px 0;
   opacity: 0;
@@ -164,7 +167,7 @@ iframe {
 }
 
 .dropdown-kicker {
-  color: rgba(216, 170, 96, 0.74);
+  color: rgb(243, 242, 242);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 15px;
   min-width: 28px;
@@ -186,7 +189,7 @@ iframe {
 }
 
 .dropdown-copy small {
-  color: rgba(247, 242, 232, 0.56);
+  color: rgb(252, 251, 249);
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0;
@@ -194,7 +197,7 @@ iframe {
 }
 
 .dropdown-arrow {
-  color: rgba(216, 170, 96, 0.62);
+  color: rgb(245, 245, 245);
   font-size: 13px;
   transform: translateX(-4px);
   transition:
@@ -204,8 +207,8 @@ iframe {
 
 .nav-dropdown a:hover,
 .nav-dropdown a:focus-visible {
-  background: rgba(216, 170, 96, 0.08);
-  border-color: rgba(216, 170, 96, 0.18);
+  background: rgba(255, 255, 255, 0.979);
+  border-color: rgba(255, 255, 255, 0.979);
   outline: none;
 }
 
@@ -350,10 +353,10 @@ iframe {
   text-transform: uppercase;
 }
 
-.primary-button {
+/* .primary-button {
   background: white;
   color: var(--dark);
-}
+} */
 
 .ghost-button {
   border: 1px solid rgba(255, 255, 255, 0.4);
@@ -384,28 +387,28 @@ iframe {
 
 .back-to-top {
   align-items: center;
-  backdrop-filter: blur(12px);
-  background: rgba(5, 6, 7, 0.56);
-  border: 1px solid rgba(216, 170, 96, 0.34);
+  backdrop-filter: blur(1px);
+  background: transparent;
+  /* border: 1px solid rgba(70, 66, 66, 0.34); */
   bottom: 22px;
   color: var(--gold-soft);
   display: flex;
   font-size: 18px;
   font-weight: 900;
-  height: 42px;
+  height: 30px;
   justify-content: center;
   position: fixed;
   right: 22px;
   transition:
     background 180ms ease,
     transform 180ms ease;
-  width: 42px;
+  width: 30px;
   z-index: 900;
 }
 
 .back-to-top:hover,
 .back-to-top:focus-visible {
-  background: rgba(216, 170, 96, 0.14);
+  background: transparent;
   outline: none;
   transform: translateY(-3px);
 }
@@ -474,7 +477,7 @@ h2 {
 .about-copy,
 details {
   background: var(--panel);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(14, 13, 13, 0.863);
   border-radius: 8px;
 }
 
@@ -683,7 +686,7 @@ li svg {
   --split: 50%;
   aspect-ratio: 0.78;
   background: var(--panel);
-  border: 1px solid rgba(216, 170, 96, 0.18);
+  border: 1px solid rgba(49, 49, 49, 0.404);
   border-radius: 0;
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.18);
   min-height: 420px;
@@ -746,7 +749,7 @@ li svg {
 .before-after-divider span {
   align-items: center;
   background: rgba(5, 6, 7, 0.78);
-  border: 1px solid rgba(216, 170, 96, 0.48);
+  border: 1px solid rgba(240, 238, 236, 0.884);
   color: var(--gold-soft);
   display: flex;
   height: 38px;
@@ -880,7 +883,7 @@ details p {
 
 .contact-panel {
   align-items: center;
-  background: var(--dark);
+  background: #000000;
   border-radius: 8px;
   color: white;
   display: grid;
@@ -896,7 +899,7 @@ details p {
 }
 
 .contact-panel p {
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(245, 241, 241, 0.72);
   max-width: 620px;
 }
 
@@ -912,7 +915,7 @@ details p {
 
 .contact-actions a + a {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.36);
+  border: 1px solid rgba(230, 222, 222, 0.596);
   color: white;
 }
 
@@ -1202,8 +1205,8 @@ details p {
 
 .footer-map span {
   align-items: flex-start;
-  background: rgba(5, 6, 7, 0.78);
-  border: 1px solid rgba(216, 170, 96, 0.24);
+  background: rgba(13, 13, 14, 0.78);
+  border: 1px solid rgb(255, 255, 255);
   bottom: 14px;
   color: var(--ink);
   display: flex;
@@ -1432,10 +1435,10 @@ details p {
     padding-inline: 18px;
   }
 
-  .mobile-menu::before {
+  /* .mobile-menu::before {
     left: 18px;
     right: 18px;
-  }
+  } */
 
   .footer {
     padding-inline: 18px;
@@ -1488,16 +1491,15 @@ details p {
 
 /* Premium foundation */
 body {
-  background:
-    radial-gradient(circle at 50% 0, rgba(216, 170, 96, 0.08), transparent 32rem),
-    linear-gradient(180deg, #050607 0%, #08090a 52%, #11100d 100%);
+  background:#000000,
+    linear-gradient(180deg, #050607 0%, #020202 52%, #11100d 100%);
   color: var(--ink);
 }
 
 .site-header {
-  backdrop-filter: blur(18px);
-  background: linear-gradient(180deg, rgba(3, 4, 5, 0.78), rgba(3, 4, 5, 0.3));
-  border-bottom: 1px solid rgba(216, 170, 96, 0.16);
+  /* backdrop-filter: blur(18px); */
+  /* background: linear-gradient(180deg, rgba(5, 5, 5, 0.911), rgba(101, 102, 102, 0.3)); */
+  /* border-bottom: 0px solid rgba(10, 10, 10, 0.973); */
   grid-template-columns: minmax(190px, 250px) 1fr auto;
   height: 72px;
   padding: 0 48px;
@@ -1554,7 +1556,7 @@ body {
 }
 
 .nav-item > a {
-  color: rgba(247, 242, 232, 0.86);
+  color: rgb(250, 250, 250);
   font-size: 11px;
   letter-spacing: 0.12em;
   min-height: 72px;
@@ -1568,9 +1570,9 @@ body {
 
 .nav-dropdown {
   background:
-    radial-gradient(circle at 18% 0, rgba(216, 170, 96, 0.16), transparent 12rem),
-    linear-gradient(180deg, rgba(12, 13, 14, 0.92), rgba(5, 6, 7, 0.82));
-  border: 1px solid rgba(216, 170, 96, 0.22);
+    radial-gradient(circle at 18% 0, rgba(161, 161, 160, 0.16), transparent 12rem),
+    linear-gradient(180deg, rgba(1, 2, 2, 0.92), rgba(5, 6, 7, 0.82));
+  border: 1px solid rgba(248, 248, 247, 0.22);
   border-radius: 0;
   box-shadow:
     0 28px 80px rgba(0, 0, 0, 0.5),
@@ -1583,7 +1585,7 @@ body {
 
 .nav-dropdown a:hover,
 .nav-dropdown a:focus-visible {
-  background: rgba(216, 170, 96, 0.08);
+  background: rgb(0, 0, 0);
 }
 
 .header-actions {
@@ -1593,9 +1595,9 @@ body {
 .booking-link,
 .primary-button,
 .contact-actions a {
-  background: linear-gradient(135deg, #f1d7a3, #c89445);
-  border: 1px solid rgba(255, 237, 190, 0.45);
-  color: #050607;
+  background: transparent;
+  border: 1px solid rgba(230, 229, 228, 0.815);
+  color: #f2f4f7;
 }
 
 .booking-link {
@@ -1653,7 +1655,7 @@ h2,
 }
 
 .ghost-button {
-  border-color: rgba(216, 170, 96, 0.56);
+  border-color: rgba(241, 238, 232, 0.56);
   color: var(--ink);
 }
 
@@ -1700,8 +1702,8 @@ details,
 .process-card,
 .offer-card,
 .language-offer-grid a {
-  background: linear-gradient(180deg, rgba(22, 23, 24, 0.96), rgba(12, 13, 14, 0.96));
-  border: 1px solid rgba(216, 170, 96, 0.18);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.96), rgba(12, 13, 14, 0.96));
+  border: 1px solid rgba(241, 237, 237, 0.959);
   border-radius: 0;
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.18);
 }
@@ -1736,7 +1738,7 @@ details,
 details p,
 .review-card p,
 .review-card small {
-  color: rgba(247, 242, 232, 0.62);
+  color: rgb(255, 254, 253);
 }
 
 .service-body span,
@@ -1753,8 +1755,8 @@ details p,
 
 .package-top strong,
 .offer-card strong {
-  background: rgba(216, 170, 96, 0.12);
-  border: 1px solid rgba(216, 170, 96, 0.28);
+  background: rgba(8, 8, 8, 0.87);
+  border: 1px solid rgba(250, 248, 246, 0.28);
   color: var(--gold-soft);
 }
 
@@ -1767,13 +1769,13 @@ li svg {
 }
 
 .language-row span {
-  border-color: rgba(216, 170, 96, 0.26);
+  border-color: rgba(66, 65, 65, 0.925);
   color: var(--gold-soft);
 }
 
 .about-image div {
   background: rgba(8, 9, 10, 0.74);
-  border: 1px solid rgba(216, 170, 96, 0.24);
+  border: 1px solid rgba(248, 247, 246, 0.904);
   color: var(--ink);
 }
 
@@ -1787,24 +1789,24 @@ summary {
 
 .contact-panel {
   background:
-    linear-gradient(90deg, rgba(3, 4, 5, 0.9), rgba(3, 4, 5, 0.62)),
+    linear-gradient(90deg, rgba(5, 5, 5, 0.9), rgba(0, 0, 0, 0.62)),
     url("/kontakt_background_img.jpg");
   background-position: center;
   background-size: cover;
-  border: 1px solid rgba(216, 170, 96, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.959);
   border-radius: 0;
   max-width: 1280px;
 }
 
 .contact-actions a + a {
   background: transparent;
-  border-color: rgba(216, 170, 96, 0.42);
+  border-color: rgb(212, 206, 206);
   color: var(--ink);
 }
 
 .footer {
   background: #050607;
-  border-top-color: rgba(216, 170, 96, 0.18);
+  border-top-color: rgba(243, 241, 237, 0.18);
   color: var(--ink);
   max-width: none;
   padding-inline: max(28px, calc((100vw - 1280px) / 2));
@@ -1815,7 +1817,7 @@ summary {
 }
 
 .footer-bottom {
-  border-top-color: rgba(216, 170, 96, 0.14);
+  border-top-color: rgba(252, 251, 250, 0.425);
 }
 
 @media (max-width: 1060px) {
@@ -1888,7 +1890,7 @@ details {
 .mobile-menu {
   backdrop-filter: blur(18px) saturate(135%);
   background:
-    radial-gradient(circle at 18% 4%, rgba(216, 170, 96, 0.16), transparent 25rem),
+    radial-gradient(circle at 18% 4%, rgba(63, 62, 62, 0.16), transparent 25rem),
     radial-gradient(circle at 90% 10%, rgba(255, 255, 255, 0.08), transparent 20rem),
     linear-gradient(180deg, rgba(5, 6, 7, 0.82), rgba(5, 6, 7, 0.64));
   border: 1px solid rgba(216, 170, 96, 0.18);
@@ -1903,7 +1905,7 @@ details {
   z-index: 1000;
 }
 
-.mobile-menu::before {
+/* .mobile-menu::before {
   background: linear-gradient(90deg, transparent, rgba(216, 170, 96, 0.42), transparent);
   content: "";
   height: 1px;
@@ -1911,7 +1913,7 @@ details {
   position: absolute;
   right: 22px;
   top: 68px;
-}
+} */
 
 .mobile-menu-inner {
   display: grid;
@@ -1920,7 +1922,7 @@ details {
 }
 
 .mobile-nav-group {
-  border-bottom: 1px solid rgba(216, 170, 96, 0.16);
+  border-bottom: 1px solid rgba(245, 244, 242, 0.16);
   display: grid;
   gap: 12px;
   padding: 22px 0;
@@ -1935,7 +1937,7 @@ details {
 }
 
 .mobile-nav-group > a:not(:first-child) {
-  color: rgba(247, 242, 232, 0.66);
+  color: rgba(255, 255, 255, 0.904);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1951,12 +1953,12 @@ details {
 
 @media (max-width: 1180px) {
   .site-header {
-    backdrop-filter: blur(16px) saturate(135%);
-    background:
+    /* backdrop-filter: blur(16px) saturate(135%); */
+    /* background:
       linear-gradient(180deg, rgba(5, 6, 7, 0.72), rgba(5, 6, 7, 0.34)),
-      radial-gradient(circle at 10% 0, rgba(216, 170, 96, 0.14), transparent 18rem);
-    border-bottom: 1px solid rgba(216, 170, 96, 0.2);
-    box-shadow: 0 14px 42px rgba(0, 0, 0, 0.32);
+      radial-gradient(circle at 10% 0, rgba(78, 80, 79, 0.342), transparent 18rem); */
+    /* border-bottom: 1px solid rgba(131, 130, 127, 0.774);
+    box-shadow: 0 14px 42px rgba(0, 0, 0, 0.32); */
     grid-template-columns: minmax(0, 1fr) 48px;
     height: 68px;
     padding: 0 18px;
@@ -1979,8 +1981,8 @@ details {
   .menu-button {
     align-items: center;
     backdrop-filter: blur(12px);
-    background: rgba(255, 255, 255, 0.055);
-    border: 1px solid rgba(216, 170, 96, 0.34);
+    background: rgba(241, 238, 238, 0.055);
+    border: 1px solid rgba(243, 243, 239, 0.34);
     color: var(--gold-soft);
     display: inline-flex;
     flex-direction: column;
