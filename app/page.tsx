@@ -186,7 +186,7 @@ export default function Home() {
                   </li>
                   <li>
                     <Check size={16} />
-                    Finale Kontrolle vor der Uebergabe
+                    Finale Kontrolle vor der Übergabe
                   </li>
                 </ul>
 
@@ -203,7 +203,7 @@ export default function Home() {
       <section id="about" className="section">
         <LightReveal className="section-heading">
           <span>03</span>
-          <h2>Ueber uns</h2>
+          <h2>Über uns</h2>
         </LightReveal>
 
         <LightGroup className="about-layout">

@@ -52,7 +52,7 @@ const navItems = [
       },
     ],
   },
-  { label: "Ueber uns", href: "/#about" },
+  { label: "Über uns", href: "/#about" },
   { label: "Galerie", href: "/#work" },
   { label: "Kontakt", href: "/#contact" },
 ];
