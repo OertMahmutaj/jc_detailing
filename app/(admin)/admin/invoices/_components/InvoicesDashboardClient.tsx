@@ -174,37 +174,33 @@ export default function InvoicesDashboardClient({
                                 <ExternalLink size={15} /> Original PDF
                               </a>
                             )}
-                            {booking.invoice.status !== "PAID" && (
-                              <>
-                                <button
-                                  disabled={isWorking === booking.invoice.id}
-                                  onClick={() =>
-                                    runInvoiceAction("/api/admin/invoices/status", booking.invoice!.id, {
-                                      status: "PAID",
-                                    })
-                                  }
-                                  type="button"
-                                >
-                                  <Check size={15} /> Als bezahlt markieren
-                                </button>
-                                <button
-                                  disabled={isWorking === booking.invoice.id || !isInvoiceOverdue(booking.invoice)}
-                                  onClick={() => runInvoiceAction("/api/admin/invoices/reminder", booking.invoice!.id)}
-                                  title={
-                                    isInvoiceOverdue(booking.invoice)
-                                      ? "Erinnerung senden"
-                                      : `Erinnerung ab ${formatSwissDate(booking.invoice.dueDate)} moeglich`
-                                  }
-                                  type="button"
-                                >
-                                  <Bell size={15} /> Erinnerung senden
-                                </button>
-                                {!isInvoiceOverdue(booking.invoice) && (
-                                  <span className="admin-action-menu-note">
-                                    Moeglich ab {formatSwissDate(booking.invoice.dueDate)}
-                                  </span>
-                                )}
-                              </>
+                            <button
+                              disabled={isWorking === booking.invoice.id}
+                              onClick={() =>
+                                runInvoiceAction("/api/admin/invoices/status", booking.invoice!.id, {
+                                  status: "PAID",
+                                })
+                              }
+                              type="button"
+                            >
+                              <Check size={15} /> Als bezahlt markieren
+                            </button>
+                            <button
+                              disabled={isWorking === booking.invoice.id || !isInvoiceOverdue(booking.invoice)}
+                              onClick={() => runInvoiceAction("/api/admin/invoices/reminder", booking.invoice!.id)}
+                              title={
+                                isInvoiceOverdue(booking.invoice)
+                                  ? "Erinnerung senden"
+                                  : `Erinnerung ab ${formatSwissDate(booking.invoice.dueDate)} moeglich`
+                              }
+                              type="button"
+                            >
+                              <Bell size={15} /> Erinnerung senden
+                            </button>
+                            {!isInvoiceOverdue(booking.invoice) && (
+                              <span className="admin-action-menu-note">
+                                Moeglich ab {formatSwissDate(booking.invoice.dueDate)}
+                              </span>
                             )}
                           </div>
                         </details>
