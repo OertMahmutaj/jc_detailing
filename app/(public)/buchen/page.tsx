@@ -1,5 +1,6 @@
 import { BookingForm } from "../components/BookingForm";
 import { HeroIntro, HeroItem, PageEntry } from "../components/StudioMotion";
+import { Suspense } from "react";
 
 export default function BookingPage() {
   return (
@@ -31,7 +32,9 @@ export default function BookingPage() {
           </p>
         </div>
 
-        <BookingForm />
+        <Suspense fallback={<div className="booking-loading" />}>
+          <BookingForm />
+        </Suspense>
       </section>
     </PageEntry>
   );

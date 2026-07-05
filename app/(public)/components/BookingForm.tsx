@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 
 type Service = { id: string; name: string; basePrice: number; durationMinutes: number };
 type Category = { id: string; name: string; priceModifier: number };
@@ -276,7 +277,7 @@ function formatDuration(minutes: number) {
 function generateTimeSlots() {
   const slots: string[] = [];
 
-  for (let hour = 8; hour <= 19; hour++) {
+  for (let hour = 8; hour <= 13; hour++) {
     const formattedHour = hour.toString().padStart(2, "0");
     slots.push(`${formattedHour}:00`);
     slots.push(`${formattedHour}:30`);
@@ -288,6 +289,8 @@ function generateTimeSlots() {
 const TIME_SLOTS = generateTimeSlots();
 
 export function BookingForm() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
   const [status, setStatus] = useState<Status>("idle");
@@ -315,6 +318,13 @@ export function BookingForm() {
     const addOnDuration = selectedAddOns.reduce((sum, addOn) => sum + addOn.additionalDuration, 0);
     return serviceDuration + addOnDuration;
   }, [selectedAddOns, selectedServices]);
+  const currentLanguage = useMemo(() => {
+    const queryLanguage = searchParams.get("lang")?.toLowerCase();
+    const pathLanguage = pathname.split("/").find((part) => ["de", "en", "fr", "it"].includes(part));
+    const language = queryLanguage || pathLanguage || "de";
+
+    return ["de", "en", "fr", "it"].includes(language) ? language : "de";
+  }, [pathname, searchParams]);
 
   const availableAddOns = useMemo(() => {
     const allowedNames = new Set(selectedServices.flatMap((service) => serviceAddOns[service.name] ?? []));
@@ -437,6 +447,7 @@ export function BookingForm() {
       serviceIds: selectedServices.map((service) => service.id),
       vehicleCategoryId: selectedCategory?.id,
       addOnIds: selectedAddOns.map((addOn) => addOn.id),
+      language: currentLanguage,
     };
 
     try {

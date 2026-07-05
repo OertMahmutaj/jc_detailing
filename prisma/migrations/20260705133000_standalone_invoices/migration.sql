@@ -1,0 +1,2 @@
+ALTER TABLE "Invoice" ADD COLUMN IF NOT EXISTS "recipientName" TEXT;
+ALTER TABLE "Invoice" ALTER COLUMN "bookingId" DROP NOT NULL;

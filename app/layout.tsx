@@ -7,7 +7,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html data-scroll-behavior="smooth" lang="de" suppressHydrationWarning>
       <body suppressHydrationWarning>{children}</body>
     </html>
   );

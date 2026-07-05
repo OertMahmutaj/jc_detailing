@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { BarChart3, CalendarDays, FileText, LogOut, Users, Menu, X } from "lucide-react";
+import { BarChart3, CalendarDays, CalendarOff, FileText, LogOut, Users, Menu, X } from "lucide-react";
 
 const adminLinks = [
     { href: "/admin/dashboard", label: "Dashboard", icon: BarChart3 },
     { href: "/admin/bookings", label: "Buchungen", icon: CalendarDays },
+    { href: "/admin/calendar", label: "Kalender", icon: CalendarOff },
     { href: "/admin/clients", label: "Kunden", icon: Users },
     { href: "/admin/invoices", label: "Rechnungen", icon: FileText },
 ];

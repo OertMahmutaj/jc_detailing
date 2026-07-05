@@ -46,6 +46,17 @@ export async function GET(request: Request) {
       },
     });
 
+    const availabilityBlocks = await prisma.availabilityBlock.findMany({
+      where: {
+        startTime: { lt: latestPotentialEnd },
+        endTime: { gt: dayStart },
+      },
+      select: {
+        startTime: true,
+        endTime: true,
+      },
+    });
+
     const blockedSlots: string[] = [];
 
     for (let hour = 8; hour <= 19; hour++) {
@@ -53,11 +64,14 @@ export async function GET(request: Request) {
         const slot = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
         const slotStart = buildSlotDate(dateParam, slot);
         const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60000);
-        const hasConflict = existingBookings.some((booking) =>
+        const hasBookingConflict = existingBookings.some((booking) =>
           overlaps(slotStart, slotEnd, new Date(booking.dateTime), new Date(booking.endTime))
         );
+        const hasBlockedConflict = availabilityBlocks.some((block) =>
+          overlaps(slotStart, slotEnd, new Date(block.startTime), new Date(block.endTime))
+        );
 
-        if (hasConflict) {
+        if (hasBookingConflict || hasBlockedConflict) {
           blockedSlots.push(slot);
         }
       }

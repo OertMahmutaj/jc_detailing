@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import path from "path";
 import QRCode from "qrcode";
 import pdfmake from "pdfmake";
+import { createClient } from "@supabase/supabase-js";
 
 const FONTS_DIR = path.join(process.cwd(), "public", "fonts");
 
@@ -28,6 +29,60 @@ pdfmake.addFonts({
   },
 });
 
+async function archiveInvoicePdf(pdfBuffer: Buffer, invoiceNumber: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const bucket = process.env.SUPABASE_INVOICE_BUCKET || "invoices";
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return null;
+  }
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const filePath = `invoices/${invoiceNumber}-${Date.now()}.pdf`;
+  const { error } = await supabase.storage.from(bucket).upload(filePath, pdfBuffer, {
+    contentType: "application/pdf",
+    upsert: false,
+  });
+
+  if (error) {
+    console.warn("Invoice archive upload failed:", error.message);
+    return null;
+  }
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+  return data.publicUrl;
+}
+
+type InvoiceLanguage = "de" | "en" | "fr" | "it";
+
+function cleanLanguage(value: unknown): InvoiceLanguage {
+  return value === "en" || value === "fr" || value === "it" ? value : "de";
+}
+
+function invoiceMailText(language: InvoiceLanguage, invoiceNumber: string) {
+  const texts = {
+    de: {
+      subject: localizedMail.subject,
+      text: "Guten Tag, im Anhang finden Sie Ihre Rechnung im PDF-Format inklusive QR-Einzahlungsschein.",
+    },
+    en: {
+      subject: `Your invoice ${invoiceNumber} from JC Detailing`,
+      text: "Hello, please find your invoice attached as a PDF including the QR payment slip.",
+    },
+    fr: {
+      subject: `Votre facture ${invoiceNumber} de JC Detailing`,
+      text: "Bonjour, vous trouverez votre facture en piece jointe au format PDF avec bulletin de versement QR.",
+    },
+    it: {
+      subject: `La tua fattura ${invoiceNumber} di JC Detailing`,
+      text: "Buongiorno, in allegato trovi la tua fattura in formato PDF con bollettino di pagamento QR.",
+    },
+  } as const;
+
+  return texts[language];
+}
+
 export async function POST(req: Request) {
   try {
     const {
@@ -37,19 +92,29 @@ export async function POST(req: Request) {
       vatRate,
       items,
       totalAmount,
+      language: rawLanguage,
     } = await req.json();
+    const language = cleanLanguage(rawLanguage);
 
     // 1. Database Persistence Sync
     const invoice = await prisma.invoice.upsert({
       where: { bookingId },
-      update: { invoiceNumber, emailOverride: targetEmail, vatRate },
+      update: {
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        emailOverride: targetEmail,
+        invoiceNumber,
+        language,
+        totalAmount,
+        vatRate,
+      },
       create: {
         bookingId,
-        invoiceNumber,
-        emailOverride: targetEmail,
-        vatRate,
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        emailOverride: targetEmail,
+        invoiceNumber,
+        language,
         totalAmount,
+        vatRate,
       },
     });
 
@@ -207,6 +272,8 @@ export async function POST(req: Request) {
     // 4. Generate PDF via the new promise-based pdfmake API
     const pdfBuffer: Buffer = await pdfmake.createPdf(docDefinition).getBuffer();
 
+    const archivedPdfUrl = await archiveInvoicePdf(pdfBuffer, invoiceNumber);
+
     // 5. Dispatch Mail via Transporter
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_SERVER_HOST,
@@ -217,11 +284,13 @@ export async function POST(req: Request) {
       },
     });
 
+    const localizedMail = invoiceMailText(language, invoiceNumber);
+
     await transporter.sendMail({
       from: '"JC Detailing Test" <billing@jcdetailer.ch>',
       to: targetEmail,
-      subject: `Ihre Rechnung ${invoiceNumber} von JC Detailing`,
-      text: "Guten Tag, im Anhang finden Sie Ihre gewünschte Abrechnung im PDF-Format inklusive QR-Einzahlungsschein.",
+      subject: localizedMail.subject,
+      text: localizedMail.text,
       attachments: [
         {
           filename: `Rechnung_${invoiceNumber}.pdf`,
@@ -231,7 +300,17 @@ export async function POST(req: Request) {
       ],
     });
 
-    return NextResponse.json({ success: true });
+    await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: {
+        pdfUrl: archivedPdfUrl || invoice.pdfUrl,
+        sentAt: new Date(),
+        status: "SENT",
+        totalAmount,
+      },
+    });
+
+    return NextResponse.json({ pdfUrl: archivedPdfUrl, success: true });
   } catch (error: any) {
     console.error("Invoicing pipeline failed:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

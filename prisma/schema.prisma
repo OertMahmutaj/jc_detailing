@@ -17,9 +17,8 @@ enum BookingStatus {
 }
 
 enum InvoiceStatus {
-  UNPAID
+  SENT
   PAID
-  OVERDUE
 }
 
 model User {
@@ -95,15 +94,20 @@ model Invoice {
   dueDate       DateTime
   totalAmount   Float         
   vatRate       Float         @default(7.7) // Default Swiss VAT percentage
-  status        InvoiceStatus @default(UNPAID)
+  status        InvoiceStatus @default(SENT)
+  language      String        @default("de")
   pdfUrl        String?       
+  sentAt        DateTime?
+  paidAt        DateTime?
+  reminderSentAt DateTime?
   
   // Custom Overrides (so admin can change target info without corrupting base data)
   emailOverride String?       
+  recipientName String?
   companyUid    String?       @default("CHE-122.222.222") // The UID shown in your invoice mock
 
-  bookingId     String        @unique
-  booking       Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId     String?       @unique
+  booking       Booking?      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   items         InvoiceItem[]
 
   updatedAt     DateTime      @updatedAt
@@ -117,4 +121,15 @@ model InvoiceItem {
   quantity     Float    @default(1.0)
   unit         String   @default("Stk.") // Stk., h, etc.
   pricePerUnit Float    
+}
+
+model AvailabilityBlock {
+  id        String   @id @default(uuid())
+  startTime DateTime
+  endTime   DateTime
+  fullDay   Boolean  @default(false)
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@index([startTime, endTime])
 }

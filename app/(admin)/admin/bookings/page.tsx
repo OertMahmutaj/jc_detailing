@@ -1,9 +1,15 @@
+import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../_lib/prisma";
+import { AdminSearchForm } from "../_components/AdminSearchForm";
+import { AdminBookingCreator } from "../_components/AdminBookingCreator";
+import { createAdminBooking } from "../_actions/bookingActions";
+
+const PAGE_SIZE = 5;
 
 const statusLabels = {
   PENDING: "Offen",
-  CONFIRMED: "Bestätigt",
+  CONFIRMED: "Bestaetigt",
   COMPLETED: "Erledigt",
   CANCELLED: "Storniert",
 } as const;
@@ -25,6 +31,35 @@ async function updateBookingStatus(formData: FormData) {
   revalidatePath("/admin/dashboard");
 }
 
+async function updateBookingSchedule(formData: FormData) {
+  "use server";
+
+  const id = String(formData.get("id") ?? "");
+  const date = String(formData.get("date") ?? "");
+  const time = String(formData.get("time") ?? "");
+
+  if (!id || !date || !time) return;
+
+  const booking = await prisma.booking.findUnique({
+    where: { id },
+    select: { dateTime: true, endTime: true },
+  });
+
+  if (!booking) return;
+
+  const durationMs = booking.endTime.getTime() - booking.dateTime.getTime();
+  const dateTime = new Date(`${date}T${time}:00`);
+  const endTime = new Date(dateTime.getTime() + durationMs);
+
+  await prisma.booking.update({
+    where: { id },
+    data: { dateTime, endTime },
+  });
+
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin/dashboard");
+}
+
 async function deleteBooking(formData: FormData) {
   "use server";
 
@@ -38,10 +73,21 @@ async function deleteBooking(formData: FormData) {
 }
 
 function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("de-CH", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(value);
+  const day = String(value.getDate()).padStart(2, "0");
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const year = value.getFullYear();
+  const hours = String(value.getHours()).padStart(2, "0");
+  const minutes = String(value.getMinutes()).padStart(2, "0");
+
+  return `${day}.${month}.${year}, ${hours}:${minutes}`;
+}
+
+function inputDate(value: Date) {
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
+function inputTime(value: Date) {
+  return `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
 }
 
 function formatDuration(start: Date, end: Date) {
@@ -54,26 +100,70 @@ function formatDuration(start: Date, end: Date) {
   return `${hours}h ${rest} Min.`;
 }
 
-export default async function AdminBookingsPage() {
-  const bookings = await prisma.booking.findMany({
-    include: {
-      addOns: true,
-      client: true,
-      invoice: true,
-      service: true,
-      vehicleCategory: true,
-    },
-    orderBy: { dateTime: "desc" },
-  });
+function pageHref(page: number, query: string) {
+  const params = new URLSearchParams();
+  params.set("page", String(page));
+  if (query) params.set("q", query);
+
+  return `/admin/bookings?${params.toString()}`;
+}
+
+export default async function AdminBookingsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ page?: string; q?: string }>;
+}) {
+  const params = (await searchParams) ?? {};
+  const query = String(params.q ?? "").trim();
+  const page = Math.max(1, Number(params.page ?? "1") || 1);
+  const skip = (page - 1) * PAGE_SIZE;
+  const where = query
+    ? {
+        OR: [
+          { client: { name: { contains: query, mode: "insensitive" as const } } },
+          { client: { email: { contains: query, mode: "insensitive" as const } } },
+          { client: { phone: { contains: query, mode: "insensitive" as const } } },
+          { vehicleModel: { contains: query, mode: "insensitive" as const } },
+          { service: { name: { contains: query, mode: "insensitive" as const } } },
+        ],
+      }
+    : {};
+
+  const [bookings, totalBookings, services, categories, addOns] = await Promise.all([
+    prisma.booking.findMany({
+      include: {
+        addOns: true,
+        client: true,
+        invoice: true,
+        service: true,
+        vehicleCategory: true,
+      },
+      orderBy: { dateTime: "desc" },
+      skip,
+      take: PAGE_SIZE,
+      where,
+    }),
+    prisma.booking.count({ where }),
+    prisma.service.findMany({ orderBy: { name: "asc" } }),
+    prisma.vehicleCategory.findMany({ orderBy: { name: "asc" } }),
+    prisma.addOn.findMany({ orderBy: { name: "asc" } }),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(totalBookings / PAGE_SIZE));
 
   return (
     <div className="admin-page">
       <header className="admin-page-header">
         <p>Termine</p>
         <h1>Buchungen</h1>
+        <AdminBookingCreator action={createAdminBooking} addOns={addOns} categories={categories} services={services} />
       </header>
 
       <section className="admin-panel">
+        <div className="admin-panel-head">
+          <h2>Alle Buchungen</h2>
+          <AdminSearchForm defaultValue={query} placeholder="Kunde, E-Mail, Fahrzeug..." />
+        </div>
+
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
@@ -97,6 +187,14 @@ export default async function AdminBookingsPage() {
                   <td>
                     <strong>{formatDate(booking.dateTime)}</strong>
                     <span>{formatDuration(booking.dateTime, booking.endTime)}</span>
+                    <form action={updateBookingSchedule} className="admin-inline-form">
+                      <input name="id" type="hidden" value={booking.id} />
+                      <input name="date" type="date" defaultValue={inputDate(booking.dateTime)} />
+                      <input name="time" type="time" min="08:00" max="19:30" step="1800" defaultValue={inputTime(booking.dateTime)} />
+                      <button className="admin-mini-button" type="submit">
+                        Aendern
+                      </button>
+                    </form>
                   </td>
                   <td>
                     <strong>{booking.service.name}</strong>
@@ -125,7 +223,7 @@ export default async function AdminBookingsPage() {
                     <form action={deleteBooking}>
                       <input name="id" type="hidden" value={booking.id} />
                       <button className="admin-danger-button" type="submit">
-                        Löschen
+                        Loeschen
                       </button>
                     </form>
                   </td>
@@ -134,7 +232,19 @@ export default async function AdminBookingsPage() {
             </tbody>
           </table>
 
-          {!bookings.length && <p className="admin-empty">Noch keine Buchungen vorhanden.</p>}
+          {!bookings.length && <p className="admin-empty">Keine Buchungen gefunden.</p>}
+        </div>
+
+        <div className="admin-pagination">
+          <Link aria-disabled={page <= 1} href={pageHref(Math.max(1, page - 1), query)}>
+            Zurueck
+          </Link>
+          <span>
+            Seite {page} von {totalPages}
+          </span>
+          <Link aria-disabled={page >= totalPages} href={pageHref(Math.min(totalPages, page + 1), query)}>
+            Weiter
+          </Link>
         </div>
       </section>
     </div>

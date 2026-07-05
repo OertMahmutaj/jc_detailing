@@ -33,8 +33,11 @@ type BookingPayload = {
   serviceIds?: unknown;
   vehicleCategoryId?: unknown;
   addOnIds?: unknown;
+  language?: unknown;
   website?: unknown;
 };
+
+type InvoiceLanguage = "de" | "en" | "fr" | "it";
 
 function cleanText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return "";
@@ -44,6 +47,13 @@ function cleanText(value: unknown, maxLength: number) {
 function cleanIdArray(value: unknown) {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is string => typeof item === "string" && item.length > 0).slice(0, 12);
+}
+
+function cleanLanguage(value: unknown): InvoiceLanguage {
+  if (typeof value !== "string") return "de";
+  const language = value.toLowerCase();
+
+  return language === "en" || language === "fr" || language === "it" ? language : "de";
 }
 
 function getClientIp(request: Request) {
@@ -74,6 +84,19 @@ function isOverlapConstraintError(error: unknown) {
   return maybeError.code === "P2004" || Boolean(maybeError.message?.includes("Booking_no_active_time_overlap"));
 }
 
+function getZurichMinutes(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+    timeZone: "Europe/Zurich",
+  }).formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0);
+
+  return hour * 60 + minute;
+}
+
 async function sendEmail({ to, subject, text }: { to: string; subject: string; text: string }) {
   const key = process.env.RESEND_API_KEY;
 
@@ -98,9 +121,58 @@ async function sendEmail({ to, subject, text }: { to: string; subject: string; t
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error("Resend API rejected request:", errorData);
-    throw new Error("Email provider rejected the request");
+    const providerMessage =
+      typeof errorData?.message === "string" ? errorData.message : "Email provider rejected the request";
+    throw new Error(providerMessage);
   }
+}
+
+function invoiceNumber() {
+  return `RE-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+}
+
+function customerTexts(language: InvoiceLanguage, name: string, invoice: string, total: number, summary: string) {
+  const formattedTotal = `CHF ${total.toFixed(2)}`;
+  const texts = {
+    de: {
+      subject: "JC Detailing - Buchung und Rechnung erhalten",
+      body:
+        `Hallo ${name}\n\n` +
+        "Danke fuer deine Buchung bei JC Detailing. Deine Anfrage ist bei uns eingegangen.\n\n" +
+        `Rechnung: ${invoice}\nBetrag: ${formattedTotal}\n\n` +
+        `Deine Angaben:\n\n${summary}\n\n` +
+        "Freundliche Gruesse\nJC Detailing",
+    },
+    en: {
+      subject: "JC Detailing - Booking and invoice received",
+      body:
+        `Hello ${name}\n\n` +
+        "Thank you for your booking with JC Detailing. We have received your request.\n\n" +
+        `Invoice: ${invoice}\nAmount: ${formattedTotal}\n\n` +
+        `Your details:\n\n${summary}\n\n` +
+        "Kind regards\nJC Detailing",
+    },
+    fr: {
+      subject: "JC Detailing - Reservation et facture recues",
+      body:
+        `Bonjour ${name}\n\n` +
+        "Merci pour votre reservation chez JC Detailing. Nous avons bien recu votre demande.\n\n" +
+        `Facture: ${invoice}\nMontant: ${formattedTotal}\n\n` +
+        `Vos informations:\n\n${summary}\n\n` +
+        "Meilleures salutations\nJC Detailing",
+    },
+    it: {
+      subject: "JC Detailing - Prenotazione e fattura ricevute",
+      body:
+        `Ciao ${name}\n\n` +
+        "Grazie per la tua prenotazione presso JC Detailing. Abbiamo ricevuto la tua richiesta.\n\n" +
+        `Fattura: ${invoice}\nImporto: ${formattedTotal}\n\n` +
+        `I tuoi dati:\n\n${summary}\n\n` +
+        "Cordiali saluti\nJC Detailing",
+    },
+  } as const;
+
+  return texts[language];
 }
 
 export async function POST(request: Request) {
@@ -126,6 +198,7 @@ export async function POST(request: Request) {
     const vehicleModel = cleanText(body.vehicleModel, 120);
     const notes = cleanText(body.notes, 1200);
     const vehicleCategoryId = cleanText(body.vehicleCategoryId, 80);
+    const language = cleanLanguage(body.language);
     const addOnIds = cleanIdArray(body.addOnIds);
     const serviceIds = cleanIdArray(body.serviceIds).length
       ? cleanIdArray(body.serviceIds)
@@ -138,6 +211,15 @@ export async function POST(request: Request) {
 
     if (!startBookingDate || Number.isNaN(startBookingDate.getTime()) || startBookingDate.getTime() <= Date.now()) {
       return Response.json({ message: "Bitte wähle einen gültigen Termin in der Zukunft." }, { status: 400 });
+    }
+
+    const startMinutes = getZurichMinutes(startBookingDate);
+
+    if (startMinutes < 8 * 60 || startMinutes > 13 * 60 + 30) {
+      return Response.json(
+        { message: "Bitte waehle eine Uhrzeit zwischen 08:00 und 13:30." },
+        { status: 400 }
+      );
     }
 
     if (!vehicleCategoryId || serviceIds.length === 0) {
@@ -192,7 +274,14 @@ export async function POST(request: Request) {
       },
     });
 
-    if (conflictingBooking) {
+    const conflictingBlock = await prisma.availabilityBlock.findFirst({
+      where: {
+        startTime: { lt: endBookingDate },
+        endTime: { gt: startBookingDate },
+      },
+    });
+
+    if (conflictingBooking || conflictingBlock) {
       return Response.json(
         { message: "Dieser Termin ist leider gerade vergeben worden. Bitte wähle eine andere Zeit." },
         { status: 400 }
@@ -205,6 +294,13 @@ export async function POST(request: Request) {
       notes,
       servicesByRequestOrder.length > 1 ? `Ausgewählte Leistungen: ${serviceNames}` : "",
     ].filter(Boolean).join("\n\n");
+
+    let createdBookingId = "";
+    const estimatedTotal =
+      servicesByRequestOrder.reduce((sum, service) => sum + service.basePrice, 0) +
+      dbCategory.priceModifier +
+      dbAddOns.reduce((sum, addOn) => sum + addOn.price, 0);
+    const newInvoiceNumber = invoiceNumber();
 
     try {
       const createdBooking = await prisma.booking.create({
@@ -228,6 +324,7 @@ export async function POST(request: Request) {
           },
         },
       });
+      createdBookingId = createdBooking.id;
 
       try {
         for (const service of servicesByRequestOrder) {
@@ -250,6 +347,50 @@ export async function POST(request: Request) {
 
       throw createError;
     }
+
+    const invoice = await prisma.invoice.create({
+      data: {
+        bookingId: createdBookingId,
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        emailOverride: email,
+        invoiceNumber: newInvoiceNumber,
+        language,
+        sentAt: new Date(),
+        status: "SENT",
+        totalAmount: estimatedTotal,
+        vatRate: 7.7,
+      },
+    });
+
+    await prisma.invoiceItem.createMany({
+      data: [
+        ...servicesByRequestOrder.map((service) => ({
+          description: service.name,
+          invoiceId: invoice.id,
+          pricePerUnit: service.basePrice,
+          quantity: 1,
+          unit: "Stk.",
+        })),
+        ...(dbCategory.priceModifier > 0
+          ? [
+              {
+                description: `Fahrzeuggroesse: ${dbCategory.name}`,
+                invoiceId: invoice.id,
+                pricePerUnit: dbCategory.priceModifier,
+                quantity: 1,
+                unit: "Stk.",
+              },
+            ]
+          : []),
+        ...dbAddOns.map((addOn) => ({
+          description: addOn.name,
+          invoiceId: invoice.id,
+          pricePerUnit: addOn.price,
+          quantity: 1,
+          unit: "Stk.",
+        })),
+      ],
+    });
 
     const summary = [
       `Name: ${name}`,
@@ -275,18 +416,19 @@ export async function POST(request: Request) {
       console.error("Failed to send admin alert email:", adminEmailError);
     }
 
+    const localizedCustomerEmail = customerTexts(language, name, newInvoiceNumber, estimatedTotal, summary);
+
     try {
       await sendEmail({
         to: email,
-        subject: "JC Detailing - Deine Anfrage ist eingegangen",
-        text:
-          `Hallo ${name}\n\n` +
-          "Danke für deine Anfrage bei JC Detailing. Wir prüfen deinen Wunschtermin und melden uns so schnell wie möglich mit einer Bestätigung oder einem Terminvorschlag.\n\n" +
-          `Deine Angaben:\n\n${summary}\n\n` +
-          "Freundliche Grüsse\nJC Detailing",
+        subject: localizedCustomerEmail.subject,
+        text: localizedCustomerEmail.body,
       });
     } catch (customerEmailError) {
-      console.warn("Customer confirmation email could not be sent:", customerEmailError);
+      console.warn(
+        "Customer confirmation email could not be sent:",
+        customerEmailError instanceof Error ? customerEmailError.message : customerEmailError
+      );
     }
 
     return Response.json({ message: "Anfrage gesendet." });

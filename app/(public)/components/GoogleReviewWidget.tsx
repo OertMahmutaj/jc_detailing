@@ -17,7 +17,7 @@ type ReviewResponse = {
 };
 
 const googleReviewsUrl =
-  "https://www.google.com/maps/place/JCDetailing/@47.1851689,7.8752737,12z/data=!4m12!1m2!2m1!1sjc+detailing+luzern!3m8!1s0x47902198a9df5769:0xb4f52c1f731c38bb!8m2!3d47.1851689!4d8.027709!9m1!1b1!15sChNqYyBkZXRhaWxpbmcgbHV6ZXJuWhUiE2pjIGRldGFpbGluZyBsdXplcm6SARVjYXJfZGV0YWlsaW5nX3NlcnZpY2WaAURDaTlEUVVsUlFVTnZaRU5vZEhsalJqbHZUMnhDTTFvelJqUlBWelZRV21wa01VNUZNVzVoZWtaRVZHNXNNMlJHUlJBQuABAPoBBAgAEC8!16s%2Fg%2F11z64wxb_v?entry=ttu";
+  "https://www.google.com/maps/place/JCDetailing/@47.1851689,8.027709,17z/data=!4m8!3m7!1s0x47902198a9df5769:0xb4f52c1f731c38bb!8m2!3d47.1851689!4d8.027709!9m1!1b1!16s%2Fg%2F11z64wxb_v?authuser=0&hl=en&entry=ttu&g_ep=EgoyMDI2MDYyOS4wIKXMDSoASAFQAw%3D%3D";
 
 export function GoogleReviewWidget() {
   const [open, setOpen] = useState(false);

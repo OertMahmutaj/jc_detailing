@@ -58,7 +58,6 @@ const navItems = [
 ];
 
 const menuEase = [0.22, 1, 0.36, 1] as const;
-const bookingUrl = "/buchen";
 const languageOptions = [
   { label: "DE", name: "Deutsch", href: "/de" },
   { label: "EN", name: "English", href: "/en" },
@@ -76,6 +75,7 @@ export function Navbar() {
   const activeLanguage =
     languageOptions.find((language) => pathname === language.href || pathname.startsWith(`${language.href}/`)) ??
     languageOptions[0];
+  const bookingUrl = `/buchen?lang=${activeLanguage.label.toLowerCase()}`;
 
   function closeMenu() {
     setMobileOpen(false);
