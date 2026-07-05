@@ -46,8 +46,8 @@ model Service {
   name            String    
   basePrice       Float     
   durationMinutes Int       
-  primaryBookings Booking[]  @relation("PrimaryBookingService")
-  bookings        Booking[]  @relation("BookingToServices")
+  primaryBookings Booking[] @relation("PrimaryBookingService")
+  bookings        Booking[] @relation("BookingToServices")
 }
 
 model VehicleCategory {
@@ -94,9 +94,27 @@ model Invoice {
   issuedAt      DateTime      @default(now())
   dueDate       DateTime
   totalAmount   Float         
+  vatRate       Float         @default(7.7) // Default Swiss VAT percentage
   status        InvoiceStatus @default(UNPAID)
   pdfUrl        String?       
+  
+  // Custom Overrides (so admin can change target info without corrupting base data)
+  emailOverride String?       
+  companyUid    String?       @default("CHE-122.222.222") // The UID shown in your invoice mock
 
   bookingId     String        @unique
   booking       Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  items         InvoiceItem[]
+
+  updatedAt     DateTime      @updatedAt
+}
+
+model InvoiceItem {
+  id           String   @id @default(uuid())
+  invoiceId    String
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description  String   // e.g., "Schwertransport", "Innenreinigung", "Zusatz Addon"
+  quantity     Float    @default(1.0)
+  unit         String   @default("Stk.") // Stk., h, etc.
+  pricePerUnit Float    
 }

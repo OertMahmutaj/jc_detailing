@@ -1,8 +1,13 @@
 import { headers } from "next/headers";
 import AdminSidebar from "./navigation/page"; // Update path if placed elsewhere
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const isLoginPage = headers().get("x-admin-login-page") === "1";
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const headersList = await headers();
+  const isLoginPage = headersList.get("x-admin-login-page") === "1";
 
   if (isLoginPage) {
     return children;
