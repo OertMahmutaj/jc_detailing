@@ -2451,7 +2451,7 @@ details p {
   display: block;
   margin-top: 4px;
   font-size: 13px;
-  color: #6b6d76 !important;
+  color: #000002 !important;
 }
 
 .admin-select {
@@ -6212,7 +6212,7 @@ details {
 .admin-empty,
 .admin-table td > span,
 .admin-list-row span {
-  color: var(--admin-muted);
+  color: black;
 }
 
 .admin-panel {
@@ -6942,7 +6942,7 @@ details {
 .admin-list-row time,
 .admin-empty,
 .admin-table td > span {
-  color: var(--admin-muted);
+  color: black;
 }
 
 .admin-table td > strong,
@@ -7240,7 +7240,7 @@ details {
 .admin-calendar-block time,
 .admin-calendar-day-preview small,
 .admin-calendar-weekdays span {
-  color: var(--admin-muted);
+  color: black;
 }
 
 .admin-search-form input,
@@ -7445,3 +7445,8 @@ details {
 /* .admin-inline-form button {
   width: 280px;
 } */
+
+.admin-calendar-booking-summary span {
+  display: block;        /* Forces each span to take up its own row */
+  margin-bottom: 4px;    /* Adds breathing room between rows */
+}
