@@ -13,11 +13,12 @@ interface Item {
 interface InvoiceEditorProps {
   initialData: {
     basePrice: number;
-    bookingId: string;
+    bookingId?: string | null;
+    invoiceId?: string | null;
     clientEmail: string;
     invoiceNumber: string;
     items?: any[];
-    language?: string;
+    language?: string | null;
     modifierPrice: number;
     serviceName: string;
   };
@@ -37,24 +38,25 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
   const [language, setLanguage] = useState(initialData.language || "de");
   const [targetEmail, setTargetEmail] = useState(initialData.clientEmail);
   const [vatRate, setVatRate] = useState(7.7);
+  const [isSending, setIsSending] = useState(false);
+
   const [items, setItems] = useState<Item[]>(
     initialData.items && initialData.items.length > 0
       ? initialData.items.map((item: any) => ({
-          description: item.description,
-          pricePerUnit: item.pricePerUnit,
-          quantity: item.quantity,
-          unit: item.unit,
+          description: item.description || "",
+          pricePerUnit: Number(item.pricePerUnit) || 0,
+          quantity: Number(item.quantity) || 1,
+          unit: item.unit || "Stk.",
         }))
       : [
           {
-            description: initialData.serviceName,
+            description: initialData.serviceName || "Rechnung ohne Buchung",
             pricePerUnit: initialData.basePrice + initialData.modifierPrice,
             quantity: 1,
             unit: "Stk.",
           },
         ],
   );
-  const [isSending, setIsSending] = useState(false);
 
   const netAmount = items.reduce((sum, item) => sum + item.quantity * item.pricePerUnit, 0);
   const vatAmount = netAmount * (vatRate / 100);
@@ -75,16 +77,13 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
   }
 
   async function handleSendInvoice() {
-    await submitInvoice("/api/admin/invoices/send", "Rechnung erfolgreich gebucht und per E-Mail gesendet.");
-  }
-
-  async function submitInvoice(endpoint: string, successMessage: string) {
     setIsSending(true);
 
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetch("/api/admin/invoices/send", {
         body: JSON.stringify({
-          bookingId: initialData.bookingId,
+          bookingId: initialData.bookingId || null,
+          invoiceId: initialData.invoiceId || null,
           invoiceNumber,
           items,
           language,
@@ -96,13 +95,15 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
         method: "POST",
       });
 
-      if (response.ok) {
-        alert(successMessage);
-        onSaved?.();
-      } else {
-        const data = await response.json().catch(() => null);
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
         alert(`Fehler: ${data?.error || "Unbekannter Fehler"}`);
+        return;
       }
+
+      alert("Rechnung erfolgreich gebucht und per E-Mail gesendet.");
+      onSaved?.();
     } catch (error) {
       console.error(error);
       alert("Netzwerkfehler beim Senden der Rechnung.");
@@ -153,6 +154,7 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
 
           <div className="admin-invoice-items">
             <span>Positionen</span>
+
             {items.map((item, index) => (
               <div className="admin-invoice-item" key={index}>
                 <input
@@ -168,17 +170,20 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
                     value={item.quantity}
                     onChange={(event) => updateItem(index, "quantity", parseFloat(event.target.value) || 0)}
                   />
+
                   <input
                     placeholder="Einheit"
                     value={item.unit}
                     onChange={(event) => updateItem(index, "unit", event.target.value)}
                   />
+
                   <input
                     placeholder="Preis"
                     type="number"
                     value={item.pricePerUnit}
                     onChange={(event) => updateItem(index, "pricePerUnit", parseFloat(event.target.value) || 0)}
                   />
+
                   <button
                     className="admin-icon-danger"
                     disabled={items.length === 1}

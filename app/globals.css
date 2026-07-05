@@ -4984,7 +4984,7 @@ details {
 }
 
 .admin-action-menu button:disabled {
-  color: rgba(246, 242, 234, 0.34);
+  color: rgba(10, 10, 10, 0.966);
   cursor: not-allowed;
 }
 
@@ -5230,7 +5230,7 @@ details {
 .admin-action-menu a:hover,
 .admin-action-menu button:hover {
   background: #faf6f0;
-  color: #ff70a6;
+  color: #246605;
 }
 
 .admin-action-menu-note {

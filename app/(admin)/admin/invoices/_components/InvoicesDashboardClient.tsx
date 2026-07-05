@@ -7,10 +7,10 @@ import InvoiceEditor from "./InvoiceEditor";
 
 type InvoiceBooking = {
   basePrice: number;
-  bookingId: string;
+  bookingId?: string | null;
   clientEmail: string;
   clientName: string;
-  dateTime: Date | string;
+  dateTime?: Date | string | null;
   invoice?: {
     dueDate: Date | string;
     id: string;
@@ -47,8 +47,13 @@ function formatCurrency(value: number) {
   return `CHF ${grouped}.${cents}`;
 }
 
-function formatSwissDate(value: Date | string) {
+function formatSwissDate(value?: Date | string | null) {
+  if (!value) return "-";
+
   const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "-";
+
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const year = date.getFullYear();
@@ -60,6 +65,10 @@ function isInvoiceOverdue(invoice: InvoiceBooking["invoice"]) {
   if (!invoice || invoice.status === "PAID") return false;
 
   return new Date(invoice.dueDate).getTime() < Date.now();
+}
+
+function getRowKey(booking: InvoiceBooking) {
+  return booking.bookingId || booking.invoice?.id || `${booking.clientEmail}-${booking.invoice?.invoiceNumber}`;
 }
 
 export default function InvoicesDashboardClient({
@@ -87,6 +96,7 @@ export default function InvoicesDashboardClient({
       headers: { "Content-Type": "application/json" },
       method: "POST",
     });
+
     const data = await response.json().catch(() => null);
 
     setIsWorking(null);
@@ -107,11 +117,13 @@ export default function InvoicesDashboardClient({
           <strong>{formatCurrency(metrics.openRevenue)}</strong>
           <small>Gesendete, noch offene Rechnungen</small>
         </article>
+
         <article className="admin-metric-card is-success">
           <span>Erhalten diesen Monat</span>
           <strong>{formatCurrency(metrics.receivedThisMonth)}</strong>
           <small>Bezahlt seit Monatsbeginn</small>
         </article>
+
         <article className="admin-metric-card is-danger">
           <span>Ueberfaellige Zahlungen</span>
           <strong>{formatCurrency(metrics.overduePayments)}</strong>
@@ -122,6 +134,7 @@ export default function InvoicesDashboardClient({
       <div className="admin-panel admin-invoice-bookings">
         <div className="admin-panel-head">
           <h2>Waehle eine Buchung zum Bearbeiten</h2>
+
           <button
             className={`admin-filter-toggle ${showUnpaidOnly ? "is-active" : ""}`}
             onClick={() => setShowUnpaidOnly((current) => !current)}
@@ -142,21 +155,27 @@ export default function InvoicesDashboardClient({
                 <th>Aktion</th>
               </tr>
             </thead>
+
             <tbody>
               {visibleBookings.map((booking) => (
-                <tr key={booking.bookingId}>
+                <tr key={getRowKey(booking)}>
                   <td>
                     <strong>{booking.clientName}</strong>
                     <span>{booking.clientEmail}</span>
                   </td>
+
                   <td>{booking.serviceName}</td>
+
                   <td>{formatSwissDate(booking.dateTime)}</td>
+
                   <td>
                     <span className={`admin-status-pill is-${booking.invoice?.status?.toLowerCase() || "missing"}`}>
                       {booking.invoice ? statusLabels[booking.invoice.status] : "Keine Rechnung"}
                     </span>
+
                     {booking.invoice && <span>{booking.invoice.invoiceNumber}</span>}
                   </td>
+
                   <td>
                     <div className="admin-row-actions">
                       <button className="admin-action-button" onClick={() => setSelectedBooking(booking)} type="button">
@@ -168,12 +187,14 @@ export default function InvoicesDashboardClient({
                           <summary>
                             Aktionen <ChevronDown size={14} />
                           </summary>
+
                           <div>
                             {booking.invoice.pdfUrl && (
                               <a href={booking.invoice.pdfUrl} rel="noreferrer" target="_blank">
                                 <ExternalLink size={15} /> Original PDF
                               </a>
                             )}
+
                             <button
                               disabled={isWorking === booking.invoice.id}
                               onClick={() =>
@@ -185,6 +206,7 @@ export default function InvoicesDashboardClient({
                             >
                               <Check size={15} /> Als bezahlt markieren
                             </button>
+
                             <button
                               disabled={isWorking === booking.invoice.id || !isInvoiceOverdue(booking.invoice)}
                               onClick={() => runInvoiceAction("/api/admin/invoices/reminder", booking.invoice!.id)}
@@ -197,6 +219,7 @@ export default function InvoicesDashboardClient({
                             >
                               <Bell size={15} /> Erinnerung senden
                             </button>
+
                             {!isInvoiceOverdue(booking.invoice) && (
                               <span className="admin-action-menu-note">
                                 Moeglich ab {formatSwissDate(booking.invoice.dueDate)}
@@ -229,14 +252,15 @@ export default function InvoicesDashboardClient({
             </button>
 
             <InvoiceEditor
-              key={selectedBooking.bookingId}
+              key={selectedBooking.bookingId || selectedBooking.invoice?.id}
               onSaved={() => {
                 setSelectedBooking(null);
                 router.refresh();
               }}
               initialData={{
                 basePrice: selectedBooking.basePrice,
-                bookingId: selectedBooking.bookingId,
+                bookingId: selectedBooking.bookingId || null,
+                invoiceId: selectedBooking.invoice?.id || null,
                 clientEmail: selectedBooking.clientEmail,
                 invoiceNumber:
                   selectedBooking.invoice?.invoiceNumber || `RE-${Math.floor(1000 + Math.random() * 9000)}`,

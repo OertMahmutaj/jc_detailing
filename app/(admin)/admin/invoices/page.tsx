@@ -111,7 +111,7 @@ export default async function AdminInvoicesPage({
       <header className="admin-page-header">
         {/* <p>Verwaltung</p> */}
         <h1>Rechnungen & Buchungen</h1>
-        <StandaloneInvoiceCreator action={createStandaloneInvoice} />
+        {/* <StandaloneInvoiceCreator action={createStandaloneInvoice} /> */}
       </header>
 
       <section className="admin-panel admin-search-panel">
@@ -123,7 +123,7 @@ export default async function AdminInvoicesPage({
 
       <InvoicesDashboardClient bookings={formattedBookings} metrics={metrics} />
 
-      <section className="admin-panel admin-standalone-invoices">
+      {/* <section className="admin-panel admin-standalone-invoices">
         <div className="admin-panel-head">
           <h2>Rechnungen ohne Buchung</h2>
         </div>
@@ -159,7 +159,7 @@ export default async function AdminInvoicesPage({
           </table>
           {!standaloneInvoices.length && <p className="admin-empty">Keine freien Rechnungen vorhanden.</p>}
         </div>
-      </section>
+      </section> */}
 
       <div className="admin-pagination">
         <Link aria-disabled={page <= 1} href={pageHref(Math.max(1, page - 1), query)}>
