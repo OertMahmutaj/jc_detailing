@@ -1,103 +1,107 @@
-// prisma/seed.ts
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+import { hashPassword } from "../app/lib/password";
 
-// 1. Set up the native pg client pool with your connection string
 const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
 const pool = new pg.Pool({ connectionString });
-
-// 2. Instantiate the Prisma 7 client passing the driver adapter
-const prisma = new PrismaClient({
-  adapter: new PrismaPg(pool),
-});
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function main() {
-  console.log("🌱 Starting database seeding...");
+  console.log("Starting database seeding...");
 
-  // 1. Clean up existing data to prevent duplicates if run multiple times
+  await prisma.invoice.deleteMany({});
+  await prisma.booking.deleteMany({});
+  await prisma.client.deleteMany({});
   await prisma.addOn.deleteMany({});
   await prisma.vehicleCategory.deleteMany({});
   await prisma.service.deleteMany({});
+  await prisma.user.deleteMany({});
 
-  // 2. Seed Vehicle Categories (Surcharges based on car size)
-  console.log("🚗 Seeding vehicle categories...");
-  const categories = await Promise.all([
+  console.log("Seeding vehicle categories...");
+  await Promise.all([
     prisma.vehicleCategory.create({
-      data: { name: "Kleinwagen / Limo", priceModifier: 0.0 },
+      data: { name: "City Car", priceModifier: 0.0 },
     }),
     prisma.vehicleCategory.create({
-      data: { name: "Kombi / SUV", priceModifier: 20.0 },
+      data: { name: "Sedan", priceModifier: 20.0 },
     }),
     prisma.vehicleCategory.create({
-      data: { name: "Grossraum / Van", priceModifier: 50.0 },
+      data: { name: "Sports Car", priceModifier: 20.0 },
+    }),
+    prisma.vehicleCategory.create({
+      data: { name: "SUV", priceModifier: 20.0 },
+    }),
+    prisma.vehicleCategory.create({
+      data: { name: "Van", priceModifier: 100.0 },
     }),
   ]);
 
-  // 3. Seed Services / Main Packages
-  console.log("🧽 Seeding services...");
+  console.log("Seeding services...");
   await Promise.all([
     prisma.service.create({
-      data: {
-        name: "Komplett Innenreinigung",
-        basePrice: 209.0,
-        durationMinutes: 180, // 3 hours
-      },
+      data: { name: "Komplett Innenreinigung", basePrice: 209.0, durationMinutes: 330 },
     }),
     prisma.service.create({
-      data: {
-        name: "Komplett Aussenreinigung",
-        basePrice: 149.0,
-        durationMinutes: 120, // 2 hours
-      },
+      data: { name: "Komplett Aussenreinigung", basePrice: 109.0, durationMinutes: 180 },
     }),
     prisma.service.create({
-      data: {
-        name: "Komplett Aufbereitung",
-        basePrice: 399.0,
-        durationMinutes: 360, // 6 hours
-      },
+      data: { name: "Pflegeerhaltung Innenreinigung", basePrice: 129.0, durationMinutes: 150 },
     }),
     prisma.service.create({
-      data: {
-        name: "Politur & Keramik",
-        basePrice: 799.0,
-        durationMinutes: 480, // 8 hours
-      },
+      data: { name: "Pflegeerhaltung Aussenreinigung", basePrice: 69.0, durationMinutes: 90 },
+    }),
+    prisma.service.create({
+      data: { name: "Polish Paket (1-Step)", basePrice: 399.0, durationMinutes: 240 },
+    }),
+    prisma.service.create({
+      data: { name: "Polish Paket (2-Step)", basePrice: 599.0, durationMinutes: 480 },
+    }),
+    prisma.service.create({
+      data: { name: "Keramik Versiegelung", basePrice: 1090.0, durationMinutes: 1380 },
+    }),
+    prisma.service.create({
+      data: { name: "Komplette Premium Paket", basePrice: 299.0, durationMinutes: 420 },
     }),
   ]);
 
-  // 4. Seed Add-ons
-  console.log("➕ Seeding add-ons...");
+  console.log("Seeding add-ons...");
   await Promise.all([
     prisma.addOn.create({
       data: { name: "Tierhaarentfernung", price: 50.0, additionalDuration: 45 },
     }),
     prisma.addOn.create({
-      data: {
-        name: "Ozonbehandlung (Geruch)",
-        price: 80.0,
-        additionalDuration: 60,
-      },
+      data: { name: "Sitze Tiefenreinigung", price: 80.0, additionalDuration: 90 },
     }),
     prisma.addOn.create({
-      data: {
-        name: "Lederpflege & Versiegelung",
-        price: 90.0,
-        additionalDuration: 60,
-      },
+      data: { name: "Fussmatten intensiv", price: 30.0, additionalDuration: 30 },
     }),
     prisma.addOn.create({
-      data: { name: "Motorraumreinigung", price: 60.0, additionalDuration: 30 },
+      data: { name: "Kofferraum Deep Clean", price: 40.0, additionalDuration: 45 },
     }),
   ]);
 
-  console.log("✅ Seeding completed successfully!");
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (adminEmail && adminPassword) {
+    console.log("Seeding admin user...");
+    await prisma.user.create({
+      data: {
+        email: adminEmail,
+        name: "JC Detailing Admin",
+        password: hashPassword(adminPassword),
+        role: "ADMIN",
+      },
+    });
+  }
+
+  console.log("Seeding completed successfully!");
 }
 
 main()
-  .catch((e) => {
-    console.error("❌ Seeding failed:", e);
+  .catch((error) => {
+    console.error("Seeding failed:", error);
     process.exit(1);
   })
   .finally(async () => {

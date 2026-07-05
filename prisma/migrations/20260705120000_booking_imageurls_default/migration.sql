@@ -1,0 +1,1 @@
+ALTER TABLE "Booking" ALTER COLUMN "imageUrls" SET DEFAULT ARRAY[]::TEXT[];

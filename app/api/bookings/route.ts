@@ -7,16 +7,80 @@ const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 const ownerEmail = process.env.BOOKING_OWNER_EMAIL ?? "oert64@gmail.com";
 const fromEmail = process.env.BOOKING_FROM_EMAIL ?? "JC Detailing <onboarding@resend.dev>";
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const rateLimitWindowMs = 15 * 60 * 1000;
+const maxRequestsPerWindow = 5;
+const bookingRateLimit = new Map<string, { count: number; resetAt: number }>();
+const allowedAddOnsByService: Record<string, string[]> = {
+  "Komplett Innenreinigung": ["Tierhaarentfernung"],
+  "Pflegeerhaltung Innenreinigung": [
+    "Tierhaarentfernung",
+    "Sitze Tiefenreinigung",
+    "Fussmatten intensiv",
+    "Kofferraum Deep Clean",
+  ],
+  "Komplette Premium Paket": ["Tierhaarentfernung"],
+};
 
-// Email helper with debug alerts to see exactly what Resend says in terminal logs
-async function sendEmail({ to, subject, text }: { to: string; subject: string; text: string }) {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    console.error("❌ EMAIL ERROR: RESEND_API_KEY is missing from environment variables.");
-    return;
+type BookingPayload = {
+  name?: unknown;
+  email?: unknown;
+  phone?: unknown;
+  vehicleModel?: unknown;
+  notes?: unknown;
+  dateTime?: unknown;
+  serviceId?: unknown;
+  serviceIds?: unknown;
+  vehicleCategoryId?: unknown;
+  addOnIds?: unknown;
+  website?: unknown;
+};
+
+function cleanText(value: unknown, maxLength: number) {
+  if (typeof value !== "string") return "";
+  return value.trim().slice(0, maxLength);
+}
+
+function cleanIdArray(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string" && item.length > 0).slice(0, 12);
+}
+
+function getClientIp(request: Request) {
+  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return forwardedFor || request.headers.get("x-real-ip") || "unknown";
+}
+
+function isRateLimited(ip: string) {
+  const now = Date.now();
+  const current = bookingRateLimit.get(ip);
+
+  if (!current || current.resetAt <= now) {
+    bookingRateLimit.set(ip, { count: 1, resetAt: now + rateLimitWindowMs });
+    return false;
   }
 
-  console.log(`✉️ Attempting to send email to: ${to} from: ${fromEmail}`);
+  if (current.count >= maxRequestsPerWindow) {
+    return true;
+  }
+
+  current.count += 1;
+  return false;
+}
+
+function isOverlapConstraintError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const maybeError = error as { code?: string; message?: string };
+  return maybeError.code === "P2004" || Boolean(maybeError.message?.includes("Booking_no_active_time_overlap"));
+}
+
+async function sendEmail({ to, subject, text }: { to: string; subject: string; text: string }) {
+  const key = process.env.RESEND_API_KEY;
+
+  if (!key) {
+    console.error("EMAIL ERROR: RESEND_API_KEY is missing from environment variables.");
+    return;
+  }
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -34,142 +98,200 @@ async function sendEmail({ to, subject, text }: { to: string; subject: string; t
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error("❌ Resend API Rejected Request:", errorData);
+    console.error("Resend API rejected request:", errorData);
     throw new Error("Email provider rejected the request");
   }
-
-  console.log("✅ Email successfully accepted by Resend!");
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    
-    // Extract incoming variables
-    const { name, email, phone, vehicleModel, notes, dateTime, serviceId, vehicleCategoryId, addOnIds } = body;
+    const clientIp = getClientIp(request);
 
-    // 1. Gather configuration criteria to calculate the duration window
-    const [dbService, dbCategory, dbAddOns] = await Promise.all([
-      prisma.service.findUnique({ where: { id: serviceId } }),
-      prisma.vehicleCategory.findUnique({ where: { id: vehicleCategoryId } }),
-      prisma.addOn.findMany({ where: { id: { in: addOnIds } } }),
-    ]);
-
-    if (!dbService) {
-      return Response.json({ message: "Service nicht gefunden." }, { status: 400 });
+    if (isRateLimited(clientIp)) {
+      return Response.json(
+        { message: "Zu viele Anfragen. Bitte versuche es in einigen Minuten erneut." },
+        { status: 429 }
+      );
     }
 
-    const baseDuration = dbService.durationMinutes;
+    const body = (await request.json()) as BookingPayload;
+
+    if (cleanText(body.website, 120)) {
+      return Response.json({ message: "Anfrage gesendet." });
+    }
+
+    const name = cleanText(body.name, 100);
+    const email = cleanText(body.email, 160).toLowerCase();
+    const phone = cleanText(body.phone, 40);
+    const vehicleModel = cleanText(body.vehicleModel, 120);
+    const notes = cleanText(body.notes, 1200);
+    const vehicleCategoryId = cleanText(body.vehicleCategoryId, 80);
+    const addOnIds = cleanIdArray(body.addOnIds);
+    const serviceIds = cleanIdArray(body.serviceIds).length
+      ? cleanIdArray(body.serviceIds)
+      : cleanIdArray(typeof body.serviceId === "string" ? [body.serviceId] : []);
+    const startBookingDate = typeof body.dateTime === "string" ? new Date(body.dateTime) : null;
+
+    if (!name || !emailPattern.test(email) || !phone || !vehicleModel) {
+      return Response.json({ message: "Bitte prüfe Name, E-Mail, Telefon und Fahrzeugmodell." }, { status: 400 });
+    }
+
+    if (!startBookingDate || Number.isNaN(startBookingDate.getTime()) || startBookingDate.getTime() <= Date.now()) {
+      return Response.json({ message: "Bitte wähle einen gültigen Termin in der Zukunft." }, { status: 400 });
+    }
+
+    if (!vehicleCategoryId || serviceIds.length === 0) {
+      return Response.json({ message: "Bitte wähle mindestens eine Leistung und eine Fahrzeuggrösse." }, { status: 400 });
+    }
+
+    const uniqueServiceIds = [...new Set(serviceIds)];
+    const uniqueAddOnIds = [...new Set(addOnIds)];
+    const [dbServices, dbCategory, dbAddOns] = await Promise.all([
+      prisma.service.findMany({ where: { id: { in: uniqueServiceIds } } }),
+      prisma.vehicleCategory.findUnique({ where: { id: vehicleCategoryId } }),
+      uniqueAddOnIds.length ? prisma.addOn.findMany({ where: { id: { in: uniqueAddOnIds } } }) : Promise.resolve([]),
+    ]);
+
+    if (dbServices.length !== uniqueServiceIds.length) {
+      return Response.json({ message: "Eine ausgewählte Leistung wurde nicht gefunden." }, { status: 400 });
+    }
+
+    if (!dbCategory) {
+      return Response.json({ message: "Die Fahrzeuggrösse wurde nicht gefunden." }, { status: 400 });
+    }
+
+    if (dbAddOns.length !== uniqueAddOnIds.length) {
+      return Response.json({ message: "Eine Zusatzleistung wurde nicht gefunden." }, { status: 400 });
+    }
+
+    const servicesByRequestOrder = uniqueServiceIds
+      .map((id) => dbServices.find((service) => service.id === id))
+      .filter((service): service is (typeof dbServices)[number] => Boolean(service));
+    const allowedAddOnNames = new Set(
+      servicesByRequestOrder.flatMap((service) => allowedAddOnsByService[service.name] ?? [])
+    );
+    const hasInvalidAddOn = dbAddOns.some((addOn) => !allowedAddOnNames.has(addOn.name));
+
+    if (hasInvalidAddOn) {
+      return Response.json(
+        { message: "Eine Zusatzleistung passt nicht zu den ausgewählten Leistungen." },
+        { status: 400 }
+      );
+    }
+
+    const baseDuration = servicesByRequestOrder.reduce((sum, service) => sum + service.durationMinutes, 0);
     const addOnsDuration = dbAddOns.reduce((sum, item) => sum + item.additionalDuration, 0);
     const totalDuration = baseDuration + addOnsDuration;
-
-    // Calculate start and end timeline wrappers
-    const startBookingDate = new Date(dateTime);
     const endBookingDate = new Date(startBookingDate.getTime() + totalDuration * 60000);
 
-    // CHANGE 1: Anti Double-Booking Server Level Guard Check
     const conflictingBooking = await prisma.booking.findFirst({
       where: {
         status: { not: "CANCELLED" },
-        OR: [
-          {
-            // New booking starts inside an existing booking slot
-            dateTime: { lte: startBookingDate },
-            endTime: { gt: startBookingDate },
-          },
-          {
-            // New booking ends inside an existing booking slot
-            dateTime: { lt: endBookingDate },
-            endTime: { gte: endBookingDate },
-          },
-          {
-            // New booking completely swallows an existing booking slot frame
-            dateTime: { gte: startBookingDate },
-            endTime: { lte: endBookingDate },
-          },
-        ],
+        dateTime: { lt: endBookingDate },
+        endTime: { gt: startBookingDate },
       },
     });
 
     if (conflictingBooking) {
       return Response.json(
-        { message: "Dieser Termin ist leider gerade eben vergeben worden. Bitte wähle eine andere Zeit." },
+        { message: "Dieser Termin ist leider gerade vergeben worden. Bitte wähle eine andere Zeit." },
         { status: 400 }
       );
     }
 
-    // 2. Transactional relational database write matching your schema rules
-    const savedBooking = await prisma.booking.create({
-      data: {
-        dateTime: startBookingDate,
-        endTime: endBookingDate,
-        vehicleModel: vehicleModel || "Unbekannt",
-        notes: notes || "",
-        status: "PENDING",
-        client: {
-          connectOrCreate: {
-            where: { email: email },
-            create: { name: name, email: email, phone: phone }
-          }
-        },
-        service: { connect: { id: serviceId } },
-        vehicleCategory: { connect: { id: vehicleCategoryId } },
-        addOns: {
-          connect: addOnIds?.map((id: string) => ({ id })) || []
-        }
-      }
-    });
+    const serviceNames = servicesByRequestOrder.map((service) => service.name).join(", ");
+    const addOnNames = dbAddOns.map((addOn) => addOn.name).join(", ") || "Keine";
+    const internalNotes = [
+      notes,
+      servicesByRequestOrder.length > 1 ? `Ausgewählte Leistungen: ${serviceNames}` : "",
+    ].filter(Boolean).join("\n\n");
 
-    // CHANGE 2: Full Email Dispatch Engine Execution
-    const serviceName = dbService.name;
-    const categoryName = dbCategory?.name ?? "Standard";
-    const addOnNames = dbAddOns.map((a) => a.name).join(", ") || "Keine";
+    try {
+      const createdBooking = await prisma.booking.create({
+        data: {
+          dateTime: startBookingDate,
+          endTime: endBookingDate,
+          vehicleModel,
+          notes: internalNotes,
+          imageUrls: [],
+          status: "PENDING",
+          client: {
+            connectOrCreate: {
+              where: { email },
+              create: { name, email, phone },
+            },
+          },
+          service: { connect: { id: servicesByRequestOrder[0].id } },
+          vehicleCategory: { connect: { id: vehicleCategoryId } },
+          addOns: {
+            connect: uniqueAddOnIds.map((id) => ({ id })),
+          },
+        },
+      });
+
+      try {
+        for (const service of servicesByRequestOrder) {
+          await prisma.$executeRaw`
+            INSERT INTO "_BookingToServices" ("A", "B")
+            VALUES (${createdBooking.id}, ${service.id})
+            ON CONFLICT DO NOTHING
+          `;
+        }
+      } catch (joinError) {
+        console.warn("Booking service join table is not available yet:", joinError);
+      }
+    } catch (createError) {
+      if (isOverlapConstraintError(createError)) {
+        return Response.json(
+          { message: "Dieser Termin ist leider gerade vergeben worden. Bitte wähle eine andere Zeit." },
+          { status: 400 }
+        );
+      }
+
+      throw createError;
+    }
 
     const summary = [
       `Name: ${name}`,
       `E-Mail: ${email}`,
       `Telefon: ${phone}`,
-      `Leistung: ${serviceName}`,
-      `Fahrzeuggrösse: ${categoryName}`,
-      `Zusatzleistungen (Extras): ${addOnNames}`,
-      `Fahrzeugmodell: ${vehicleModel || "Unbekannt"}`,
-      `Termin Start: ${startBookingDate.toLocaleString("de-CH")}`,
-      `Termin Ende (Erwartet): ${endBookingDate.toLocaleString("de-CH")}`,
+      `Leistungen: ${serviceNames}`,
+      `Fahrzeuggrösse: ${dbCategory.name}`,
+      `Zusatzleistungen: ${addOnNames}`,
+      `Fahrzeugmodell: ${vehicleModel}`,
+      `Geschätzte Dauer: ${totalDuration} Minuten`,
+      `Termin Start: ${startBookingDate.toLocaleString("de-CH", { timeZone: "Europe/Zurich" })}`,
+      `Termin Ende: ${endBookingDate.toLocaleString("de-CH", { timeZone: "Europe/Zurich" })}`,
       `Hinweise/Nachricht: ${notes || "-"}`,
     ].join("\n");
 
-    // Dispatch email to business admin (This works in development!)
     try {
       await sendEmail({
         to: ownerEmail,
-        subject: `Neue Buchungsanfrage: ${serviceName}`,
+        subject: `Neue Buchungsanfrage: ${serviceNames}`,
         text: `Eine neue Buchungsanfrage wurde eingereicht:\n\n${summary}`,
       });
     } catch (adminEmailError) {
-      console.error("❌ Failed to send admin alert email:", adminEmailError);
+      console.error("Failed to send admin alert email:", adminEmailError);
     }
 
-    // Dispatch confirmation email back to customer
-    // 🛡️ Safe wrapper: prevents Resend Sandbox validation restrictions from crashing the runtime
     try {
       await sendEmail({
-        to: email || "",
+        to: email,
         subject: "JC Detailing - Deine Anfrage ist eingegangen",
         text:
           `Hallo ${name}\n\n` +
-          "Danke fuer deine Anfrage bei JC Detailing. Wir pruefen deinen Wunschtermin und melden uns so schnell wie moeglich mit einer Bestaetigung oder einem Terminvorschlag.\n\n" +
+          "Danke für deine Anfrage bei JC Detailing. Wir prüfen deinen Wunschtermin und melden uns so schnell wie möglich mit einer Bestätigung oder einem Terminvorschlag.\n\n" +
           `Deine Angaben:\n\n${summary}\n\n` +
-          "Freundliche Gruesse\nJC Detailing",
+          "Freundliche Grüsse\nJC Detailing",
       });
     } catch (customerEmailError) {
-      console.warn(
-        "⚠️ Customer confirmation email skipped/blocked by Resend Sandbox restrictions. This is normal behavior during local development until your domain is verified."
-      );
+      console.warn("Customer confirmation email could not be sent:", customerEmailError);
     }
 
     return Response.json({ message: "Anfrage gesendet." });
   } catch (err) {
-    console.error("Database save crash:", err);
+    console.error("Booking request failed:", err);
     return Response.json({ message: "Fehler beim Verarbeiten der Anfrage." }, { status: 500 });
   }
 }
