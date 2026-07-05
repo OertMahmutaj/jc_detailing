@@ -4464,11 +4464,11 @@ details {
   gap: 8px;
   justify-items: end;
   margin: 0 20px;
-  padding: 18px 0;
+  padding: 18px 10px;
 }
 
 .admin-total-box div {
-  color: rgba(246, 242, 234, 0.72);
+  color: rgba(8, 8, 8, 0.72);
 }
 
 .admin-total-box div:last-child {
@@ -4478,7 +4478,7 @@ details {
 }
 
 .admin-total-box strong {
-  color: #ffffff;
+  color: #070707;
 }
 
 .admin-submit-button {
@@ -6569,7 +6569,6 @@ details {
   border-radius: 14px;
   box-shadow: 0 24px 80px rgba(18, 18, 18, 0.22);
   color: var(--admin-ink);
-  overflow: hidden;
 }
 
 .admin-modal-close {
