@@ -109,7 +109,7 @@ export default async function AdminInvoicesPage({
   return (
     <div className="admin-page">
       <header className="admin-page-header">
-        <p>Verwaltung</p>
+        {/* <p>Verwaltung</p> */}
         <h1>Rechnungen & Buchungen</h1>
         <StandaloneInvoiceCreator action={createStandaloneInvoice} />
       </header>

@@ -378,9 +378,7 @@ iframe {
 .google-review-badge {
   align-items: stretch;
   /* backdrop-filter: blur(16px) saturate(135%); */
-  background:
-    linear-gradient(180deg, rgba(12, 13, 14, 0.62), rgba(5, 6, 7, 0.5)),
-    radial-gradient(circle at 20% 0, rgba(216, 170, 96, 0.12), transparent 12rem);
+  background: #000000;
   border: 1px solid rgba(194, 157, 99, 0.3);
   color: var(--ink);
   cursor: pointer;
@@ -419,7 +417,7 @@ iframe {
   background-clip: text;
   border-right: 1px solid rgba(216, 170, 96, 0.2);
   color: transparent;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono);
   font-size: 30px;
   font-weight: 900;
   line-height: 1;
@@ -1720,14 +1718,14 @@ details p {
 
 .service-detail-modal h2 {
   color: #151515;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono);
   font-size: clamp(24px, 4vw, 34px);
   margin: 22px 0;
 }
 
 .service-detail-modal h3 {
   color: #171717;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono);
   font-size: 18px;
   margin: 0 0 16px;
 }
@@ -1856,6 +1854,7 @@ details p {
   --admin-border: #131316;
   background: #f5eae2;
   color: #131316;
+  font-family: var(--font-geist-mono);
   display: grid;
   grid-template-columns: clamp(260px, 20vw, 300px) minmax(0, 1fr);
   min-height: 100vh;
@@ -1888,8 +1887,8 @@ details p {
 .admin-brand-logo-wrap {
   position: relative;
   display: inline-block;
-  width: 100%;
-  max-width: 160px;
+  /* width: 100%;
+  max-width: 160px; */
 }
 
 .admin-brand-logo {
@@ -2345,6 +2344,7 @@ details p {
   overflow: hidden;
   box-shadow: 3px 3px 0px #131316;
   min-width: 0;
+  font-family: var(--font-geist-mono);
 }
 
 .admin-panel-head {
@@ -2492,7 +2492,7 @@ details p {
 }
 
 .admin-mini-button:hover {
-  background: #ff70a6;
+  background: #e00909;
   color: #ffffff;
 }
 
@@ -2532,9 +2532,9 @@ details p {
     justify-content: space-between;
   }
 
-  .admin-brand-logo-wrap {
+  /* .admin-brand-logo-wrap {
     max-width: 120px;
-  }
+  } */
 
   .admin-nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4323,7 +4323,8 @@ details {
   justify-content: center;
   letter-spacing: 0.08em;
   min-height: 38px;
-  padding: 0 13px;
+  padding: 0px 13px;
+  /* margin-top: 100px; */
   text-transform: uppercase;
 }
 
@@ -4482,7 +4483,7 @@ details {
 }
 
 .admin-submit-button {
-  margin: 0 20px 20px;
+  margin: 20px 20px 20px;
   width: calc(100% - 40px);
 }
 
@@ -4490,7 +4491,7 @@ details {
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-  margin: 0 20px 20px;
+  margin: 10px 20px 20px;
 }
 
 .admin-submit-actions .admin-submit-button {
@@ -5331,7 +5332,7 @@ details {
 }
 
 .admin-calendar-form .admin-submit-button {
-  margin: 0 20px 20px;
+  margin: 20px 20px 20px;
 }
 
 .admin-check-row {
@@ -5482,13 +5483,13 @@ details {
 }
 
 .admin-calendar-day.is-today .admin-calendar-day-number {
-  background: #ff70a6;
+  background: #ff8170;
   color: #ffffff;
   border-color: #131316;
 }
 
 .admin-calendar-day.has-bookings .admin-calendar-day-number {
-  border-color: #ff70a6;
+  border-color: red;
   border-width: 2px;
 }
 
@@ -5575,7 +5576,7 @@ details {
 
 .admin-calendar-side .admin-panel-head span,
 .admin-calendar-modal .admin-panel-head span {
-  color: #ff70a6;
+  color: red;
   display: block;
   font-size: 11px;
   font-weight: 800;
@@ -5715,7 +5716,7 @@ details {
 }
 
 .admin-calendar-modal>.admin-submit-button {
-  margin: 0 20px 20px;
+  margin: 20px 20px 20px;
   width: calc(100% - 40px);
 }
 
@@ -5872,11 +5873,11 @@ details {
   text-decoration: none;
 }
 
-.admin-brand-logo-wrap {
+/* .admin-brand-logo-wrap {
   max-width: 150px;
   position: relative;
   width: 100%;
-}
+} */
 
 .admin-brand-logo {
   display: block;
@@ -5902,7 +5903,7 @@ details {
 .admin-brand strong,
 .admin-sidebar-group-title {
   color: rgba(255, 255, 255, 0.42);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0;
@@ -5949,7 +5950,7 @@ details {
   box-shadow: none;
   color: rgba(255, 255, 255, 0.72);
   display: flex;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono);
   font-size: 14px;
   font-weight: 500;
   gap: 12px;
@@ -6115,7 +6116,7 @@ details {
 .admin-table th,
 .admin-metric-card span {
   color: var(--admin-muted);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0;
@@ -6125,7 +6126,7 @@ details {
 
 .admin-page-header h1 {
   color: var(--admin-ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono);
   font-size: clamp(34px, 4vw, 54px);
   font-weight: 800;
   letter-spacing: -0.03em;
@@ -6177,7 +6178,7 @@ details {
 
 .admin-stat-card strong,
 .admin-metric-card strong {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono);
   font-size: clamp(26px, 3vw, 40px);
   font-weight: 800;
   letter-spacing: -0.04em;
@@ -6227,7 +6228,7 @@ details {
 
 .admin-panel-head h2 {
   color: var(--admin-ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono);
   font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -6322,7 +6323,7 @@ details {
   border-radius: 999px;
   box-shadow: none;
   display: inline-flex;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono);
   font-size: 12px;
   font-weight: 800;
   gap: 8px;
@@ -6370,7 +6371,7 @@ details {
 .admin-status-pill.is-paid,
 .admin-status-pill.is-ready {
   background: var(--admin-green);
-  color: #ffffff;
+  color: black;
 }
 
 .admin-status-pill.is-sent {
@@ -6424,7 +6425,7 @@ details {
 
 .admin-calendar-toolbar h2 {
   color: var(--admin-ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono);
   font-size: clamp(28px, 3.4vw, 44px);
   font-weight: 800;
   letter-spacing: -0.04em;
@@ -6602,7 +6603,7 @@ details {
 .admin-invoice-items > span,
 .admin-check-row {
   color: var(--admin-muted);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0;
@@ -6614,6 +6615,8 @@ details {
   background: #0d0f17;
   border: 1px solid var(--admin-line);
   border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
 }
 
 .admin-pdf-preview,
@@ -6652,15 +6655,15 @@ details {
   }
 
   .admin-brand {
-    align-items: center;
+    align-items: left;
     flex-direction: row;
     gap: 10px;
     width: auto;
   }
 
-  .admin-brand-logo-wrap {
+  /* .admin-brand-logo-wrap {
     max-width: 120px;
-  }
+  } */
 
   .admin-brand-logo {
     max-height: 48px;
@@ -7374,7 +7377,7 @@ details {
 .admin-create-booking-button {
   justify-self: start;
   min-height: 38px;
-  padding: 0 18px;
+  /* padding: 0 18px; */
   width: auto;
 }
 

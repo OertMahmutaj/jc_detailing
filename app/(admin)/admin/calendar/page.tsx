@@ -117,7 +117,7 @@ export default async function AdminCalendarPage() {
   return (
     <div className="admin-page">
       <header className="admin-page-header">
-        <p>Kalender</p>
+        {/* <p>Kalender</p> */}
         <h1>Terminplan</h1>
       </header>
 

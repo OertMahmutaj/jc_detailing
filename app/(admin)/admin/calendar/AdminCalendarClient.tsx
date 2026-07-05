@@ -245,12 +245,12 @@ export function AdminCalendarClient({
                 <input name="date" required type="date" defaultValue={blockingDate} />
               </label>
               <label>
-                <Clock size={15} />
+                {/* <Clock size={15} /> */}
                 Von
                 <input defaultValue="08:00" name="start" step="1800" type="time" />
               </label>
               <label>
-                <Clock size={15} />
+                {/* <Clock size={15} /> */}
                 Bis
                 <input defaultValue="19:30" name="end" step="1800" type="time" />
               </label>
@@ -294,12 +294,12 @@ export function AdminCalendarClient({
                 <input name="date" required type="date" defaultValue={isoToDateKey(editingBooking.startTime)} />
               </label>
               <label>
-                <Clock size={15} />
+                {/* <Clock size={15} /> */}
                 Von
                 <input name="start" required step="1800" type="time" defaultValue={timeValue(editingBooking.startTime)} />
               </label>
               <label>
-                <Clock size={15} />
+                {/* <Clock size={15} /> */}
                 Bis
                 <input name="end" required step="1800" type="time" defaultValue={timeValue(editingBooking.endTime)} />
               </label>

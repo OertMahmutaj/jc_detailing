@@ -153,7 +153,7 @@ export default async function AdminBookingsPage({
   return (
     <div className="admin-page">
       <header className="admin-page-header">
-        <p>Termine</p>
+        {/* <p>Termine</p> */}
         <h1>Buchungen</h1>
         <AdminBookingCreator action={createAdminBooking} addOns={addOns} categories={categories} services={services} />
       </header>

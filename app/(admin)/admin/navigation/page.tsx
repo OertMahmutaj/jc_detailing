@@ -44,7 +44,7 @@ export default function AdminSidebar() {
                         />
                         <span className="admin-brand-indicator" />
                     </div>
-                    <strong>Admin</strong>
+                    {/* <strong>Admin</strong> */}
                 </Link>
 
                 {/* The Hamburger Menu button toggles the state class */}

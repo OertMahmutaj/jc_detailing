@@ -84,7 +84,7 @@ export default async function AdminDashboardPage() {
   return (
     <div className="admin-page">
       <header className="admin-page-header">
-        <p>Übersicht</p>
+        {/* <p>Übersicht</p> */}
         <h1>Dashboard</h1>
       </header>
 

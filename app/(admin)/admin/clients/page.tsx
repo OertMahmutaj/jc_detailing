@@ -65,7 +65,7 @@ export default async function AdminClientsPage({
   return (
     <div className="admin-page">
       <header className="admin-page-header">
-        <p>Kunden</p>
+        {/* <p>Kunden</p> */}
         <h1>Clients</h1>
       </header>
 
