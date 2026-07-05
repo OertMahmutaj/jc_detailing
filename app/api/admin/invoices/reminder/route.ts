@@ -53,7 +53,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Diese Rechnung ist noch nicht fällig." }, { status: 400 });
     }
 
-    const targetEmail = invoice.emailOverride || invoice.booking.client.email;
+    const targetEmail = invoice.emailOverride || invoice.booking?.client.email;
+
+    if (!targetEmail) {
+      return NextResponse.json(
+        { error: "Keine Email-Adresse für diese Rechnung gefunden." },
+        { status: 400 },
+      );
+    }
+
+    const recipientName = invoice.recipientName || invoice.booking?.client.name || "Kunde";
+
     const transporter = nodemailer.createTransport({
       auth: {
         pass: process.env.EMAIL_SERVER_PASSWORD,
@@ -67,7 +77,7 @@ export async function POST(request: Request) {
       attachments: await getPdfAttachment(invoice.pdfUrl, invoice.invoiceNumber),
       from: '"JC Detailing" <billing@jcdetailer.ch>',
       subject: `Freundliche Erinnerung: Rechnung ${invoice.invoiceNumber}`,
-      text: `Guten Tag ${invoice.booking.client.name},\n\nwir möchten Sie freundlich daran erinnern, dass die Rechnung ${invoice.invoiceNumber} noch offen ist.\n\nBetrag: CHF ${invoice.totalAmount.toFixed(2)}\nFällig seit: ${invoice.dueDate.toLocaleDateString("de-CH")}\n\nVielen Dank und freundliche Grüsse\nJC Detailing`,
+      text: `Guten Tag ${recipientName},\n\nwir möchten Sie freundlich daran erinnern, dass die Rechnung ${invoice.invoiceNumber} noch offen ist.\n\nBetrag: CHF ${invoice.totalAmount.toFixed(2)}\nFällig seit: ${invoice.dueDate.toLocaleDateString("de-CH")}\n\nVielen Dank und freundliche Grüsse\nJC Detailing`,
       to: targetEmail,
     });
 

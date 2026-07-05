@@ -63,7 +63,7 @@ function cleanLanguage(value: unknown): InvoiceLanguage {
 function invoiceMailText(language: InvoiceLanguage, invoiceNumber: string) {
   const texts = {
     de: {
-      subject: localizedMail.subject,
+      subject: `Ihre Rechnung ${invoiceNumber} von JC Detailing`,
       text: "Guten Tag, im Anhang finden Sie Ihre Rechnung im PDF-Format inklusive QR-Einzahlungsschein.",
     },
     en: {
