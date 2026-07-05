@@ -1,12 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
-
-const pool = new pg.Pool({
-  connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL,
-});
-const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
+import { prisma } from "../../(admin)/admin/_lib/prisma";
 
 const serviceRenames = [
   { from: "Innenreinigung komplett", to: "Komplett Innenreinigung" },

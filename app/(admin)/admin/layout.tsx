@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import AdminSidebar from "./navigation/page"; // Update path if placed elsewhere
+import AdminSidebar from "./navigation/page";
 
 export default async function AdminLayout({
   children,
@@ -16,7 +16,11 @@ export default async function AdminLayout({
   return (
     <main className="admin-shell">
       <AdminSidebar />
-      <section className="admin-content">{children}</section>
+      <section className="admin-content">
+        <div className="admin-page-body">
+          {children}
+        </div>
+      </section>
     </main>
   );
 }

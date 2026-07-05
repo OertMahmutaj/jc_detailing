@@ -90,31 +90,29 @@ export default async function AdminCalendarPage() {
   const rangeStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const rangeEnd = new Date(now.getFullYear(), now.getMonth() + 13, 0, 23, 59, 59);
 
-  const [bookings, blocks, services, categories, addOns] = await Promise.all([
-    prisma.booking.findMany({
-      include: {
-        addOns: true,
-        client: true,
-        service: true,
-        vehicleCategory: true,
-      },
-      orderBy: { dateTime: "asc" },
-      where: {
-        dateTime: { gte: rangeStart, lte: rangeEnd },
-        status: { not: "CANCELLED" },
-      },
-    }),
-    prisma.availabilityBlock.findMany({
-      orderBy: { startTime: "asc" },
-      where: {
-        startTime: { lte: rangeEnd },
-        endTime: { gte: rangeStart },
-      },
-    }),
-    prisma.service.findMany({ orderBy: { name: "asc" } }),
-    prisma.vehicleCategory.findMany({ orderBy: { name: "asc" } }),
-    prisma.addOn.findMany({ orderBy: { name: "asc" } }),
-  ]);
+  const bookings = await prisma.booking.findMany({
+    include: {
+      addOns: true,
+      client: true,
+      service: true,
+      vehicleCategory: true,
+    },
+    orderBy: { dateTime: "asc" },
+    where: {
+      dateTime: { gte: rangeStart, lte: rangeEnd },
+      status: { not: "CANCELLED" },
+    },
+  });
+  const blocks = await prisma.availabilityBlock.findMany({
+    orderBy: { startTime: "asc" },
+    where: {
+      startTime: { lte: rangeEnd },
+      endTime: { gte: rangeStart },
+    },
+  });
+  const services = await prisma.service.findMany({ orderBy: { name: "asc" } });
+  const categories = await prisma.vehicleCategory.findMany({ orderBy: { name: "asc" } });
+  const addOns = await prisma.addOn.findMany({ orderBy: { name: "asc" } });
 
   return (
     <div className="admin-page">
