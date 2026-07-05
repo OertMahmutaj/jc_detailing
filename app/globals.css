@@ -2206,7 +2206,7 @@ details p {
 }
 
 .admin-login-card input:focus {
-  border-color: #ff70a6;
+  border-color: #f07909;
 }
 
 .admin-login-card button {
@@ -5278,9 +5278,11 @@ details {
   display: none;
 }
 
+/*KC*/
 .admin-inline-form .admin-mini-button {
   grid-column: 1 / -1;
   margin-top: 0;
+  width: 200px;
 }
 
 .admin-pagination {
@@ -6333,6 +6335,7 @@ details {
   padding: 0 16px;
   text-transform: none;
 }
+
 
 .admin-mini-button,
 .admin-action-button,
@@ -7427,3 +7430,18 @@ details {
 .admin-nav a {
   border-radius: 0;
 }
+
+.admin-inline-form input[type="date"] {
+  width: 150px;
+  min-width: 150px;
+}
+
+
+.admin-inline-form input[type="time"] {
+  width: 100px; 
+  min-width: 100px;
+}
+
+/* .admin-inline-form button {
+  width: 280px;
+} */
