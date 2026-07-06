@@ -50,27 +50,27 @@ const vehicleDetails: Record<string, { title: string; description: string; image
   "City Car": {
     title: "City Car",
     description: "Kleine Fahrzeuge (Mini, Fiat 500)",
-    image: "/IMG_4623.jpeg",
+    image: "/city_car.png",
   },
   Sedan: {
     title: "Limousine",
     description: "Standardfahrzeuge (Audi A4, Mercedes C-Klasse)",
-    image: "/aussenreinigung.jpg",
+    image: "/sedan.png",
   },
   "Sports Car": {
     title: "Sportwagen",
     description: "Sportliche Fahrzeuge (Porsche, Ferrari)",
-    image: "/politur.jpeg",
+    image: "/sports_car.png",
   },
   SUV: {
     title: "SUV",
     description: "Grössere Fahrzeuge (Peugeot 5008, Range Rover)",
-    image: "/keramikversiegelung.jpeg",
+    image: "/suv.png",
   },
   Van: {
     title: "Van",
     description: "Minivans und Transporter",
-    image: "/innenreinigung.jpeg",
+    image: "/van.png",
   },
 };
 
