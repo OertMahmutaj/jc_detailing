@@ -8,14 +8,10 @@ import { createClient } from "@supabase/supabase-js";
 
 const FONTS_DIR = path.join(process.cwd(), "public", "fonts");
 
-// Required in pdfmake 0.3.x: explicitly allow which local paths can be read
-// (security hardening added to prevent local-file-exfiltration via docDefinition)
 pdfmake.setLocalAccessPolicy((filePath: string) => {
   return filePath.startsWith(FONTS_DIR);
 });
 
-// We don't load any fonts/images from external URLs, so deny all by default
-// (silences the "No URL access policy defined" warning)
 pdfmake.setUrlAccessPolicy(() => false);
 
 pdfmake.addFonts({
