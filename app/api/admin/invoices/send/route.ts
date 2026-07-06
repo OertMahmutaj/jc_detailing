@@ -40,10 +40,12 @@ async function archiveInvoicePdf(pdfBuffer: Buffer, invoiceNumber: string) {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
   const filePath = `invoices/${invoiceNumber}-${Date.now()}.pdf`;
-  const { error } = await supabase.storage.from(bucket).upload(filePath, pdfBuffer, {
-    contentType: "application/pdf",
-    upsert: false,
-  });
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(filePath, pdfBuffer, {
+      contentType: "application/pdf",
+      upsert: false,
+    });
 
   if (error) {
     console.warn("Invoice archive upload failed:", error.message);
@@ -58,6 +60,65 @@ type InvoiceLanguage = "de" | "en" | "fr" | "it";
 
 function cleanLanguage(value: unknown): InvoiceLanguage {
   return value === "en" || value === "fr" || value === "it" ? value : "de";
+}
+
+function invoicePdfLabels(language: InvoiceLanguage) {
+  const labels = {
+    de: {
+      description: "Beschreibung",
+      quantity: "Menge",
+      unitPrice: "Einzelpreis",
+      amount: "Betrag",
+      total: "Gesamtsumme (inkl. MwSt)",
+      invoiceNumber: "Rechnungsnummer",
+      date: "Datum",
+      paymentPart: "Zahlteil",
+      payableTo: "Konto / Zahlbar an",
+      payableBy: "Zahlbar durch",
+      locale: "de-CH",
+    },
+    en: {
+      description: "Description",
+      quantity: "Quantity",
+      unitPrice: "Unit price",
+      amount: "Amount",
+      total: "Total (incl. VAT)",
+      invoiceNumber: "Invoice number",
+      date: "Date",
+      paymentPart: "Payment part",
+      payableTo: "Account / Payable to",
+      payableBy: "Payable by",
+      locale: "en-CH",
+    },
+    fr: {
+      description: "Description",
+      quantity: "Quantité",
+      unitPrice: "Prix unitaire",
+      amount: "Montant",
+      total: "Total (TVA incl.)",
+      invoiceNumber: "Numéro de facture",
+      date: "Date",
+      paymentPart: "Section paiement",
+      payableTo: "Compte / Payable à",
+      payableBy: "Payable par",
+      locale: "fr-CH",
+    },
+    it: {
+      description: "Descrizione",
+      quantity: "Quantità",
+      unitPrice: "Prezzo unitario",
+      amount: "Importo",
+      total: "Totale (IVA incl.)",
+      invoiceNumber: "Numero fattura",
+      date: "Data",
+      paymentPart: "Sezione pagamento",
+      payableTo: "Conto / Pagabile a",
+      payableBy: "Pagabile da",
+      locale: "it-CH",
+    },
+  } as const;
+
+  return labels[language];
 }
 
 function invoiceMailText(language: InvoiceLanguage, invoiceNumber: string) {
@@ -95,6 +156,7 @@ export async function POST(req: Request) {
       language: rawLanguage,
     } = await req.json();
     const language = cleanLanguage(rawLanguage);
+    const t = invoicePdfLabels(language);
 
     // 1. Database Persistence Sync
     const invoice = await prisma.invoice.upsert({
@@ -136,10 +198,10 @@ export async function POST(req: Request) {
     // Build the dynamic line-item rows array
     const tableBody: any[][] = [
       [
-        { text: "Beschreibung", font: "CustomBold", bold: true },
-        { text: "Menge", font: "CustomBold", bold: true },
-        { text: "Einzelpreis", font: "CustomBold", bold: true },
-        { text: "Betrag", font: "CustomBold", bold: true },
+        { text: t.description, font: "CustomBold", bold: true },
+        { text: t.quantity, font: "CustomBold", bold: true },
+        { text: t.unitPrice, font: "CustomBold", bold: true },
+        { text: t.amount, font: "CustomBold", bold: true },
       ],
     ];
 
@@ -173,13 +235,13 @@ export async function POST(req: Request) {
             {
               stack: [
                 {
-                  text: `Rechnungsnummer: ${invoiceNumber}`,
+                  text: `${t.invoiceNumber}: ${invoiceNumber}`,
                   font: "CustomBold",
                   fontSize: 10,
                   alignment: "right",
                 },
                 {
-                  text: `Datum: ${new Date().toLocaleDateString("de-CH")}`,
+                  text: `${t.date}: ${new Date().toLocaleDateString(t.locale)}`,
                   font: "CustomRegular",
                   fontSize: 10,
                   alignment: "right",
@@ -203,7 +265,7 @@ export async function POST(req: Request) {
 
         // Total Summaries Section
         {
-          text: `Gesamtsumme (inkl. MwSt): CHF ${totalAmount.toFixed(2)}`,
+          text: `${t.total}: CHF ${totalAmount.toFixed(2)}`,
           font: "CustomBold",
           fontSize: 12,
           alignment: "right",
@@ -236,25 +298,25 @@ export async function POST(req: Request) {
             {
               stack: [
                 {
-                  text: "Zahlteil",
+                  text: t.paymentPart,
                   font: "CustomRegular",
                   fontSize: 9,
                   bold: true,
                 },
                 {
-                  text: "Konto / Zahlbar an:\nCH3908704016075473007\nJC Detailing",
+                  text: `${t.payableTo}:\nCH3908704016075473007\nJC Detailing`,
                   font: "CustomRegular",
                   fontSize: 8,
                   margin: [0, 4, 0, 8],
                 },
                 {
-                  text: `Zahlbar durch:\n${targetEmail}`,
+                  text: `${t.payableBy}:\n${targetEmail}`,
                   font: "CustomRegular",
                   fontSize: 8,
                   margin: [0, 0, 0, 8],
                 },
                 {
-                  text: `Betrag: CHF ${totalAmount.toFixed(2)}`,
+                  text: `${t.amount}: CHF ${totalAmount.toFixed(2)}`,
                   font: "CustomBold",
                   fontSize: 10,
                 },
@@ -270,7 +332,9 @@ export async function POST(req: Request) {
     };
 
     // 4. Generate PDF via the new promise-based pdfmake API
-    const pdfBuffer: Buffer = await pdfmake.createPdf(docDefinition).getBuffer();
+    const pdfBuffer: Buffer = await pdfmake
+      .createPdf(docDefinition)
+      .getBuffer();
 
     const archivedPdfUrl = await archiveInvoicePdf(pdfBuffer, invoiceNumber);
 
@@ -286,6 +350,20 @@ export async function POST(req: Request) {
 
     const localizedMail = invoiceMailText(language, invoiceNumber);
 
+    function invoicePdfFilename(
+      language: InvoiceLanguage,
+      invoiceNumber: string,
+    ) {
+      const prefixes = {
+        de: "Rechnung",
+        en: "Invoice",
+        fr: "Facture",
+        it: "Fattura",
+      } as const;
+
+      return `${prefixes[language]}_${invoiceNumber}.pdf`;
+    }
+
     await transporter.sendMail({
       from: '"JC Detailing Test" <billing@jcdetailer.ch>',
       to: targetEmail,
@@ -293,7 +371,7 @@ export async function POST(req: Request) {
       text: localizedMail.text,
       attachments: [
         {
-          filename: `Rechnung_${invoiceNumber}.pdf`,
+          filename: invoicePdfFilename(language, invoiceNumber),
           content: pdfBuffer,
           contentType: "application/pdf",
         },

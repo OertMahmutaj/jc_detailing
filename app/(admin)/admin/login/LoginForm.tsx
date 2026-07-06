@@ -1,13 +1,24 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [retryAfter, setRetryAfter] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (retryAfter === null || retryAfter <= 0) return;
+
+    const timer = setInterval(() => {
+      setRetryAfter((current) => (current === null ? null : Math.max(0, current - 1)));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [retryAfter]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,6 +38,12 @@ export function LoginForm() {
 
     setIsSubmitting(false);
 
+    if (response.status === 429) {
+      setRetryAfter(data?.retryAfter ?? 60);
+      setError(data?.error || "Zu viele Versuche. Bitte später erneut versuchen.");
+      return;
+    }
+
     if (!response.ok) {
       setError(data?.error || "Login fehlgeschlagen.");
       return;
@@ -35,6 +52,8 @@ export function LoginForm() {
     router.replace(searchParams.get("next") || "/admin/dashboard");
     router.refresh();
   }
+
+  const isLocked = retryAfter !== null && retryAfter > 0;
 
   return (
     <form className="admin-login-card" onSubmit={onSubmit}>
@@ -53,10 +72,19 @@ export function LoginForm() {
         <input autoComplete="current-password" name="password" required type="password" />
       </label>
 
-      {error && <span className="admin-login-error">{error}</span>}
+      {error && (
+        <span className="admin-login-error">
+          {error}
+          {isLocked && ` (${retryAfter}s)`}
+        </span>
+      )}
 
-      <button disabled={isSubmitting} type="submit">
-        {isSubmitting ? "Einloggen..." : "Einloggen"}
+      <button disabled={isSubmitting || isLocked} type="submit">
+        {isLocked
+          ? `Bitte warten (${retryAfter}s)`
+          : isSubmitting
+            ? "Einloggen..."
+            : "Einloggen"}
       </button>
     </form>
   );

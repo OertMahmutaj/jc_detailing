@@ -13,7 +13,7 @@ export function verifyPassword(password: string, storedPassword: string) {
   const [method, salt, storedHash] = storedPassword.split(":");
 
   if (method !== "scrypt" || !salt || !storedHash) {
-    return password === storedPassword;
+    throw new Error("Invalid password hash format");
   }
 
   const hash = scryptSync(password, salt, KEY_LENGTH);
