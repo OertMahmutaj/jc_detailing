@@ -46,43 +46,154 @@ async function deleteAvailabilityBlock(formData: FormData) {
   revalidatePath("/admin/calendar");
 }
 
-async function updateBookingSchedule(formData: FormData) {
+async function updateBookingSchedule(formData: FormData): Promise<{
+  success: boolean;
+  error?: string;
+}> {
   "use server";
 
-  const id = String(formData.get("id") ?? "");
-  const date = String(formData.get("date") ?? "");
-  const start = String(formData.get("start") ?? "");
-  const end = String(formData.get("end") ?? "");
+  try {
+    const id = String(formData.get("id") ?? "");
+    const date = String(formData.get("date") ?? "");
+    const start = String(formData.get("start") ?? "");
+    const end = String(formData.get("end") ?? "");
 
-  if (!id || !date || !start || !end) return;
+    if (!id || !date || !start || !end) {
+      return {
+        success: false,
+        error: "Bitte fülle Datum, Startzeit und Endzeit aus.",
+      };
+    }
 
-  const dateTime = buildDateTime(date, start);
-  const endTime = buildDateTime(date, end);
+    const dateTime = buildDateTime(date, start);
+    const endTime = buildDateTime(date, end);
 
-  if (endTime <= dateTime) return;
+    if (
+      Number.isNaN(dateTime.getTime()) ||
+      Number.isNaN(endTime.getTime())
+    ) {
+      return {
+        success: false,
+        error: "Datum oder Uhrzeit ist ungültig.",
+      };
+    }
 
-  await prisma.booking.update({
-    where: { id },
-    data: { dateTime, endTime },
-  });
+    if (endTime <= dateTime) {
+      return {
+        success: false,
+        error: "Die Endzeit muss nach der Startzeit liegen.",
+      };
+    }
 
-  revalidatePath("/admin/calendar");
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin/dashboard");
+    const conflictingBooking = await prisma.booking.findFirst({
+      where: {
+        id: {
+          not: id,
+        },
+        status: {
+          not: "CANCELLED",
+        },
+        dateTime: {
+          lt: endTime,
+        },
+        endTime: {
+          gt: dateTime,
+        },
+      },
+      select: {
+        dateTime: true,
+        endTime: true,
+        client: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        dateTime: "asc",
+      },
+    });
+
+    if (conflictingBooking) {
+      const formatter = new Intl.DateTimeFormat("de-CH", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Zurich",
+      });
+
+      const conflictStart = formatter.format(conflictingBooking.dateTime);
+      const conflictEnd = formatter.format(conflictingBooking.endTime);
+
+      return {
+        success: false,
+        error: `Dieser Zeitraum ist bereits belegt: ${conflictStart}–${conflictEnd} Uhr (${conflictingBooking.client.name}).`,
+      };
+    }
+
+    await prisma.booking.update({
+      where: { id },
+      data: {
+        dateTime,
+        endTime,
+      },
+    });
+
+    revalidatePath("/admin/calendar");
+    revalidatePath("/admin/bookings");
+    revalidatePath("/admin/dashboard");
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Calendar booking update failed:", error);
+
+    return {
+      success: false,
+      error: "Die Buchung konnte nicht gespeichert werden.",
+    };
+  }
 }
 
-async function cancelBooking(formData: FormData) {
+async function cancelBooking(formData: FormData): Promise<{
+  success: boolean;
+  error?: string;
+}> {
   "use server";
 
-  const id = String(formData.get("id") ?? "");
-  if (!id) return;
+  try {
+    const id = String(formData.get("id") ?? "");
 
-  await prisma.booking.delete({ where: { id } });
+    if (!id) {
+      return {
+        success: false,
+        error: "Die Buchung wurde nicht gefunden.",
+      };
+    }
 
-  revalidatePath("/admin/calendar");
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin/invoices");
-  revalidatePath("/admin/dashboard");
+    await prisma.booking.update({
+      where: { id },
+      data: {
+        status: "CANCELLED",
+      },
+    });
+
+    revalidatePath("/admin/calendar");
+    revalidatePath("/admin/bookings");
+    revalidatePath("/admin/invoices");
+    revalidatePath("/admin/dashboard");
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Booking cancellation failed:", error);
+
+    return {
+      success: false,
+      error: "Die Buchung konnte nicht storniert werden.",
+    };
+  }
 }
 
 export default async function AdminCalendarPage() {

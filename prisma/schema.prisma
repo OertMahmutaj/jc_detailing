@@ -66,20 +66,23 @@ model AddOn {
 
 model Booking {
   id                String          @id @default(uuid())
-  dateTime          DateTime        
-  endTime           DateTime        
+  dateTime          DateTime
+  endTime           DateTime
   status            BookingStatus   @default(PENDING)
-  vehicleModel      String          
+  vehicleModel      String
   notes             String?
   imageUrls         String[]        @default([])
 
   clientId          String
-  client            Client          @relation(fields: [clientId], references: [id])
+  client            Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
   serviceId         String
   service           Service         @relation("PrimaryBookingService", fields: [serviceId], references: [id])
   services          Service[]       @relation("BookingToServices")
+
   vehicleCategoryId String
   vehicleCategory   VehicleCategory @relation(fields: [vehicleCategoryId], references: [id])
+
   addOns            AddOn[]         @relation("BookingToAddOns")
   invoice           Invoice?
 
@@ -93,7 +96,7 @@ model Invoice {
   issuedAt      DateTime      @default(now())
   dueDate       DateTime
   totalAmount   Float         
-  vatRate       Float         @default(7.7) // Default Swiss VAT percentage
+  vatRate       Float         @default(8.1) // Default Swiss VAT percentage
   status        InvoiceStatus @default(SENT)
   language      String        @default("de")
   pdfUrl        String?       

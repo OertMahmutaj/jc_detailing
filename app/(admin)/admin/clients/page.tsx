@@ -33,14 +33,14 @@ export default async function AdminClientsPage({
   const skip = (page - 1) * PAGE_SIZE;
   const where = query
     ? {
-        OR: [
-          { name: { contains: query, mode: "insensitive" as const } },
-          { email: { contains: query, mode: "insensitive" as const } },
-          { phone: { contains: query, mode: "insensitive" as const } },
-          { bookings: { some: { vehicleModel: { contains: query, mode: "insensitive" as const } } } },
-          { bookings: { some: { service: { name: { contains: query, mode: "insensitive" as const } } } } },
-        ],
-      }
+      OR: [
+        { name: { contains: query, mode: "insensitive" as const } },
+        { email: { contains: query, mode: "insensitive" as const } },
+        { phone: { contains: query, mode: "insensitive" as const } },
+        { bookings: { some: { vehicleModel: { contains: query, mode: "insensitive" as const } } } },
+        { bookings: { some: { service: { name: { contains: query, mode: "insensitive" as const } } } } },
+      ],
+    }
     : {};
 
   const [clients, totalClients] = await Promise.all([
@@ -84,6 +84,7 @@ export default async function AdminClientsPage({
                 <th>Buchungen</th>
                 <th>Letzter Termin</th>
                 <th>Letzte Leistung</th>
+                <th>Aktion</th>
               </tr>
             </thead>
             <tbody>
@@ -110,6 +111,14 @@ export default async function AdminClientsPage({
                     </td>
                     <td>
                       <strong>{lastBooking ? lastBooking.service.name : "-"}</strong>
+                    </td>
+                    <td>
+                      <Link
+                        href={`/admin/clients/${client.id}`}
+                        className="admin-table-action"
+                      >
+                        Bearbeiten
+                      </Link>
                     </td>
                   </tr>
                 );

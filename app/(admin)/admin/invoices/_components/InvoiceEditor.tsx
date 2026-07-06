@@ -37,7 +37,7 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
   const [invoiceNumber, setInvoiceNumber] = useState(initialData.invoiceNumber);
   const [language, setLanguage] = useState(initialData.language || "de");
   const [targetEmail, setTargetEmail] = useState(initialData.clientEmail);
-  const [vatRate, setVatRate] = useState(7.7);
+  const [vatRate, setVatRate] = useState(8.1);
   const [isSending, setIsSending] = useState(false);
 
   const [items, setItems] = useState<Item[]>(

@@ -4,6 +4,8 @@ import { prisma } from "../_lib/prisma";
 import { AdminSearchForm } from "../_components/AdminSearchForm";
 import { AdminBookingCreator } from "../_components/AdminBookingCreator";
 import { createAdminBooking } from "../_actions/bookingActions";
+import { AdminBookingScheduleForm } from "../_components/AdminBookingScheduleForm";
+import { AdminBookingStatusForm } from "../_components/AdminBookingStatusForm";
 
 const PAGE_SIZE = 5;
 
@@ -14,50 +16,158 @@ const statusLabels = {
   CANCELLED: "Storniert",
 } as const;
 
-async function updateBookingStatus(formData: FormData) {
+async function updateBookingStatus(formData: FormData): Promise<{
+  success: boolean;
+  error?: string;
+}> {
   "use server";
 
-  const id = String(formData.get("id") ?? "");
-  const status = String(formData.get("status") ?? "");
+  try {
+    const id = String(formData.get("id") ?? "");
+    const status = String(formData.get("status") ?? "");
 
-  if (!id || !Object.keys(statusLabels).includes(status)) return;
+    if (!id || !Object.keys(statusLabels).includes(status)) {
+      return {
+        success: false,
+        error: "Ungültiger Buchungsstatus.",
+      };
+    }
 
-  await prisma.booking.update({
-    where: { id },
-    data: { status: status as keyof typeof statusLabels },
-  });
+    await prisma.booking.update({
+      where: { id },
+      data: {
+        status: status as keyof typeof statusLabels,
+      },
+    });
 
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin/dashboard");
+    revalidatePath("/admin/bookings");
+    revalidatePath("/admin/calendar");
+    revalidatePath("/admin/dashboard");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Booking status update failed:", error);
+
+    return {
+      success: false,
+      error: "Der Buchungsstatus konnte nicht gespeichert werden.",
+    };
+  }
 }
 
-async function updateBookingSchedule(formData: FormData) {
+async function updateBookingSchedule(formData: FormData): Promise<{
+  success: boolean;
+  error?: string;
+}> {
   "use server";
 
-  const id = String(formData.get("id") ?? "");
-  const date = String(formData.get("date") ?? "");
-  const time = String(formData.get("time") ?? "");
+  try {
+    const id = String(formData.get("id") ?? "");
+    const date = String(formData.get("date") ?? "");
+    const time = String(formData.get("time") ?? "");
 
-  if (!id || !date || !time) return;
+    if (!id || !date || !time) {
+      return {
+        success: false,
+        error: "Bitte Datum und Uhrzeit angeben.",
+      };
+    }
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
-    select: { dateTime: true, endTime: true },
-  });
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      select: {
+        dateTime: true,
+        endTime: true,
+      },
+    });
 
-  if (!booking) return;
+    if (!booking) {
+      return {
+        success: false,
+        error: "Die Buchung wurde nicht gefunden.",
+      };
+    }
 
-  const durationMs = booking.endTime.getTime() - booking.dateTime.getTime();
-  const dateTime = new Date(`${date}T${time}:00`);
-  const endTime = new Date(dateTime.getTime() + durationMs);
+    const durationMs = booking.endTime.getTime() - booking.dateTime.getTime();
 
-  await prisma.booking.update({
-    where: { id },
-    data: { dateTime, endTime },
-  });
+    const dateTime = new Date(`${date}T${time}:00`);
+    const endTime = new Date(dateTime.getTime() + durationMs);
 
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin/dashboard");
+    if (Number.isNaN(dateTime.getTime()) || Number.isNaN(endTime.getTime())) {
+      return {
+        success: false,
+        error: "Datum oder Uhrzeit ist ungültig.",
+      };
+    }
+
+    const conflictingBooking = await prisma.booking.findFirst({
+      where: {
+        id: {
+          not: id,
+        },
+        status: {
+          not: "CANCELLED",
+        },
+        dateTime: {
+          lt: endTime,
+        },
+        endTime: {
+          gt: dateTime,
+        },
+      },
+      select: {
+        dateTime: true,
+        endTime: true,
+        client: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        dateTime: "asc",
+      },
+    });
+
+    if (conflictingBooking) {
+      const formatter = new Intl.DateTimeFormat("de-CH", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Zurich",
+      });
+
+      const conflictStart = formatter.format(conflictingBooking.dateTime);
+      const conflictEnd = formatter.format(conflictingBooking.endTime);
+
+      return {
+        success: false,
+        error: `Dieser Zeitraum ist bereits belegt: ${conflictStart}–${conflictEnd} Uhr (${conflictingBooking.client.name}).`,
+      };
+    }
+
+    await prisma.booking.update({
+      where: { id },
+      data: {
+        dateTime,
+        endTime,
+      },
+    });
+
+    revalidatePath("/admin/bookings");
+    revalidatePath("/admin/calendar");
+    revalidatePath("/admin/dashboard");
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Booking schedule update failed:", error);
+
+    return {
+      success: false,
+      error: "Die Buchung konnte nicht verschoben werden.",
+    };
+  }
 }
 
 async function deleteBooking(formData: FormData) {
@@ -122,14 +232,14 @@ export default async function AdminBookingsPage({
   const skip = (page - 1) * PAGE_SIZE;
   const where = query
     ? {
-        OR: [
-          { client: { name: { contains: query, mode: "insensitive" as const } } },
-          { client: { email: { contains: query, mode: "insensitive" as const } } },
-          { client: { phone: { contains: query, mode: "insensitive" as const } } },
-          { vehicleModel: { contains: query, mode: "insensitive" as const } },
-          { service: { name: { contains: query, mode: "insensitive" as const } } },
-        ],
-      }
+      OR: [
+        { client: { name: { contains: query, mode: "insensitive" as const } } },
+        { client: { email: { contains: query, mode: "insensitive" as const } } },
+        { client: { phone: { contains: query, mode: "insensitive" as const } } },
+        { vehicleModel: { contains: query, mode: "insensitive" as const } },
+        { service: { name: { contains: query, mode: "insensitive" as const } } },
+      ],
+    }
     : {};
 
   const [bookings, totalBookings, services, categories, addOns] = await Promise.all([
@@ -190,14 +300,12 @@ export default async function AdminBookingsPage({
                   <td>
                     <strong>{formatDate(booking.dateTime)}</strong>
                     <span>{formatDuration(booking.dateTime, booking.endTime)}</span>
-                    <form action={updateBookingSchedule} className="admin-inline-form">
-                      <input name="id" type="hidden" value={booking.id} />
-                      <input name="date" type="date" defaultValue={inputDate(booking.dateTime)} />
-                      <input name="time" type="time" min="08:00" max="19:30" step="1800" defaultValue={inputTime(booking.dateTime)} />
-                      <button className="admin-mini-button" type="submit">
-                        Aendern
-                      </button>
-                    </form>
+                    <AdminBookingScheduleForm
+                      action={updateBookingSchedule}
+                      bookingId={booking.id}
+                      date={inputDate(booking.dateTime)}
+                      time={inputTime(booking.dateTime)}
+                    />
                   </td>
                   <td>
                     <strong>{booking.service.name}</strong>
@@ -208,19 +316,11 @@ export default async function AdminBookingsPage({
                     <span>{booking.vehicleCategory.name}</span>
                   </td>
                   <td>
-                    <form action={updateBookingStatus}>
-                      <input name="id" type="hidden" value={booking.id} />
-                      <select className="admin-select" defaultValue={booking.status} name="status">
-                        {Object.entries(statusLabels).map(([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                      <button className="admin-mini-button" type="submit">
-                        Speichern
-                      </button>
-                    </form>
+                    <AdminBookingStatusForm
+                      action={updateBookingStatus}
+                      bookingId={booking.id}
+                      initialStatus={booking.status}
+                    />
                   </td>
                   <td>
                     <form action={deleteBooking}>

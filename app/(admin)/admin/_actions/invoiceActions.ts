@@ -64,7 +64,7 @@ export async function createStandaloneInvoice(formData: FormData) {
       sentAt: new Date(),
       status: "SENT",
       totalAmount: amount,
-      vatRate: 7.7,
+      vatRate: 8.1,
     },
   });
 

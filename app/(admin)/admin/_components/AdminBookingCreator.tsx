@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import { CalendarPlus, X } from "lucide-react";
+import { useAdminNotification } from "../_components/AdminNotificationProvider";
 
-type Option = { id: string; name: string; price?: number };
+type Option = {
+  id: string;
+  name: string;
+  price?: number;
+};
 
 export function AdminBookingCreator({
   action,
@@ -12,24 +17,82 @@ export function AdminBookingCreator({
   defaultDate,
   services,
 }: {
-  action: (formData: FormData) => Promise<void>;
+  action: (formData: FormData) => Promise<{
+    success: boolean;
+    error?: string;
+  }>;
   addOns: Option[];
   categories: Option[];
   defaultDate?: string;
   services: Option[];
 }) {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { showNotification } = useAdminNotification();
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (isSubmitting) return;
+
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      setIsSubmitting(true);
+
+      const result = await action(formData);
+
+      if (!result.success) {
+        showNotification(
+          result.error || "Die Buchung konnte nicht gespeichert werden.",
+          "error"
+        );
+        return;
+      }
+
+      setOpen(false);
+      showNotification("Buchung wurde erfolgreich erstellt.", "success");
+    } catch (error) {
+      console.error("Booking creation failed:", error);
+
+      showNotification(
+        "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
+        "error"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <>
-      <button className="admin-submit-button admin-create-booking-button" onClick={() => setOpen(true)} type="button">
-        <CalendarPlus size={16} /> Neue Buchung
+      <button
+        className="admin-submit-button admin-create-booking-button"
+        onClick={() => setOpen(true)}
+        type="button"
+      >
+        <CalendarPlus size={16} />
+        Neue Buchung
       </button>
 
       {open && (
-        <div className="admin-modal-backdrop" role="dialog" aria-label="Neue Buchung" aria-modal="true">
-          <form action={action} className="admin-modal admin-calendar-modal" onSubmit={() => setOpen(false)}>
-            <button className="admin-modal-close" onClick={() => setOpen(false)} type="button">
+        <div
+          className="admin-modal-backdrop"
+          role="dialog"
+          aria-label="Neue Buchung"
+          aria-modal="true"
+        >
+          <form
+            className="admin-modal admin-calendar-modal"
+            onSubmit={handleSubmit}
+          >
+            <button
+              className="admin-modal-close"
+              disabled={isSubmitting}
+              onClick={() => setOpen(false)}
+              type="button"
+            >
               <X size={22} />
             </button>
 
@@ -45,21 +108,29 @@ export function AdminBookingCreator({
                 Name
                 <input name="name" required type="text" />
               </label>
+
               <label>
                 E-Mail
                 <input name="email" required type="email" />
               </label>
+
               <label>
                 Telefon
                 <input name="phone" required type="tel" />
               </label>
+
               <label>
                 Fahrzeug
                 <input name="vehicleModel" required type="text" />
               </label>
+
               <label>
                 Leistung
-                <select name="serviceId" required>
+                <select name="serviceId" required defaultValue="">
+                  <option disabled value="">
+                    Leistung wählen
+                  </option>
+
                   {services.map((service) => (
                     <option key={service.id} value={service.id}>
                       {service.name}
@@ -67,9 +138,14 @@ export function AdminBookingCreator({
                   ))}
                 </select>
               </label>
+
               <label>
                 Fahrzeugklasse
-                <select name="vehicleCategoryId" required>
+                <select name="vehicleCategoryId" required defaultValue="">
+                  <option disabled value="">
+                    Fahrzeugklasse wählen
+                  </option>
+
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -77,32 +153,54 @@ export function AdminBookingCreator({
                   ))}
                 </select>
               </label>
+
               <label>
                 Sprache
                 <select name="language" defaultValue="de">
                   <option value="de">Deutsch</option>
                   <option value="en">English</option>
-                  <option value="fr">Francais</option>
+                  <option value="fr">Français</option>
                   <option value="it">Italiano</option>
                 </select>
               </label>
+
               <label>
                 Datum
-                <input name="date" required type="date" defaultValue={defaultDate} />
+                <input
+                  name="date"
+                  required
+                  type="date"
+                  defaultValue={defaultDate}
+                />
               </label>
+
               <label>
                 Von
-                <input name="start" required step="1800" type="time" defaultValue="08:00" />
+                <input
+                  name="start"
+                  required
+                  step="1800"
+                  type="time"
+                  defaultValue="08:00"
+                />
               </label>
+
               <label>
                 Bis
-                <input name="end" required step="1800" type="time" defaultValue="10:00" />
+                <input
+                  name="end"
+                  required
+                  step="1800"
+                  type="time"
+                  defaultValue="10:00"
+                />
               </label>
             </div>
 
             {addOns.length > 0 && (
               <div className="admin-addon-checks">
                 <span>Extras</span>
+
                 {addOns.map((addOn) => (
                   <label className="admin-check-row" key={addOn.id}>
                     <input name="addOnIds" type="checkbox" value={addOn.id} />
@@ -112,8 +210,12 @@ export function AdminBookingCreator({
               </div>
             )}
 
-            <button className="admin-submit-button" type="submit">
-              Buchung speichern
+            <button
+              className="admin-submit-button"
+              disabled={isSubmitting}
+              type="submit"
+            >
+              {isSubmitting ? "Buchung wird gespeichert..." : "Buchung speichern"}
             </button>
           </form>
         </div>

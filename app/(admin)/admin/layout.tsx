@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import AdminSidebar from "./navigation/page";
+import { AdminNotificationProvider } from "./_components/AdminNotificationProvider";
 
 export default async function AdminLayout({
   children,
@@ -14,13 +15,14 @@ export default async function AdminLayout({
   }
 
   return (
-    <main className="admin-shell">
-      <AdminSidebar />
-      <section className="admin-content">
-        <div className="admin-page-body">
-          {children}
-        </div>
-      </section>
-    </main>
+    <AdminNotificationProvider>
+      <main className="admin-shell">
+        <AdminSidebar />
+
+        <section className="admin-content">
+          <div className="admin-page-body">{children}</div>
+        </section>
+      </main>
+    </AdminNotificationProvider>
   );
 }

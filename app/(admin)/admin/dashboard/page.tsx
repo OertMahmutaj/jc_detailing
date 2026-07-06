@@ -18,6 +18,16 @@ function formatDate(value: Date) {
   }).format(value);
 }
 
+const DEFAULT_VAT_RATE = 8.1;
+
+function toGrossAmount(netAmount: number, vatRate = DEFAULT_VAT_RATE) {
+  return Math.round(netAmount * (1 + vatRate / 100) * 100) / 100;
+}
+
+function formatGrossCurrency(netAmount: number, vatRate = DEFAULT_VAT_RATE) {
+  return formatCurrency(toGrossAmount(netAmount, vatRate));
+}
+
 export default async function AdminDashboardPage() {
   const now = new Date();
   const today = startOfDay(now);
@@ -50,6 +60,7 @@ export default async function AdminDashboardPage() {
       include: {
         service: true,
         vehicleCategory: true,
+        addOns: true,
       },
     }),
     prisma.booking.count({ where: { status: "PENDING" } }),
@@ -69,7 +80,16 @@ export default async function AdminDashboardPage() {
   ]);
 
   const monthRevenue = monthBookings.reduce((sum, booking) => {
-    return sum + booking.service.basePrice + booking.vehicleCategory.priceModifier;
+    const addOnsTotal = booking.addOns.reduce((addOnSum, addOn) => {
+      return addOnSum + addOn.price;
+    }, 0);
+
+    return (
+      sum +
+      booking.service.basePrice +
+      booking.vehicleCategory.priceModifier +
+      addOnsTotal
+    );
   }, 0);
 
   const statCards = [
@@ -78,7 +98,11 @@ export default async function AdminDashboardPage() {
     { label: "Dieser Monat", value: monthBookings.length.toString(), hint: "Buchungen" },
     { label: "Offen", value: pendingCount.toString(), hint: "Anfragen" },
     { label: "Kunden", value: clientCount.toString(), hint: "gespeichert" },
-    { label: "Umsatz Monat", value: formatCurrency(monthRevenue), hint: "geschätzt" },
+    {
+      label: "Umsatz Monat",
+      value: formatGrossCurrency(monthRevenue),
+      hint: "inkl. MwSt.",
+    },
   ];
 
   return (

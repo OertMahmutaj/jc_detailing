@@ -130,38 +130,34 @@ function customerTexts(language: InvoiceLanguage, name: string, invoice: string,
   const formattedTotal = `CHF ${total.toFixed(2)}`;
   const texts = {
     de: {
-      subject: "JC Detailing - Buchung und Rechnung erhalten",
+      subject: "JC Detailing - Buchung erhalten",
       body:
         `Hallo ${name}\n\n` +
         "Danke fuer deine Buchung bei JC Detailing. Deine Anfrage ist bei uns eingegangen.\n\n" +
-        `Rechnung: ${invoice}\nBetrag: ${formattedTotal}\n\n` +
         `Deine Angaben:\n\n${summary}\n\n` +
         "Freundliche Gruesse\nJC Detailing",
     },
     en: {
-      subject: "JC Detailing - Booking and invoice received",
+      subject: "JC Detailing - Booking received",
       body:
         `Hello ${name}\n\n` +
         "Thank you for your booking with JC Detailing. We have received your request.\n\n" +
-        `Invoice: ${invoice}\nAmount: ${formattedTotal}\n\n` +
         `Your details:\n\n${summary}\n\n` +
         "Kind regards\nJC Detailing",
     },
     fr: {
-      subject: "JC Detailing - Reservation et facture recues",
+      subject: "JC Detailing - Reservation recues",
       body:
         `Bonjour ${name}\n\n` +
         "Merci pour votre reservation chez JC Detailing. Nous avons bien recu votre demande.\n\n" +
-        `Facture: ${invoice}\nMontant: ${formattedTotal}\n\n` +
         `Vos informations:\n\n${summary}\n\n` +
         "Meilleures salutations\nJC Detailing",
     },
     it: {
-      subject: "JC Detailing - Prenotazione e fattura ricevute",
+      subject: "JC Detailing - Prenotazione ricevuta",
       body:
         `Ciao ${name}\n\n` +
         "Grazie per la tua prenotazione presso JC Detailing. Abbiamo ricevuto la tua richiesta.\n\n" +
-        `Fattura: ${invoice}\nImporto: ${formattedTotal}\n\n` +
         `I tuoi dati:\n\n${summary}\n\n` +
         "Cordiali saluti\nJC Detailing",
     },
@@ -353,7 +349,7 @@ export async function POST(request: Request) {
         sentAt: new Date(),
         status: "SENT",
         totalAmount: estimatedTotal,
-        vatRate: 7.7,
+        vatRate: 8.1,
       },
     });
 
