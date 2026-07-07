@@ -278,7 +278,7 @@ export default async function AdminBookingsPage({
         </div>
 
         <div className="admin-table-wrap">
-          <table className="admin-table">
+          <table className="admin-table admin-bookings-table">
             <thead>
               <tr>
                 <th>Kunde</th>
@@ -322,11 +322,12 @@ export default async function AdminBookingsPage({
                       initialStatus={booking.status}
                     />
                   </td>
-                  <td>
-                    <form action={deleteBooking}>
+                  <td className="admin-booking-actions-cell">
+                    <form className="admin-booking-delete-form" action={deleteBooking}>
                       <input name="id" type="hidden" value={booking.id} />
+
                       <button className="admin-danger-button" type="submit">
-                        Loeschen
+                        Löschen
                       </button>
                     </form>
                   </td>

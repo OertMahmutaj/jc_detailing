@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CalendarPlus, X } from "lucide-react";
 import { useAdminNotification } from "../_components/AdminNotificationProvider";
 
@@ -31,10 +31,28 @@ export function AdminBookingCreator({
 
   const { showNotification } = useAdminNotification();
 
+  useEffect(() => {
+  if (!open) return;
+
+  const previousBodyOverflow = document.body.style.overflow;
+  const previousHtmlOverflow = document.documentElement.style.overflow;
+
+  document.body.style.overflow = "hidden";
+  document.documentElement.style.overflow = "hidden";
+
+  return () => {
+    document.body.style.overflow = previousBodyOverflow;
+    document.documentElement.style.overflow = previousHtmlOverflow;
+  };
+}, [open]);
+
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (isSubmitting) return;
+
+    
 
     const formData = new FormData(event.currentTarget);
 

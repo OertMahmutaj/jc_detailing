@@ -1140,6 +1140,7 @@ summary {
 .faq-list summary {
   color: var(--ink);
   list-style-position: outside;
+  margin-left: 10px;
 }
 
 details p {
@@ -4350,9 +4351,9 @@ details {
   grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.75fr);
 }
 
-.admin-invoice-table {
+/* .admin-invoice-table {
   min-width: 760px;
-}
+} */
 
 .admin-status-pill {
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -4528,6 +4529,18 @@ details {
   padding: 28px;
   position: fixed;
   z-index: 2200;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.admin-modal.admin-calendar-modal {
+  width: min(100%, 620px);
+  max-height: calc(100dvh - 32px);
+
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-modal {
@@ -6249,13 +6262,31 @@ details {
 }
 
 .admin-table-wrap {
-  max-width: 100%;
+  width: 100%;
   overflow-x: auto;
-  scrollbar-width: none;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--admin-ink) transparent;
 }
 
 .admin-table-wrap::-webkit-scrollbar {
-  display: none;
+  height: 10px;
+}
+
+.admin-table-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-table-wrap::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--admin-ink) 35%, transparent);
+  border-radius: 999px;
+}
+
+.admin-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--admin-ink) 60%, transparent);
 }
 
 .admin-table {
@@ -6280,6 +6311,21 @@ details {
 .admin-table td,
 .admin-table td > strong {
   color: var(--admin-ink);
+}
+
+.admin-bookings-table {
+  min-width: 1100px;
+}
+
+.admin-invoices-table {
+  min-width: 1000px;
+}
+
+.admin-content,
+.admin-page,
+.admin-panel,
+.admin-table-wrap {
+  min-width: 0;
 }
 
 .admin-search-form {
@@ -7553,6 +7599,7 @@ details {
   cursor: pointer;
   font: inherit;
   font-weight: 700;
+  margin: 15px;
 }
 
 .admin-primary-button {
@@ -7568,6 +7615,7 @@ details {
   border: 1px solid #f0b7b7;
   border-radius: 10px;
   padding: 1rem;
+  margin: 15px;
 }
 
 .admin-danger-zone p {
@@ -7621,6 +7669,7 @@ details {
 .admin-checkbox-section {
   display: grid;
   gap: 0.8rem;
+  margin: 15px;
 }
 
 .admin-checkbox-grid {
@@ -7643,10 +7692,428 @@ details {
 .admin-textarea-label {
   display: grid;
   gap: 0.5rem;
+  margin: 15px;
 }
 
 @media (max-width: 700px) {
   .admin-checkbox-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.admin-dashboard-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-dashboard-booking-row {
+  align-items: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--admin-ink) 10%, transparent);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(92px, 0.7fr) minmax(170px, 1.5fr) minmax(110px, 0.8fr) auto;
+  padding: 15px 0;
+  margin: 15px;
+}
+
+.admin-dashboard-booking-row:first-child {
+  padding-top: 0;
+}
+
+.admin-dashboard-booking-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.admin-dashboard-time,
+.admin-dashboard-booking-info,
+.admin-dashboard-invoice {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-dashboard-time strong,
+.admin-dashboard-booking-info strong,
+.admin-dashboard-invoice strong {
+  color: var(--admin-ink);
+  font-size: 14px;
+}
+
+.admin-dashboard-time span,
+.admin-dashboard-booking-info span,
+.admin-dashboard-invoice span {
+  color: var(--admin-muted);
+  font-size: 12px;
+}
+
+.admin-invoice-summary {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 20px;
+}
+
+.admin-invoice-summary > div {
+  background: color-mix(in srgb, var(--admin-ink) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--admin-ink) 8%, transparent);
+  border-radius: 12px;
+  display: grid;
+  gap: 5px;
+  padding: 15px;
+}
+
+.admin-invoice-summary span,
+.admin-invoice-summary small {
+  color: var(--admin-muted);
+  font-size: 12px;
+}
+
+.admin-invoice-summary strong {
+  color: var(--admin-ink);
+  font-size: 22px;
+}
+
+.admin-invoice-summary--overdue {
+  border-color: color-mix(in srgb, #b42318 28%, transparent) !important;
+}
+
+.admin-list-row-actions {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+
+@media (max-width: 1050px) {
+  .admin-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-dashboard-booking-row {
+    align-items: start;
+    grid-template-columns: 1fr auto;
+  }
+
+  .admin-dashboard-booking-info,
+  .admin-dashboard-invoice {
+    grid-column: 1 / -1;
+  }
+
+  .admin-list-row-actions {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+/* Booking table: compact and aligned inline controls */
+
+.admin-bookings-table th:nth-child(1) {
+  min-width: 175px;
+}
+
+.admin-bookings-table th:nth-child(2) {
+  min-width: 250px;
+}
+
+.admin-bookings-table th:nth-child(3) {
+  min-width: 220px;
+}
+
+.admin-bookings-table th:nth-child(4) {
+  min-width: 130px;
+}
+
+.admin-bookings-table th:nth-child(5) {
+  min-width: 190px;
+}
+
+.admin-bookings-table th:nth-child(6) {
+  min-width: 130px;
+}
+
+.admin-bookings-table td {
+  padding-block: 18px;
+}
+
+.admin-booking-schedule-form,
+.admin-booking-status-form,
+.admin-booking-delete-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-booking-schedule-form {
+  max-width: 250px;
+}
+
+.admin-booking-schedule-inputs {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin-booking-schedule-inputs input[type="date"] {
+  flex: 1 1 150px;
+  min-width: 150px;
+  width: 150px;
+}
+
+.admin-booking-schedule-inputs input[type="time"] {
+  flex: 0 0 98px;
+  min-width: 98px;
+  width: 98px;
+}
+
+.admin-booking-schedule-form input[type="date"],
+.admin-booking-schedule-form input[type="time"],
+.admin-booking-status-select {
+  box-sizing: border-box;
+  height: 40px;
+  margin: 0;
+  min-height: 40px;
+  width: 100%;
+}
+
+.admin-booking-schedule-button,
+.admin-booking-status-button,
+.admin-booking-delete-form .admin-danger-button {
+  box-sizing: border-box;
+  height: 40px;
+  justify-content: center;
+  margin: 0;
+  min-height: 40px;
+  padding-inline: 14px;
+  width: 100%;
+}
+
+.admin-booking-schedule-button {
+  max-width: 100%;
+}
+
+.admin-booking-status-form {
+  margin-top: 0;
+  max-width: 190px;
+}
+
+.admin-booking-status-select {
+  appearance: auto;
+  font: inherit;
+}
+
+.admin-booking-actions-cell {
+  min-width: 130px;
+}
+
+.admin-booking-delete-form {
+  margin-top: 0;
+  max-width: 118px;
+}
+
+.admin-booking-delete-form .admin-danger-button {
+  background: #b91c1c;
+  color: #ffffff;
+}
+
+.admin-booking-delete-form .admin-danger-button:hover {
+  background: #991b1b;
+}
+
+.admin-booking-schedule-button,
+.admin-booking-status-button {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .admin-booking-schedule-form {
+    max-width: 100%;
+  }
+
+  .admin-booking-status-form,
+  .admin-booking-delete-form {
+    max-width: 100%;
+  }
+}
+
+/* Booking schedule modal */
+
+.admin-booking-schedule-trigger {
+  margin-top: 12px;
+  min-height: 38px;
+  padding-inline: 14px;
+  white-space: nowrap;
+}
+
+.admin-booking-schedule-modal {
+  max-width: 480px;
+  overflow: hidden;
+  width: min(480px, 100%);
+}
+
+.admin-booking-schedule-modal .admin-panel-head {
+  background: transparent;
+  border-bottom: 1px solid var(--admin-line);
+  padding: 20px 68px 18px 20px;
+}
+
+.admin-booking-schedule-modal .admin-panel-head span {
+  color: var(--admin-accent);
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.admin-booking-schedule-modal .admin-panel-head h2 {
+  color: var(--admin-ink);
+  font-size: 22px;
+  margin: 0;
+}
+
+.admin-booking-schedule-modal-content {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 20px;
+}
+
+.admin-booking-schedule-modal-content label {
+  color: var(--admin-muted);
+  display: grid;
+  font-family: var(--font-geist-mono);
+  font-size: 12px;
+  font-weight: 800;
+  gap: 7px;
+}
+
+.admin-booking-schedule-modal-content input {
+  background: #fffaf0;
+  border: 1px solid var(--admin-line);
+  border-radius: 2px;
+  color: var(--admin-ink);
+  min-height: 42px;
+  padding: 0 12px;
+  width: 100%;
+}
+
+.admin-booking-schedule-modal-actions {
+  border-top: 1px solid var(--admin-line);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1.3fr;
+  padding: 16px 20px 20px;
+}
+
+.admin-booking-schedule-modal-actions .admin-secondary-button,
+.admin-booking-schedule-modal-actions .admin-submit-button {
+  height: 42px;
+  margin: 0;
+  min-height: 42px;
+  width: 100%;
+}
+
+@media (max-width: 560px) {
+  .admin-booking-schedule-modal-content,
+  .admin-booking-schedule-modal-actions {
+    grid-template-columns: 1fr;
+  }
+}
+/* Smart invoice actions menu rendered through a portal */
+
+.admin-action-menu-trigger {
+  align-items: center;
+  background: var(--admin-accent);
+  border: 0;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-family: var(--font-geist-mono);
+  font-size: 12px;
+  font-weight: 800;
+  gap: 8px;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.admin-action-menu-trigger:hover {
+  filter: brightness(0.94);
+}
+
+.admin-action-menu-trigger:focus-visible {
+  outline: 3px solid rgba(255, 98, 44, 0.28);
+  outline-offset: 3px;
+}
+
+.admin-action-menu-chevron {
+  transition: transform 160ms ease;
+}
+
+.admin-action-menu-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.admin-smart-action-menu {
+  background: #fffaf0;
+  border: 1px solid #171717;
+  box-shadow: 5px 5px 0 rgba(23, 23, 23, 0.14);
+  display: grid;
+  gap: 0;
+  min-width: 248px;
+  padding: 6px;
+  position: fixed;
+  z-index: 9999;
+}
+
+.admin-smart-action-menu a,
+.admin-smart-action-menu button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #171717;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 12px;
+  font-weight: 800;
+  gap: 9px;
+  justify-content: flex-start;
+  min-height: 40px;
+  padding: 0 10px;
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+}
+
+.admin-smart-action-menu a:hover,
+.admin-smart-action-menu button:hover {
+  background: rgba(23, 23, 23, 0.08);
+}
+
+.admin-smart-action-menu button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.admin-smart-action-menu button:disabled:hover {
+  background: transparent;
+}
+
+.admin-smart-action-menu .admin-action-menu-note {
+  border-top: 1px solid #d8cfbf;
+  color: #6f675a;
+  display: block;
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 11px;
+  line-height: 1.45;
+  margin-top: 4px;
+  padding: 9px 10px 5px;
 }

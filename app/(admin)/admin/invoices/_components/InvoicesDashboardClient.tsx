@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Bell, Check, ChevronDown, ExternalLink, X } from "lucide-react";
 import InvoiceEditor from "./InvoiceEditor";
+import { AdminInvoiceActionMenu } from "../../_components/AdminInvoiceActionMenu";
+
 
 type InvoiceBooking = {
   basePrice: number;
@@ -145,7 +147,7 @@ export default function InvoicesDashboardClient({
         </div>
 
         <div className="admin-table-wrap">
-          <table className="admin-table admin-invoice-table">
+          <table className="admin-table admin-invoices-table">
             <thead>
               <tr>
                 <th>Kunde</th>
@@ -183,50 +185,59 @@ export default function InvoicesDashboardClient({
                       </button>
 
                       {booking.invoice && booking.invoice.status !== "PAID" && (
-                        <details className="admin-action-menu">
-                          <summary>
-                            Aktionen <ChevronDown size={14} />
-                          </summary>
-
-                          <div>
-                            {booking.invoice.pdfUrl && (
-                              <a href={booking.invoice.pdfUrl} rel="noreferrer" target="_blank">
-                                <ExternalLink size={15} /> Original PDF
-                              </a>
-                            )}
-
-                            <button
-                              disabled={isWorking === booking.invoice.id}
-                              onClick={() =>
-                                runInvoiceAction("/api/admin/invoices/status", booking.invoice!.id, {
-                                  status: "PAID",
-                                })
-                              }
-                              type="button"
+                        <AdminInvoiceActionMenu>
+                          {booking.invoice.pdfUrl && (
+                            <a
+                              href={booking.invoice.pdfUrl}
+                              rel="noreferrer"
+                              target="_blank"
                             >
-                              <Check size={15} /> Als bezahlt markieren
-                            </button>
+                              <ExternalLink size={15} />
+                              Original PDF
+                            </a>
+                          )}
 
-                            <button
-                              disabled={isWorking === booking.invoice.id || !isInvoiceOverdue(booking.invoice)}
-                              onClick={() => runInvoiceAction("/api/admin/invoices/reminder", booking.invoice!.id)}
-                              title={
-                                isInvoiceOverdue(booking.invoice)
-                                  ? "Erinnerung senden"
-                                  : `Erinnerung ab ${formatSwissDate(booking.invoice.dueDate)} moeglich`
-                              }
-                              type="button"
-                            >
-                              <Bell size={15} /> Erinnerung senden
-                            </button>
+                          <button
+                            disabled={isWorking === booking.invoice.id}
+                            onClick={() =>
+                              runInvoiceAction("/api/admin/invoices/status", booking.invoice!.id, {
+                                status: "PAID",
+                              })
+                            }
+                            type="button"
+                          >
+                            <Check size={15} />
+                            Als bezahlt markieren
+                          </button>
 
-                            {!isInvoiceOverdue(booking.invoice) && (
-                              <span className="admin-action-menu-note">
-                                Moeglich ab {formatSwissDate(booking.invoice.dueDate)}
-                              </span>
-                            )}
-                          </div>
-                        </details>
+                          <button
+                            disabled={
+                              isWorking === booking.invoice.id ||
+                              !isInvoiceOverdue(booking.invoice)
+                            }
+                            onClick={() =>
+                              runInvoiceAction(
+                                "/api/admin/invoices/reminder",
+                                booking.invoice!.id
+                              )
+                            }
+                            title={
+                              isInvoiceOverdue(booking.invoice)
+                                ? "Erinnerung senden"
+                                : `Erinnerung ab ${formatSwissDate(booking.invoice.dueDate)} moeglich`
+                            }
+                            type="button"
+                          >
+                            <Bell size={15} />
+                            Erinnerung senden
+                          </button>
+
+                          {!isInvoiceOverdue(booking.invoice) && (
+                            <span className="admin-action-menu-note">
+                              Moeglich ab {formatSwissDate(booking.invoice.dueDate)}
+                            </span>
+                          )}
+                        </AdminInvoiceActionMenu>
                       )}
                     </div>
                   </td>

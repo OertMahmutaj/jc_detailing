@@ -52,7 +52,6 @@ export function AdminBookingStatusForm({
       }
 
       showNotification("Buchungsstatus wurde gespeichert.", "success");
-
       router.refresh();
     } catch (error) {
       console.error("Booking status update failed:", error);
@@ -67,11 +66,14 @@ export function AdminBookingStatusForm({
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form
+      className="admin-booking-status-form"
+      onSubmit={handleSubmit}
+    >
       <input name="id" type="hidden" value={bookingId} />
 
       <select
-        className="admin-select"
+        className="admin-select admin-booking-status-select"
         disabled={isSubmitting}
         name="status"
         onChange={(event) => setStatus(event.target.value as BookingStatus)}
@@ -85,7 +87,7 @@ export function AdminBookingStatusForm({
       </select>
 
       <button
-        className="admin-mini-button"
+        className="admin-mini-button admin-booking-status-button"
         disabled={isSubmitting}
         type="submit"
       >
