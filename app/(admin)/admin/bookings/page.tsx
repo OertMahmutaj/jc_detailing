@@ -6,6 +6,7 @@ import { AdminBookingCreator } from "../_components/AdminBookingCreator";
 import { createAdminBooking } from "../_actions/bookingActions";
 import { AdminBookingScheduleForm } from "../_components/AdminBookingScheduleForm";
 import { AdminBookingStatusForm } from "../_components/AdminBookingStatusForm";
+import { AdminBookingDeleteForm } from "../_components/AdminBookingDeleteForm";
 
 const PAGE_SIZE = 5;
 
@@ -323,13 +324,11 @@ export default async function AdminBookingsPage({
                     />
                   </td>
                   <td className="admin-booking-actions-cell">
-                    <form className="admin-booking-delete-form" action={deleteBooking}>
-                      <input name="id" type="hidden" value={booking.id} />
-
-                      <button className="admin-danger-button" type="submit">
-                        Löschen
-                      </button>
-                    </form>
+                    <AdminBookingDeleteForm
+                      action={deleteBooking}
+                      bookingId={booking.id}
+                      clientName={booking.client.name}
+                    />
                   </td>
                 </tr>
               ))}

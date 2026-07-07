@@ -37,7 +37,7 @@ export default function AdminSidebar() {
                         <Image
                             alt="JC Detailing"
                             className="admin-brand-logo"
-                            height={92}
+                            height={220}
                             priority
                             src="/logo.png"
                             width={220}

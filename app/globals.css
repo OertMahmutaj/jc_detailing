@@ -1886,20 +1886,17 @@ details p {
 }
 
 .admin-brand-logo-wrap {
-  position: relative;
-  display: inline-block;
-  /* width: 100%;
-  max-width: 160px; */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .admin-brand-logo {
-  display: block;
+  width: 92px;
   height: auto;
-  max-height: 72px;
   max-width: 100%;
   object-fit: contain;
-  filter: brightness(0) invert(1);
-  /* Ensure logo stands out on dark bg */
 }
 
 .admin-brand-indicator {
@@ -2534,9 +2531,9 @@ details p {
     justify-content: space-between;
   }
 
-  /* .admin-brand-logo-wrap {
-    max-width: 120px;
-  } */
+  .admin-brand-logo-wrap {
+  min-height: 72px;
+}
 
   .admin-nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4700,7 +4697,7 @@ details {
   }
 
   .admin-brand-logo {
-    max-height: 54px;
+    /* max-height: 54px; */
     max-width: min(176px, 62vw);
     width: auto;
   }
@@ -4771,6 +4768,7 @@ details {
   .admin-brand-logo {
     max-width: min(150px, 56vw);
     width: auto;
+    /* min-height: 80px; */
   }
 
   .admin-menu-toggle {
@@ -5899,10 +5897,11 @@ details {
   display: block;
   filter: none;
   height: auto;
-  max-height: 74px;
+  max-height: 120px;
   max-width: 100%;
   object-fit: contain;
   width: auto;
+  /* margin-top: 20px; */
 }
 
 .admin-brand-indicator {
@@ -6689,9 +6688,9 @@ details {
     border-radius: 20px;
     flex-direction: row;
     justify-content: space-between;
-    min-height: 76px;
+    min-height: 112px;
     overflow: visible;
-    padding: 12px 14px;
+    padding: 14px 18px;
     position: sticky;
     top: 14px;
     z-index: 40;
@@ -6701,36 +6700,44 @@ details {
     align-items: center;
     display: flex;
     justify-content: space-between;
+    min-height: 82px;
     width: 100%;
   }
 
-  .admin-brand {
-    align-items: left;
-    flex-direction: row;
-    gap: 10px;
+   .admin-brand {
+    align-items: center;
+    display: flex;
+    height: 82px;
+    justify-content: flex-start;
     width: auto;
   }
 
-  /* .admin-brand-logo-wrap {
-    max-width: 120px;
-  } */
+  .admin-brand-logo-wrap {
+    align-items: center;
+    display: flex;
+    height: 82px;
+    justify-content: flex-start;
+    width: 150px;
+  }
 
   .admin-brand-logo {
-    max-height: 48px;
+    display: block;
+    height: 76px;
+    max-height: none;
+    object-fit: contain;
+    object-position: left center;
+    width: 120px;
+    margin-top: 20px;
   }
 
   .admin-menu-toggle {
     align-items: center;
-    background: rgba(255, 255, 255, 0.08);
-    border: 0;
-    border-radius: 999px;
-    color: #ffffff;
     display: inline-flex;
-    height: 42px;
+    flex: 0 0 48px;
+    height: 48px;
     justify-content: center;
-    position: relative;
-    width: 42px;
-    z-index: 90;
+    margin-left: auto;
+    width: 48px;
   }
 
   .admin-sidebar-collapsible {
@@ -7631,6 +7638,7 @@ details {
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 3px;
+  margin-top: 10px;
 }
 
 .admin-back-link {
@@ -8118,4 +8126,408 @@ details {
   padding: 9px 10px 5px;
 }
 
-/*TEST2*/
+.admin-booking-delete-trigger {
+  box-sizing: border-box;
+  height: 40px;
+  margin: 0;
+  min-height: 40px;
+  min-width: 118px;
+  padding-inline: 14px;
+}
+
+.admin-delete-confirmation-modal {
+  max-width: 500px;
+  overflow: hidden;
+  width: min(500px, 100%);
+}
+
+.admin-delete-confirmation-content {
+  align-items: flex-start;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 30px 24px 24px;
+}
+
+.admin-delete-confirmation-icon {
+  align-items: center;
+  background: #f3c9c9;
+  color: #991b1b;
+  display: inline-flex;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.admin-delete-confirmation-eyebrow {
+  color: #b91c1c;
+  display: block;
+  font-family: var(--font-geist-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.admin-delete-confirmation-content h2 {
+  color: var(--admin-ink);
+  font-size: 24px;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.admin-delete-confirmation-content p {
+  color: var(--admin-muted);
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 12px 0 0;
+}
+
+.admin-delete-confirmation-content p strong {
+  color: var(--admin-ink);
+}
+
+.admin-delete-confirmation-actions {
+  border-top: 1px solid var(--admin-line);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  padding: 16px 24px 24px;
+}
+
+.admin-delete-confirmation-actions .admin-secondary-button,
+.admin-delete-confirmation-actions .admin-danger-button {
+  height: 42px;
+  justify-content: center;
+  margin: 0;
+  min-height: 42px;
+  width: 100%;
+}
+
+.admin-delete-confirmation-actions .admin-danger-button {
+  background: #b91c1c;
+  color: #ffffff;
+}
+
+.admin-delete-confirmation-actions .admin-danger-button:hover {
+  background: #991b1b;
+}
+
+@media (max-width: 520px) {
+  .admin-delete-confirmation-content {
+    grid-template-columns: 1fr;
+    padding: 24px 18px 20px;
+  }
+
+  .admin-delete-confirmation-actions {
+    grid-template-columns: 1fr;
+    padding: 14px 18px 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-invoice-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-invoice-summary strong {
+    font-size: 24px;
+    white-space: nowrap;
+  }
+}
+
+/* Dashboard: monthly overview + next seven days */
+
+.admin-dashboard-overview {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-dashboard-overview-section {
+  min-width: 0;
+}
+
+.admin-dashboard-section-title {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.admin-dashboard-section-title span {
+  color: var(--admin-muted);
+  font-family: var(--font-geist-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-dashboard-section-title h2 {
+  color: var(--admin-ink);
+  font-family: var(--font-geist-mono);
+  font-size: 18px;
+  margin: 0;
+}
+
+.admin-month-stat-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-month-stat-grid .admin-stat-card {
+  min-height: 116px;
+}
+
+.admin-week-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-week-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-line);
+  color: var(--admin-ink);
+  display: grid;
+  gap: 8px;
+  min-height: 104px;
+  padding: 16px;
+  text-decoration: none;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.admin-week-card:hover {
+  background: rgba(23, 23, 23, 0.06);
+  transform: translateY(-2px);
+}
+
+.admin-week-card:focus-visible {
+  outline: 3px solid rgba(244, 100, 47, 0.35);
+  outline-offset: 3px;
+}
+
+.admin-week-card span {
+  color: var(--admin-muted);
+  font-family: var(--font-geist-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-week-card strong {
+  color: var(--admin-ink);
+  font-family: var(--font-geist-mono);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.admin-week-card small {
+  color: var(--admin-muted);
+  font-family: var(--font-geist-mono);
+  font-size: 12px;
+}
+
+/* Keep invoice totals readable on small screens. */
+@media (max-width: 640px) {
+  .admin-invoice-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-invoice-summary strong {
+    font-size: 24px;
+    white-space: nowrap;
+  }
+}
+
+/* Tablet: stack sections, retain compact KPI cards. */
+@media (max-width: 1120px) {
+  .admin-dashboard-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-month-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-week-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Phone: two KPI cards per row, full-width weekly cards. */
+@media (max-width: 620px) {
+  .admin-month-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-month-stat-grid .admin-stat-card {
+    min-height: 108px;
+    padding: 16px;
+  }
+
+  .admin-month-stat-grid .admin-stat-card strong {
+    font-size: clamp(24px, 8vw, 34px);
+  }
+
+  .admin-week-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-week-card {
+    align-items: center;
+    grid-template-columns: minmax(88px, 0.8fr) 1fr auto;
+    min-height: 70px;
+  }
+
+  .admin-week-card small {
+    text-align: right;
+  }
+}
+
+/* Dashboard panels: visually connected to the monthly KPI cards */
+
+.admin-dashboard-today-panel,
+.admin-dashboard-invoices-panel,
+.admin-dashboard-upcoming-panel {
+  border: 1px solid var(--admin-line);
+  overflow: hidden;
+}
+
+.admin-dashboard-today-panel {
+  border-top: 6px solid #f6af79;
+}
+
+.admin-dashboard-invoices-panel {
+  border-top: 6px solid #9eb8e5;
+}
+
+.admin-dashboard-upcoming-panel {
+  border-top: 6px solid #d9c0ec;
+}
+
+.admin-dashboard-today-panel .admin-panel-head {
+  background: #fff0e5;
+}
+
+.admin-dashboard-invoices-panel .admin-panel-head {
+  background: #edf4ff;
+}
+
+.admin-dashboard-upcoming-panel .admin-panel-head {
+  background: #f5edfb;
+}
+
+.admin-dashboard-today-panel .admin-panel-head h2,
+.admin-dashboard-invoices-panel .admin-panel-head h2,
+.admin-dashboard-upcoming-panel .admin-panel-head h2 {
+  color: var(--admin-ink);
+}
+
+.admin-dashboard-today-panel .admin-list-row,
+.admin-dashboard-invoices-panel .admin-list-row,
+.admin-dashboard-upcoming-panel .admin-list-row,
+.admin-dashboard-today-panel .admin-dashboard-booking-row {
+  background: rgba(255, 250, 240, 0.72);
+}
+
+/* Make dashboard links look intentional instead of generic underlined text. */
+.admin-dashboard-today-panel .admin-table-action,
+.admin-dashboard-invoices-panel .admin-table-action,
+.admin-dashboard-upcoming-panel .admin-table-action {
+  color: var(--admin-ink);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+/* Today panel: give the booking time a small visual anchor. */
+.admin-dashboard-today-panel .admin-dashboard-time strong {
+  color: #9a4b18;
+}
+
+/* Invoice panel: keep the two cards coherent with its blue accent. */
+.admin-dashboard-invoices-panel .admin-invoice-summary > div {
+  background: #f6f1e8;
+  border-color: rgba(23, 23, 23, 0.1);
+}
+
+.admin-dashboard-invoices-panel .admin-invoice-summary--overdue {
+  background: #fff0ec !important;
+  border-color: #f0b5aa !important;
+}
+
+/* Mobile: retain the coloured headers, but avoid too much visual weight. */
+@media (max-width: 620px) {
+  .admin-dashboard-today-panel,
+  .admin-dashboard-invoices-panel,
+  .admin-dashboard-upcoming-panel {
+    border-top-width: 5px;
+  }
+
+  .admin-dashboard-today-panel .admin-panel-head,
+  .admin-dashboard-invoices-panel .admin-panel-head,
+  .admin-dashboard-upcoming-panel .admin-panel-head {
+    padding: 16px 18px;
+  }
+}
+
+.admin-week-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.admin-dashboard-overview-section {
+  min-width: 0;
+}
+
+.admin-week-card {
+  min-height: 136px;
+}
+
+.admin-week-card {
+  color: var(--admin-ink);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.admin-week-card:hover {
+  color: var(--admin-ink);
+}
+
+@media (max-width: 900px) {
+  .admin-week-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .admin-week-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-week-card.admin-stat-card {
+    align-items: stretch;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 1fr;
+    justify-items: start;
+    min-height: 136px;
+    min-width: 0;
+    overflow: hidden;
+    padding: 16px;
+  }
+
+  .admin-week-card.admin-stat-card span,
+  .admin-week-card.admin-stat-card strong,
+  .admin-week-card.admin-stat-card small {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .admin-week-card.admin-stat-card small {
+    line-height: 1.35;
+  }
+}

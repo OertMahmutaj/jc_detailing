@@ -196,7 +196,17 @@ async function cancelBooking(formData: FormData): Promise<{
   }
 }
 
-export default async function AdminCalendarPage() {
+export default async function AdminCalendarPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ date?: string }>;
+}) {
+  const params = (await searchParams) ?? {};
+  const requestedDate = String(params.date ?? "");
+
+  const isValidRequestedDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate);
+
+  const initialDate = isValidRequestedDate ? requestedDate : undefined;
   const now = new Date();
   const rangeStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const rangeEnd = new Date(now.getFullYear(), now.getMonth() + 13, 0, 23, 59, 59);
@@ -233,6 +243,7 @@ export default async function AdminCalendarPage() {
       </header>
 
       <AdminCalendarClient
+        initialDate={initialDate}
         blocks={blocks.map((block) => ({
           endTime: block.endTime.toISOString(),
           fullDay: block.fullDay,

@@ -36,6 +36,7 @@ type CalendarProps = {
   addOns: Array<{ id: string; name: string; price?: number }>;
   blocks: CalendarBlock[];
   bookings: CalendarBooking[];
+  initialDate?: string;
 
   cancelBookingAction: (formData: FormData) => Promise<{
     success: boolean;
@@ -70,6 +71,12 @@ function toDateKey(value: Date) {
     2,
     "0"
   )}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
+function dateKeyToLocalDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number);
+
+  return new Date(year, month - 1, day);
 }
 
 function isoToDateKey(value: string) {
@@ -143,6 +150,7 @@ export function AdminCalendarClient({
   addOns,
   blocks,
   bookings,
+  initialDate,
   cancelBookingAction,
   categories,
   createBookingAction,
@@ -214,15 +222,22 @@ export function AdminCalendarClient({
     const today = new Date();
     const currentDayKey = toDateKey(today);
 
+    const selectedDayKey =
+      initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)
+        ? initialDate
+        : currentDayKey;
+
+    const selectedDay = dateKeyToLocalDate(selectedDayKey);
+
     setTodayKey(currentDayKey);
-    setSelectedDate(currentDayKey);
+    setSelectedDate(selectedDayKey);
 
     setVisibleMonth(
-      new Date(today.getFullYear(), today.getMonth(), 1)
+      new Date(selectedDay.getFullYear(), selectedDay.getMonth(), 1)
     );
 
     setHasHydrated(true);
-  }, []);
+  }, [initialDate]);
 
   const monthDays = useMemo(
     () => buildMonthDays(visibleMonth),
