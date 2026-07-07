@@ -10,9 +10,9 @@ const globalForPrisma = globalThis as unknown as {
 const pool =
   globalForPrisma.adminPool ??
   new pg.Pool({
-    connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL,
+    connectionString: process.env.DATABASE_URL,
     idleTimeoutMillis: 10_000,
-    max: 3,
+    max: 1,
   });
 
 export const prisma =
@@ -21,7 +21,5 @@ export const prisma =
     adapter: new PrismaPg(pool),
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.adminPool = pool;
-  globalForPrisma.adminPrisma = prisma;
-}
+globalForPrisma.adminPool = pool;
+globalForPrisma.adminPrisma = prisma;
