@@ -12,10 +12,9 @@ import {
   FileText,
   Images,
   LogOut,
-  Menu,
   Users,
-  X,
 } from "lucide-react";
+import AdminThemeToggle from "../_components/AdminThemeToggle.client";
 
 const adminGroups = [
   {
@@ -91,15 +90,7 @@ export default function AdminSidebar() {
           </div>
         </Link>
 
-        <button
-          aria-expanded={isOpen}
-          aria-label={isOpen ? "Navigation schliessen" : "Navigation öffnen"}
-          className="admin-menu-toggle"
-          onClick={() => setIsOpen((current) => !current)}
-          type="button"
-        >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        
       </div>
 
       <div className="admin-sidebar-collapsible">
@@ -138,6 +129,9 @@ export default function AdminSidebar() {
         </div>
 
         <div className="admin-sidebar-actions">
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <AdminThemeToggle />
+          </div>
           <Link
             className="admin-public-link"
             href="/"

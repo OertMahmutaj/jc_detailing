@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 
 export type GalleryComparison = {
   id: string;
   beforeUrl: string;
   afterUrl: string;
+  beforeCropScale: number;
+  afterCropScale: number;
 };
 
 type GalleryGridProps = {
@@ -27,20 +29,26 @@ function BeforeAfterSlider({
       style={
         {
           "--split": `${split}%`,
-        } as React.CSSProperties
+        } as CSSProperties
       }
     >
       <img
-        alt={`Fahrzeug vor der Aufbereitung ${index + 1}`}
+        alt={`Fahrzeug nach der Aufbereitung ${index + 1}`}
         className="before-after-image"
         src={comparison.afterUrl}
+        style={{
+          transform: `scale(${comparison.afterCropScale})`,
+        }}
       />
 
       <div className="before-after-before">
         <img
-          alt={`Fahrzeug nach der Aufbereitung ${index + 1}`}
+          alt={`Fahrzeug vor der Aufbereitung ${index + 1}`}
           className="before-after-image"
           src={comparison.beforeUrl}
+          style={{
+            transform: `scale(${comparison.beforeCropScale})`,
+          }}
         />
       </div>
 

@@ -62,6 +62,9 @@ export default async function AdminGalleryProjectDetailPage({
               id: true,
               originalFileName: true,
               storagePath: true,
+              cropX: true,
+              cropY: true,
+              cropScale: true,
             },
           },
           afterAsset: {
@@ -69,6 +72,9 @@ export default async function AdminGalleryProjectDetailPage({
               id: true,
               originalFileName: true,
               storagePath: true,
+              cropX: true,
+              cropY: true,
+              cropScale: true,
             },
           },
         },
@@ -99,17 +105,21 @@ export default async function AdminGalleryProjectDetailPage({
         beforeAsset: comparison.beforeAsset
           ? {
             id: comparison.beforeAsset.id,
-            originalFileName:
-              comparison.beforeAsset.originalFileName,
+            originalFileName: comparison.beforeAsset.originalFileName,
             url: beforeUrl,
+            cropX: comparison.beforeAsset.cropX,
+            cropY: comparison.beforeAsset.cropY,
+            cropScale: comparison.beforeAsset.cropScale,
           }
           : null,
         afterAsset: comparison.afterAsset
           ? {
             id: comparison.afterAsset.id,
-            originalFileName:
-              comparison.afterAsset.originalFileName,
+            originalFileName: comparison.afterAsset.originalFileName,
             url: afterUrl,
+            cropX: comparison.afterAsset.cropX,
+            cropY: comparison.afterAsset.cropY,
+            cropScale: comparison.afterAsset.cropScale,
           }
           : null,
       };

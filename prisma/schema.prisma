@@ -168,14 +168,19 @@ model GalleryProject {
 }
 
 model GalleryMediaAsset {
-  id               String              @id @default(uuid())
+  id               String         @id @default(uuid())
   projectId        String
-  project          GalleryProject      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  storagePath      String              @unique
+  project          GalleryProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  storagePath      String         @unique
   originalFileName String?
   mimeType         String
   fileSize         Int
-  createdAt        DateTime            @default(now())
+
+  cropX            Float          @default(0)
+  cropY            Float          @default(0)
+  cropScale        Float          @default(1)
+
+  createdAt        DateTime       @default(now())
 
   usedAsBefore GalleryComparison? @relation("GalleryComparisonBeforeAsset")
   usedAsAfter  GalleryComparison? @relation("GalleryComparisonAfterAsset")

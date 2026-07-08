@@ -165,6 +165,83 @@ export async function createGalleryComparison(formData: FormData) {
   }
 }
 
+function cleanNumber(
+  value: FormDataEntryValue | null,
+  fallback: number,
+  min: number,
+  max: number,
+) {
+  const number = Number(String(value ?? ""));
+
+  if (!Number.isFinite(number)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, number));
+}
+
+export async function saveGalleryAssetCrop(formData: FormData) {
+  try {
+    const projectId = cleanText(formData.get("projectId"), 120);
+    const assetId = cleanText(formData.get("assetId"), 120);
+
+    const cropX = cleanNumber(formData.get("cropX"), 0, -100, 100);
+    const cropY = cleanNumber(formData.get("cropY"), 0, -100, 100);
+    const cropScale = cleanNumber(formData.get("cropScale"), 1, 1, 4);
+
+    if (!projectId || !assetId) {
+      return {
+        success: false as const,
+        error: "Die Bilddaten fehlen.",
+      };
+    }
+
+    const asset = await prisma.galleryMediaAsset.findFirst({
+      where: {
+        id: assetId,
+        projectId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!asset) {
+      return {
+        success: false as const,
+        error: "Das Bild wurde nicht gefunden.",
+      };
+    }
+
+    await prisma.galleryMediaAsset.update({
+      where: {
+        id: asset.id,
+      },
+      data: {
+        cropX,
+        cropY,
+        cropScale,
+      },
+    });
+
+    revalidatePath("/admin/gallery");
+    revalidatePath(`/admin/gallery/${projectId}`);
+    revalidatePath("/gallery");
+
+    return {
+      success: true as const,
+      message: "Bildposition wurde gespeichert.",
+    };
+  } catch (error) {
+    console.error("Gallery asset crop update failed:", error);
+
+    return {
+      success: false as const,
+      error: "Die Bildposition konnte nicht gespeichert werden.",
+    };
+  }
+}
+
 export async function deleteGalleryComparison(formData: FormData) {
   try {
     const projectId = cleanText(formData.get("projectId"), 120);

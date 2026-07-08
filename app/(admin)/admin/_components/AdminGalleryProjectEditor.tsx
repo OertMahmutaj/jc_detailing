@@ -20,6 +20,9 @@ type GalleryAsset = {
   id: string;
   originalFileName: string | null;
   url: string | null;
+  cropX: number;
+  cropY: number;
+  cropScale: number;
 };
 
 type Comparison = {

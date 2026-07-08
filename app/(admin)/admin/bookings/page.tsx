@@ -279,7 +279,7 @@ export default async function AdminBookingsPage({
           <AdminSearchForm defaultValue={query} placeholder="Kunde, E-Mail, Fahrzeug..." />
         </div>
 
-        <div className="admin-table-wrap">
+        <div className="admin-table-wrap admin-bookings-table-wrap">
           <table className="admin-table admin-bookings-table">
             <thead>
               <tr>
@@ -294,12 +294,12 @@ export default async function AdminBookingsPage({
             <tbody>
               {bookings.map((booking) => (
                 <tr key={booking.id}>
-                  <td>
+                  <td data-label="Kunde">
                     <strong>{booking.client.name}</strong>
                     <span>{booking.client.email}</span>
                     <span>{booking.client.phone}</span>
                   </td>
-                  <td>
+                  <td data-label="Termin">
                     <strong>{formatDate(booking.dateTime)}</strong>
                     <span>{formatDuration(booking.dateTime, booking.endTime)}</span>
                     <AdminBookingScheduleForm
@@ -309,22 +309,22 @@ export default async function AdminBookingsPage({
                       time={inputTime(booking.dateTime)}
                     />
                   </td>
-                  <td>
+                  <td data-label="Leistungen">
                     <strong>{booking.service.name}</strong>
                     <span>{booking.addOns.map((addOn) => addOn.name).join(", ") || "Keine Extras"}</span>
                   </td>
-                  <td>
+                  <td data-label="Fahrzeug">
                     <strong>{booking.vehicleModel}</strong>
                     <span>{booking.vehicleCategory.name}</span>
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <AdminBookingStatusForm
                       action={updateBookingStatus}
                       bookingId={booking.id}
                       initialStatus={booking.status}
                     />
                   </td>
-                  <td className="admin-booking-actions-cell">
+                  <td className="admin-booking-actions-cell" data-label="Aktionen">
                     <Link
                       className="admin-action-button"
                       href={`/admin/bookings/${booking.id}`}

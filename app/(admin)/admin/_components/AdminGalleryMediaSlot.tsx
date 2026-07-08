@@ -2,19 +2,24 @@
 
 import {
   type ChangeEvent,
+  useEffect,
   useRef,
   useState,
+  useTransition,
 } from "react";
 import {
   ImagePlus,
   LoaderCircle,
   RefreshCw,
+  RotateCcw,
+  Save,
   Trash2,
   Upload,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getBrowserSupabaseClient } from "../_lib/supabaseBrowser";
+import { saveGalleryAssetCrop } from "../_actions/galleryActions";
 import { useAdminNotification } from "./AdminNotificationProvider";
 
 type GallerySlot = "BEFORE" | "AFTER";
@@ -23,6 +28,9 @@ type GalleryAsset = {
   id: string;
   originalFileName: string | null;
   url: string | null;
+  cropX: number;
+  cropY: number;
+  cropScale: number;
 };
 
 type AdminGalleryMediaSlotProps = {
@@ -32,16 +40,33 @@ type AdminGalleryMediaSlotProps = {
   slot: GallerySlot;
 };
 
-const allowedMimeTypes = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-];
+type CropState = {
+  scale: number;
+};
 
+const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
 const maxPhotoSizeInBytes = 10 * 1024 * 1024;
 
 function getSlotLabel(slot: GallerySlot) {
   return slot === "BEFORE" ? "Vorher" : "Nachher";
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function roundCropValue(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+function getInitialCrop(asset: GalleryAsset | null): CropState {
+  return {
+    scale: asset?.cropScale ?? 1,
+  };
+}
+
+function isSameCrop(first: CropState, second: CropState) {
+  return Math.abs(first.scale - second.scale) < 0.01;
 }
 
 async function getResponseError(response: Response) {
@@ -64,6 +89,10 @@ export function AdminGalleryMediaSlot({
   const { showNotification } = useAdminNotification();
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  const [isCropPending, startCropTransition] = useTransition();
+  const [crop, setCrop] = useState<CropState>(() => getInitialCrop(asset));
 
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -71,35 +100,88 @@ export function AdminGalleryMediaSlot({
     useState(false);
 
   const slotLabel = getSlotLabel(slot);
+  const initialCrop = getInitialCrop(asset);
+  const hasUnsavedCrop = asset ? !isSameCrop(crop, initialCrop) : false;
+
+  useEffect(() => {
+    setCrop(getInitialCrop(asset));
+  }, [asset?.id, asset?.cropScale]);
+
+  useEffect(() => {
+    const preview = previewRef.current;
+
+    if (!preview || !asset?.url) {
+      return;
+    }
+
+    function handleWheel(event: globalThis.WheelEvent) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const direction = event.deltaY > 0 ? -1 : 1;
+
+      setCrop((current) => ({
+        scale: roundCropValue(clamp(current.scale + direction * 0.08, 1, 4)),
+      }));
+    }
+
+    preview.addEventListener("wheel", handleWheel, {
+      passive: false,
+    });
+
+    return () => {
+      preview.removeEventListener("wheel", handleWheel);
+    };
+  }, [asset?.url]);
 
   function openFilePicker() {
     inputRef.current?.click();
   }
 
-  async function handleFileChange(
-    event: ChangeEvent<HTMLInputElement>
-  ) {
+  function resetCrop() {
+    setCrop({
+      scale: 1,
+    });
+  }
+
+  function saveCrop() {
+    if (!asset) return;
+
+    const formData = new FormData();
+
+    formData.set("projectId", projectId);
+    formData.set("assetId", asset.id);
+    formData.set("cropX", "0");
+    formData.set("cropY", "0");
+    formData.set("cropScale", String(crop.scale));
+
+    startCropTransition(async () => {
+      const result = await saveGalleryAssetCrop(formData);
+
+      if (!result.success) {
+        showNotification(result.error, "error");
+        return;
+      }
+
+      showNotification(result.message, "success");
+      router.refresh();
+    });
+  }
+
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
     event.target.value = "";
 
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     if (!allowedMimeTypes.includes(file.type)) {
-      showNotification(
-        "Nur JPEG-, PNG- und WebP-Bilder sind erlaubt.",
-        "error"
-      );
+      showNotification("Nur JPEG-, PNG- und WebP-Bilder sind erlaubt.", "error");
       return;
     }
 
     if (file.size <= 0 || file.size > maxPhotoSizeInBytes) {
-      showNotification(
-        "Ein Bild darf maximal 10 MB gross sein.",
-        "error"
-      );
+      showNotification("Ein Bild darf maximal 10 MB gross sein.", "error");
       return;
     }
 
@@ -120,7 +202,7 @@ export function AdminGalleryMediaSlot({
             contentType: file.type,
             fileSize: file.size,
           }),
-        }
+        },
       );
 
       if (!uploadUrlResponse.ok) {
@@ -137,15 +219,11 @@ export function AdminGalleryMediaSlot({
 
       const { error: uploadError } = await supabase.storage
         .from(uploadData.bucket)
-        .uploadToSignedUrl(
-          uploadData.storagePath,
-          uploadData.token,
-          file
-        );
+        .uploadToSignedUrl(uploadData.storagePath, uploadData.token, file);
 
       if (uploadError) {
         throw new Error(
-          "Das Bild konnte nicht in den Speicher hochgeladen werden."
+          "Das Bild konnte nicht in den Speicher hochgeladen werden.",
         );
       }
 
@@ -165,7 +243,7 @@ export function AdminGalleryMediaSlot({
             mimeType: file.type,
             fileSize: file.size,
           }),
-        }
+        },
       );
 
       if (!completionResponse.ok) {
@@ -176,7 +254,7 @@ export function AdminGalleryMediaSlot({
         asset
           ? `${slotLabel}-Bild wurde ersetzt.`
           : `${slotLabel}-Bild wurde hochgeladen.`,
-        "success"
+        "success",
       );
 
       router.refresh();
@@ -187,7 +265,7 @@ export function AdminGalleryMediaSlot({
         error instanceof Error
           ? error.message
           : "Das Bild konnte nicht hochgeladen werden.",
-        "error"
+        "error",
       );
     } finally {
       setIsUploading(false);
@@ -218,7 +296,7 @@ export function AdminGalleryMediaSlot({
 
       showNotification(
         `${slotLabel}-Bild wurde entfernt. Der Vergleich ist nun nicht mehr veröffentlicht.`,
-        "success"
+        "success",
       );
 
       router.refresh();
@@ -229,7 +307,7 @@ export function AdminGalleryMediaSlot({
         error instanceof Error
           ? error.message
           : "Das Bild konnte nicht gelöscht werden.",
-        "error"
+        "error",
       );
     } finally {
       setIsDeleting(false);
@@ -253,27 +331,62 @@ export function AdminGalleryMediaSlot({
 
       <header className="admin-gallery-media-slot-head">
         <span>{slotLabel}</span>
-
-        {asset ? (
-          <small>Bild vorhanden</small>
-        ) : (
-          <small>Bild fehlt</small>
-        )}
+        {asset ? <small>Bild vorhanden</small> : <small>Bild fehlt</small>}
       </header>
 
       {asset ? (
         <>
-          <div className="admin-gallery-media-preview">
+          <div
+            className="gallery-preview-frame admin-gallery-media-preview admin-gallery-media-crop-frame"
+            ref={previewRef}
+          >
             {asset.url ? (
-              <img
-                alt={`${slotLabel}-Bild für den Vorher-Nachher-Vergleich`}
-                src={asset.url}
-              />
+              <>
+                <img
+                  alt={`${slotLabel}-Bild für den Vorher-Nachher-Vergleich`}
+                  className="gallery-preview-image admin-gallery-media-crop-image"
+                  draggable={false}
+                  src={asset.url}
+                  style={{
+                    transform: `scale(${crop.scale})`,
+                  }}
+                />
+
+                <span className="admin-gallery-media-crop-hint">
+                  Scroll = Zoom
+                </span>
+              </>
             ) : (
               <div className="admin-gallery-media-preview-unavailable">
                 Vorschau konnte nicht geladen werden.
               </div>
             )}
+          </div>
+
+          <div className="admin-gallery-media-crop-actions">
+            <button
+              className="admin-gallery-media-button"
+              disabled={isCropPending || !hasUnsavedCrop}
+              onClick={saveCrop}
+              type="button"
+            >
+              {isCropPending ? (
+                <LoaderCircle className="admin-spinner" size={15} />
+              ) : (
+                <Save size={15} />
+              )}
+              Position speichern
+            </button>
+
+            <button
+              className="admin-gallery-media-button"
+              disabled={isCropPending}
+              onClick={resetCrop}
+              type="button"
+            >
+              <RotateCcw size={15} />
+              Zurücksetzen
+            </button>
           </div>
 
           <div className="admin-gallery-media-file-name">
@@ -282,9 +395,7 @@ export function AdminGalleryMediaSlot({
 
           {isDeleteConfirmationOpen ? (
             <div className="admin-gallery-media-delete-confirmation">
-              <p>
-                Dieses {slotLabel.toLowerCase()}-Bild wirklich entfernen?
-              </p>
+              <p>Dieses {slotLabel.toLowerCase()}-Bild wirklich entfernen?</p>
 
               <div>
                 <button

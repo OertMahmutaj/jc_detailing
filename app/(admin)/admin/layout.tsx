@@ -1,6 +1,9 @@
 import { headers } from "next/headers";
 import AdminSidebar from "./navigation/page";
 import { AdminNotificationProvider } from "./_components/AdminNotificationProvider";
+import AdminThemeInitializer from "./_components/AdminTheme.client";
+import AdminRowCollapse from "./_components/AdminRowCollapse.client";
+
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -36,10 +39,15 @@ export default async function AdminLayout({
 
   return (
     <AdminNotificationProvider>
+      <AdminThemeInitializer />
+      <AdminRowCollapse />
       <main className="admin-shell">
         <AdminSidebar />
 
         <section className="admin-content">
+          <div className="admin-topbar">
+            <div className="admin-topbar-actions"></div>
+          </div>
           <div className="admin-page-body">{children}</div>
         </section>
       </main>

@@ -57,11 +57,13 @@ export default async function GalleryPage() {
       beforeAsset: {
         select: {
           storagePath: true,
+          cropScale: true,
         },
       },
       afterAsset: {
         select: {
           storagePath: true,
+          cropScale: true,
         },
       },
     },
@@ -99,7 +101,7 @@ export default async function GalleryPage() {
         ) {
           console.error(
             "Gallery comparison URLs could not be created:",
-            beforeResult.error ?? afterResult.error
+            beforeResult.error ?? afterResult.error,
           );
 
           return null;
@@ -109,11 +111,13 @@ export default async function GalleryPage() {
           id: comparison.id,
           beforeUrl: beforeResult.data.signedUrl,
           afterUrl: afterResult.data.signedUrl,
+          beforeCropScale: comparison.beforeAsset.cropScale,
+          afterCropScale: comparison.afterAsset.cropScale,
         } satisfies GalleryComparison;
-      })
+      }),
     )
   ).filter(
-    (comparison): comparison is GalleryComparison => comparison !== null
+    (comparison): comparison is GalleryComparison => comparison !== null,
   );
 
   return (
