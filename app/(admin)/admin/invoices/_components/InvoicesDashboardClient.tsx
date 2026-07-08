@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Bell, Check, ChevronDown, ExternalLink, X } from "lucide-react";
+import { Bell, Check, ExternalLink, X } from "lucide-react";
 import InvoiceEditor from "./InvoiceEditor";
 import { AdminInvoiceActionMenu } from "../../_components/AdminInvoiceActionMenu";
-
+import { useAdminNotification } from "../../_components/AdminNotificationProvider";
 
 type InvoiceBooking = {
   basePrice: number;
@@ -28,6 +28,7 @@ type InvoiceBooking = {
   } | null;
   modifierPrice: number;
   serviceName: string;
+  totalAmount: number;
 };
 
 type InvoiceMetrics = {
@@ -70,7 +71,11 @@ function isInvoiceOverdue(invoice: InvoiceBooking["invoice"]) {
 }
 
 function getRowKey(booking: InvoiceBooking) {
-  return booking.bookingId || booking.invoice?.id || `${booking.clientEmail}-${booking.invoice?.invoiceNumber}`;
+  return (
+    booking.bookingId ||
+    booking.invoice?.id ||
+    `${booking.clientEmail}-${booking.invoice?.invoiceNumber}`
+  );
 }
 
 export default function InvoicesDashboardClient({
@@ -81,34 +86,55 @@ export default function InvoicesDashboardClient({
   metrics: InvoiceMetrics;
 }) {
   const router = useRouter();
-  const [selectedBooking, setSelectedBooking] = useState<InvoiceBooking | null>(null);
-  const [showUnpaidOnly, setShowUnpaidOnly] = useState(false);
+  const { showNotification } = useAdminNotification();
+
+  const [selectedBooking, setSelectedBooking] =
+    useState<InvoiceBooking | null>(null);
+
   const [isWorking, setIsWorking] = useState<string | null>(null);
 
-  const visibleBookings = bookings.filter((booking) => {
-    if (!showUnpaidOnly) return true;
-    return Boolean(booking.invoice && booking.invoice.status !== "PAID");
-  });
+  async function runInvoiceAction(
+    endpoint: string,
+    invoiceId: string,
+    body?: Record<string, string>,
+  ) {
+    try {
+      setIsWorking(invoiceId);
 
-  async function runInvoiceAction(endpoint: string, invoiceId: string, body?: Record<string, string>) {
-    setIsWorking(invoiceId);
+      const response = await fetch(endpoint, {
+        body: JSON.stringify({
+          invoiceId,
+          ...body,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
 
-    const response = await fetch(endpoint, {
-      body: JSON.stringify({ invoiceId, ...body }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    });
+      const data = await response.json().catch(() => null);
 
-    const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        showNotification(
+          data?.error || "Aktion konnte nicht ausgeführt werden.",
+          "error",
+        );
+        return;
+      }
 
-    setIsWorking(null);
+      showNotification(
+        data?.message || "Aktion wurde erfolgreich ausgeführt.",
+        "success",
+      );
 
-    if (!response.ok) {
-      alert(data?.error || "Aktion konnte nicht ausgefuehrt werden.");
-      return;
+      router.refresh();
+    } catch (error) {
+      console.error("Invoice action failed:", error);
+
+      showNotification("Aktion konnte nicht ausgeführt werden.", "error");
+    } finally {
+      setIsWorking(null);
     }
-
-    router.refresh();
   }
 
   return (
@@ -127,23 +153,15 @@ export default function InvoicesDashboardClient({
         </article>
 
         <article className="admin-metric-card is-danger">
-          <span>Ueberfaellige Zahlungen</span>
+          <span>Überfällige Zahlungen</span>
           <strong>{formatCurrency(metrics.overduePayments)}</strong>
-          <small>Offen nach Faelligkeitsdatum</small>
+          <small>Offen nach Fälligkeitsdatum</small>
         </article>
       </section>
 
       <div className="admin-panel admin-invoice-bookings">
         <div className="admin-panel-head">
-          <h2>Waehle eine Buchung zum Bearbeiten</h2>
-
-          <button
-            className={`admin-filter-toggle ${showUnpaidOnly ? "is-active" : ""}`}
-            onClick={() => setShowUnpaidOnly((current) => !current)}
-            type="button"
-          >
-            Nur offene anzeigen
-          </button>
+          <h2>Wähle eine Buchung zum Bearbeiten</h2>
         </div>
 
         <div className="admin-table-wrap">
@@ -154,12 +172,13 @@ export default function InvoicesDashboardClient({
                 <th>Service</th>
                 <th>Datum</th>
                 <th>Status</th>
+                <th>Betrag</th>
                 <th>Aktion</th>
               </tr>
             </thead>
 
             <tbody>
-              {visibleBookings.map((booking) => (
+              {bookings.map((booking) => (
                 <tr key={getRowKey(booking)}>
                   <td>
                     <strong>{booking.clientName}</strong>
@@ -171,16 +190,32 @@ export default function InvoicesDashboardClient({
                   <td>{formatSwissDate(booking.dateTime)}</td>
 
                   <td>
-                    <span className={`admin-status-pill is-${booking.invoice?.status?.toLowerCase() || "missing"}`}>
-                      {booking.invoice ? statusLabels[booking.invoice.status] : "Keine Rechnung"}
+                    <span
+                      className={`admin-status-pill is-${
+                        booking.invoice?.status?.toLowerCase() || "missing"
+                      }`}
+                    >
+                      {booking.invoice
+                        ? statusLabels[booking.invoice.status]
+                        : "Keine Rechnung"}
                     </span>
 
-                    {booking.invoice && <span>{booking.invoice.invoiceNumber}</span>}
+                    {booking.invoice && (
+                      <span>{booking.invoice.invoiceNumber}</span>
+                    )}
+                  </td>
+
+                  <td>
+                    <strong>{formatCurrency(booking.totalAmount)}</strong>
                   </td>
 
                   <td>
                     <div className="admin-row-actions">
-                      <button className="admin-action-button" onClick={() => setSelectedBooking(booking)} type="button">
+                      <button
+                        className="admin-action-button"
+                        onClick={() => setSelectedBooking(booking)}
+                        type="button"
+                      >
                         {booking.invoice ? "Bearbeiten" : "Erstellen"}
                       </button>
 
@@ -200,9 +235,13 @@ export default function InvoicesDashboardClient({
                           <button
                             disabled={isWorking === booking.invoice.id}
                             onClick={() =>
-                              runInvoiceAction("/api/admin/invoices/status", booking.invoice!.id, {
-                                status: "PAID",
-                              })
+                              runInvoiceAction(
+                                "/api/admin/invoices/status",
+                                booking.invoice!.id,
+                                {
+                                  status: "PAID",
+                                },
+                              )
                             }
                             type="button"
                           >
@@ -218,13 +257,15 @@ export default function InvoicesDashboardClient({
                             onClick={() =>
                               runInvoiceAction(
                                 "/api/admin/invoices/reminder",
-                                booking.invoice!.id
+                                booking.invoice!.id,
                               )
                             }
                             title={
                               isInvoiceOverdue(booking.invoice)
                                 ? "Erinnerung senden"
-                                : `Erinnerung ab ${formatSwissDate(booking.invoice.dueDate)} moeglich`
+                                : `Erinnerung ab ${formatSwissDate(
+                                    booking.invoice.dueDate,
+                                  )} möglich`
                             }
                             type="button"
                           >
@@ -234,7 +275,8 @@ export default function InvoicesDashboardClient({
 
                           {!isInvoiceOverdue(booking.invoice) && (
                             <span className="admin-action-menu-note">
-                              Moeglich ab {formatSwissDate(booking.invoice.dueDate)}
+                              Möglich ab{" "}
+                              {formatSwissDate(booking.invoice.dueDate)}
                             </span>
                           )}
                         </AdminInvoiceActionMenu>
@@ -246,12 +288,19 @@ export default function InvoicesDashboardClient({
             </tbody>
           </table>
 
-          {!visibleBookings.length && <p className="admin-empty">Keine passenden Buchungen vorhanden.</p>}
+          {!bookings.length && (
+            <p className="admin-empty">Keine passenden Buchungen vorhanden.</p>
+          )}
         </div>
       </div>
 
       {selectedBooking && (
-        <div className="admin-modal-backdrop" role="dialog" aria-modal="true" aria-label="Rechnung bearbeiten">
+        <div
+          className="admin-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Rechnung bearbeiten"
+        >
           <div className="admin-modal admin-invoice-modal">
             <button
               aria-label="Schliessen"
@@ -274,7 +323,8 @@ export default function InvoicesDashboardClient({
                 invoiceId: selectedBooking.invoice?.id || null,
                 clientEmail: selectedBooking.clientEmail,
                 invoiceNumber:
-                  selectedBooking.invoice?.invoiceNumber || `RE-${Math.floor(1000 + Math.random() * 9000)}`,
+                  selectedBooking.invoice?.invoiceNumber ||
+                  `RE-${Math.floor(1000 + Math.random() * 9000)}`,
                 items: selectedBooking.invoice?.items,
                 language: selectedBooking.invoice?.language || "de",
                 modifierPrice: selectedBooking.modifierPrice,

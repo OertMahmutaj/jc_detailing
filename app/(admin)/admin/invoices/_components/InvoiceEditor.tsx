@@ -2,6 +2,7 @@
 
 import { Mail, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useAdminNotification } from "../../_components/AdminNotificationProvider";
 
 interface Item {
   description: string;
@@ -25,6 +26,12 @@ interface InvoiceEditorProps {
   onSaved?: () => void;
 }
 
+type InvoiceSendResponse = {
+  error?: string;
+  pdfUrl?: string | null;
+  success?: boolean;
+};
+
 function formatCurrency(value: number) {
   const fixedValue = Number.isFinite(value) ? value : 0;
   const [whole, cents] = fixedValue.toFixed(2).split(".");
@@ -33,8 +40,15 @@ function formatCurrency(value: number) {
   return `CHF ${grouped}.${cents}`;
 }
 
-export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorProps) {
-  const [invoiceNumber, setInvoiceNumber] = useState(initialData.invoiceNumber);
+export default function InvoiceEditor({
+  initialData,
+  onSaved,
+}: InvoiceEditorProps) {
+  const { showNotification } = useAdminNotification();
+
+  const [invoiceNumber, setInvoiceNumber] = useState(
+    initialData.invoiceNumber,
+  );
   const [language, setLanguage] = useState(initialData.language || "de");
   const [targetEmail, setTargetEmail] = useState(initialData.clientEmail);
   const [vatRate, setVatRate] = useState(8.1);
@@ -58,12 +72,23 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
         ],
   );
 
-  const netAmount = items.reduce((sum, item) => sum + item.quantity * item.pricePerUnit, 0);
+  const netAmount = items.reduce(
+    (sum, item) => sum + item.quantity * item.pricePerUnit,
+    0,
+  );
   const vatAmount = netAmount * (vatRate / 100);
   const totalAmount = netAmount + vatAmount;
 
   function addItem() {
-    setItems([...items, { description: "Zusatzleistung", pricePerUnit: 0, quantity: 1, unit: "Stk." }]);
+    setItems([
+      ...items,
+      {
+        description: "Zusatzleistung",
+        pricePerUnit: 0,
+        quantity: 1,
+        unit: "Stk.",
+      },
+    ]);
   }
 
   function removeItem(index: number) {
@@ -72,14 +97,36 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
 
   function updateItem(index: number, field: keyof Item, value: string | number) {
     const updated = [...items];
-    updated[index] = { ...updated[index], [field]: value };
+
+    updated[index] = {
+      ...updated[index],
+      [field]: value,
+    };
+
     setItems(updated);
   }
 
   async function handleSendInvoice() {
-    setIsSending(true);
+    if (isSending) return;
+
+    if (!invoiceNumber.trim()) {
+      showNotification("Bitte gib eine Rechnungsnummer ein.", "error");
+      return;
+    }
+
+    if (!targetEmail.trim()) {
+      showNotification("Bitte gib eine Empfänger-E-Mail ein.", "error");
+      return;
+    }
+
+    if (!items.length) {
+      showNotification("Bitte füge mindestens eine Position hinzu.", "error");
+      return;
+    }
 
     try {
+      setIsSending(true);
+
       const response = await fetch("/api/admin/invoices/send", {
         body: JSON.stringify({
           bookingId: initialData.bookingId || null,
@@ -91,22 +138,30 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
           totalAmount,
           vatRate,
         }),
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         method: "POST",
       });
 
-      const data = await response.json().catch(() => null);
+      const data = (await response
+        .json()
+        .catch(() => null)) as InvoiceSendResponse | null;
 
       if (!response.ok) {
-        alert(`Fehler: ${data?.error || "Unbekannter Fehler"}`);
+        showNotification(
+          data?.error || "Rechnung konnte nicht gesendet werden.",
+          "error",
+        );
         return;
       }
 
-      alert("Rechnung erfolgreich gebucht und per E-Mail gesendet.");
+      showNotification("Rechnung wurde erfolgreich gesendet.", "success");
       onSaved?.();
     } catch (error) {
-      console.error(error);
-      alert("Netzwerkfehler beim Senden der Rechnung.");
+      console.error("Invoice sending failed:", error);
+
+      showNotification("Rechnung konnte nicht gesendet werden.", "error");
     } finally {
       setIsSending(false);
     }
@@ -123,12 +178,19 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
           <div className="admin-form-grid">
             <label>
               Rechnungsnummer
-              <input value={invoiceNumber} onChange={(event) => setInvoiceNumber(event.target.value)} />
+              <input
+                value={invoiceNumber}
+                onChange={(event) => setInvoiceNumber(event.target.value)}
+              />
             </label>
 
             <label>
-              Empfaenger-E-Mail
-              <input type="email" value={targetEmail} onChange={(event) => setTargetEmail(event.target.value)} />
+              Empfänger-E-Mail
+              <input
+                type="email"
+                value={targetEmail}
+                onChange={(event) => setTargetEmail(event.target.value)}
+              />
             </label>
 
             <label>
@@ -137,16 +199,21 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
                 step="0.1"
                 type="number"
                 value={vatRate}
-                onChange={(event) => setVatRate(parseFloat(event.target.value) || 0)}
+                onChange={(event) =>
+                  setVatRate(parseFloat(event.target.value) || 0)
+                }
               />
             </label>
 
             <label>
               Sprache
-              <select value={language} onChange={(event) => setLanguage(event.target.value)}>
+              <select
+                value={language}
+                onChange={(event) => setLanguage(event.target.value)}
+              >
                 <option value="de">Deutsch</option>
                 <option value="en">English</option>
-                <option value="fr">Francais</option>
+                <option value="fr">Français</option>
                 <option value="it">Italiano</option>
               </select>
             </label>
@@ -160,7 +227,9 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
                 <input
                   placeholder="Beschreibung"
                   value={item.description}
-                  onChange={(event) => updateItem(index, "description", event.target.value)}
+                  onChange={(event) =>
+                    updateItem(index, "description", event.target.value)
+                  }
                 />
 
                 <div className="admin-invoice-item-meta">
@@ -168,20 +237,34 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
                     placeholder="Menge"
                     type="number"
                     value={item.quantity}
-                    onChange={(event) => updateItem(index, "quantity", parseFloat(event.target.value) || 0)}
+                    onChange={(event) =>
+                      updateItem(
+                        index,
+                        "quantity",
+                        parseFloat(event.target.value) || 0,
+                      )
+                    }
                   />
 
                   <input
                     placeholder="Einheit"
                     value={item.unit}
-                    onChange={(event) => updateItem(index, "unit", event.target.value)}
+                    onChange={(event) =>
+                      updateItem(index, "unit", event.target.value)
+                    }
                   />
 
                   <input
                     placeholder="Preis"
                     type="number"
                     value={item.pricePerUnit}
-                    onChange={(event) => updateItem(index, "pricePerUnit", parseFloat(event.target.value) || 0)}
+                    onChange={(event) =>
+                      updateItem(
+                        index,
+                        "pricePerUnit",
+                        parseFloat(event.target.value) || 0,
+                      )
+                    }
                   />
 
                   <button
@@ -196,8 +279,12 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
               </div>
             ))}
 
-            <button className="admin-inline-button" onClick={addItem} type="button">
-              <Plus size={14} /> Position hinzufuegen
+            <button
+              className="admin-inline-button"
+              onClick={addItem}
+              type="button"
+            >
+              <Plus size={14} /> Position hinzufügen
             </button>
           </div>
 
@@ -214,8 +301,16 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
           </div>
 
           <div className="admin-submit-actions">
-            <button className="admin-submit-button" disabled={isSending} onClick={handleSendInvoice} type="button">
-              <Mail size={16} /> {isSending ? "Wird verarbeitet..." : "Buchen & per E-Mail senden"}
+            <button
+              className="admin-submit-button"
+              disabled={isSending}
+              onClick={handleSendInvoice}
+              type="button"
+            >
+              <Mail size={16} />{" "}
+              {isSending
+                ? "Wird verarbeitet..."
+                : "Rechnung per E-Mail senden"}
             </button>
           </div>
         </div>
@@ -234,7 +329,7 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
             </header>
 
             <section>
-              <span>Empfaenger</span>
+              <span>Empfänger</span>
               <strong>{targetEmail}</strong>
             </section>
 
@@ -246,7 +341,9 @@ export default function InvoiceEditor({ initialData, onSaved }: InvoiceEditorPro
                     <td>
                       {item.quantity} {item.unit}
                     </td>
-                    <td>{formatCurrency(item.quantity * item.pricePerUnit)}</td>
+                    <td>
+                      {formatCurrency(item.quantity * item.pricePerUnit)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

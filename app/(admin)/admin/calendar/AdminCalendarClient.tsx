@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { AdminBookingCreator } from "../_components/AdminBookingCreator";
-import { useAdminNotification } from "../_components/AdminNotificationProvider";
 
 type ActionResult = {
   success: boolean;
+  message?: string;
   error?: string;
 };
 
@@ -21,6 +21,7 @@ type CalendarBooking = {
   serviceName: string;
   startTime: string;
   status: string;
+  totalAmount: number;
   vehicle: string;
 };
 
@@ -37,23 +38,11 @@ type CalendarProps = {
   blocks: CalendarBlock[];
   bookings: CalendarBooking[];
   initialDate?: string;
-
-  cancelBookingAction: (formData: FormData) => Promise<{
-    success: boolean;
-    error?: string;
-  }>;
-
   categories: Array<{ id: string; name: string; price?: number }>;
-
   createBookingAction: (formData: FormData) => Promise<ActionResult>;
-
   createBlockAction: (formData: FormData) => Promise<void>;
-
   deleteBlockAction: (formData: FormData) => Promise<void>;
-
   services: Array<{ id: string; name: string; price?: number }>;
-
-  updateBookingAction: (formData: FormData) => Promise<ActionResult>;
 };
 
 const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
@@ -66,10 +55,28 @@ const monthFormatter = new Intl.DateTimeFormat("de-CH", {
 const INITIAL_DATE = new Date(2000, 0, 1);
 const INITIAL_DATE_KEY = "2000-01-01";
 
+function bookingStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    PENDING: "Offen",
+    CONFIRMED: "Bestätigt",
+    COMPLETED: "Abgeschlossen",
+    CANCELLED: "Storniert",
+  };
+
+  return labels[status] ?? status;
+}
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("de-CH", {
+    style: "currency",
+    currency: "CHF",
+  }).format(value);
+}
+
 function toDateKey(value: Date) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}-${String(value.getDate()).padStart(2, "0")}`;
 }
 
@@ -87,7 +94,7 @@ function timeValue(value: string) {
   const date = new Date(value);
 
   return `${String(date.getHours()).padStart(2, "0")}:${String(
-    date.getMinutes()
+    date.getMinutes(),
   ).padStart(2, "0")}`;
 }
 
@@ -95,13 +102,13 @@ function buildMonthDays(monthDate: Date) {
   const firstDay = new Date(
     monthDate.getFullYear(),
     monthDate.getMonth(),
-    1
+    1,
   );
 
   const lastDay = new Date(
     monthDate.getFullYear(),
     monthDate.getMonth() + 1,
-    0
+    0,
   );
 
   const leadingDays = (firstDay.getDay() + 6) % 7;
@@ -113,7 +120,7 @@ function buildMonthDays(monthDate: Date) {
       date: new Date(
         firstDay.getFullYear(),
         firstDay.getMonth(),
-        1 - index
+        1 - index,
       ),
       inMonth: false,
     });
@@ -124,7 +131,7 @@ function buildMonthDays(monthDate: Date) {
       date: new Date(
         monthDate.getFullYear(),
         monthDate.getMonth(),
-        day
+        day,
       ),
       inMonth: true,
     });
@@ -137,7 +144,7 @@ function buildMonthDays(monthDate: Date) {
       date: new Date(
         monthDate.getFullYear(),
         monthDate.getMonth() + 1,
-        nextDay
+        nextDay,
       ),
       inMonth: false,
     });
@@ -151,16 +158,13 @@ export function AdminCalendarClient({
   blocks,
   bookings,
   initialDate,
-  cancelBookingAction,
   categories,
   createBookingAction,
   createBlockAction,
   deleteBlockAction,
   services,
-  updateBookingAction,
 }: CalendarProps) {
   const router = useRouter();
-  const { showNotification } = useAdminNotification();
 
   const [hasHydrated, setHasHydrated] = useState(false);
 
@@ -172,51 +176,6 @@ export function AdminCalendarClient({
     useState<CalendarBooking | null>(null);
 
   const [blockingDate, setBlockingDate] = useState<string | null>(null);
-
-  const [isUpdatingBooking, setIsUpdatingBooking] = useState(false);
-  const [isCancellingBooking, setIsCancellingBooking] = useState(false);
-
-  async function handleBookingCancel(
-    event: React.FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
-
-    if (isCancellingBooking) return;
-
-    try {
-      setIsCancellingBooking(true);
-
-      const result = await cancelBookingAction(
-        new FormData(event.currentTarget)
-      );
-
-      if (!result.success) {
-        showNotification(
-          result.error || "Die Buchung konnte nicht storniert werden.",
-          "error"
-        );
-        return;
-      }
-
-      setEditingBooking(null);
-
-      showNotification(
-        "Die Buchung wurde erfolgreich storniert.",
-        "success"
-      );
-
-      router.refresh();
-    } catch (error) {
-      console.error("Booking cancellation failed:", error);
-
-      showNotification(
-        "Die Buchung konnte nicht storniert werden.",
-        "error"
-      );
-    } finally {
-      setIsCancellingBooking(false);
-    }
-  }
 
   useEffect(() => {
     const today = new Date();
@@ -233,7 +192,7 @@ export function AdminCalendarClient({
     setSelectedDate(selectedDayKey);
 
     setVisibleMonth(
-      new Date(selectedDay.getFullYear(), selectedDay.getMonth(), 1)
+      new Date(selectedDay.getFullYear(), selectedDay.getMonth(), 1),
     );
 
     setHasHydrated(true);
@@ -241,7 +200,7 @@ export function AdminCalendarClient({
 
   const monthDays = useMemo(
     () => buildMonthDays(visibleMonth),
-    [visibleMonth]
+    [visibleMonth],
   );
 
   const bookingsByDay = useMemo(() => {
@@ -253,7 +212,7 @@ export function AdminCalendarClient({
 
         return acc;
       },
-      {}
+      {},
     );
   }, [bookings]);
 
@@ -266,56 +225,12 @@ export function AdminCalendarClient({
 
         return acc;
       },
-      {}
+      {},
     );
   }, [blocks]);
 
   const selectedBookings = bookingsByDay[selectedDate] ?? [];
   const selectedBlocks = blocksByDay[selectedDate] ?? [];
-
-  async function handleBookingUpdate(
-    event: React.FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
-
-    if (isUpdatingBooking) return;
-
-    try {
-      setIsUpdatingBooking(true);
-
-      const formData = new FormData(event.currentTarget);
-
-      const result = await updateBookingAction(formData);
-
-      if (!result.success) {
-        showNotification(
-          result.error ||
-          "Die Buchung konnte nicht gespeichert werden.",
-          "error"
-        );
-
-        return;
-      }
-
-      setEditingBooking(null);
-
-      showNotification(
-        "Die Buchung wurde erfolgreich aktualisiert.",
-        "success"
-      );
-
-      router.refresh();
-    } catch (error) {
-      console.error("Booking update failed:", error);
-
-      showNotification(
-        "Die Buchung konnte nicht gespeichert werden.",
-        "error"
-      );
-    } finally {
-      setIsUpdatingBooking(false);
-    }
-  }
 
   if (!hasHydrated) {
     return null;
@@ -333,8 +248,8 @@ export function AdminCalendarClient({
                   new Date(
                     current.getFullYear(),
                     current.getMonth() - 1,
-                    1
-                  )
+                    1,
+                  ),
               )
             }
             type="button"
@@ -345,15 +260,15 @@ export function AdminCalendarClient({
           <h2>{monthFormatter.format(visibleMonth)}</h2>
 
           <button
-            aria-label="Naechster Monat"
+            aria-label="Nächster Monat"
             onClick={() =>
               setVisibleMonth(
                 (current) =>
                   new Date(
                     current.getFullYear(),
                     current.getMonth() + 1,
-                    1
-                  )
+                    1,
+                  ),
               )
             }
             type="button"
@@ -420,7 +335,7 @@ export function AdminCalendarClient({
       <aside className="admin-calendar-side admin-panel">
         <div className="admin-panel-head">
           <div>
-            <span>Ausgewaehlter Tag</span>
+            <span>Ausgewählter Tag</span>
             <h2>{selectedDate.split("-").reverse().join(".")}</h2>
           </div>
 
@@ -466,8 +381,8 @@ export function AdminCalendarClient({
                   {block.fullDay
                     ? "Ganzer Tag"
                     : `${timeValue(block.startTime)} - ${timeValue(
-                      block.endTime
-                    )}`}
+                        block.endTime,
+                      )}`}
                 </span>
 
                 <strong>{block.reason || "Blockiert"}</strong>
@@ -576,7 +491,7 @@ export function AdminCalendarClient({
 
       {editingBooking && (
         <div
-          aria-label="Buchung bearbeiten"
+          aria-label="Buchung ansehen"
           aria-modal="true"
           className="admin-modal-backdrop"
           role="dialog"
@@ -584,7 +499,6 @@ export function AdminCalendarClient({
           <div className="admin-modal admin-calendar-modal">
             <button
               className="admin-modal-close"
-              disabled={isUpdatingBooking}
               onClick={() => setEditingBooking(null)}
               type="button"
             >
@@ -611,77 +525,57 @@ export function AdminCalendarClient({
               )}
             </div>
 
-            <form
-              className="admin-form-grid"
-              onSubmit={handleBookingUpdate}
-            >
-              <input
-                name="id"
-                type="hidden"
-                value={editingBooking.id}
-              />
+            <div className="admin-form-grid">
+              <label>
+                Status
+                <input
+                  readOnly
+                  value={bookingStatusLabel(editingBooking.status)}
+                />
+              </label>
 
               <label>
                 Datum
                 <input
-                  defaultValue={isoToDateKey(
-                    editingBooking.startTime
-                  )}
-                  name="date"
-                  required
-                  type="date"
+                  readOnly
+                  value={isoToDateKey(editingBooking.startTime)}
                 />
               </label>
 
               <label>
                 Von
                 <input
-                  defaultValue={timeValue(editingBooking.startTime)}
-                  name="start"
-                  required
-                  step="1800"
-                  type="time"
+                  readOnly
+                  value={timeValue(editingBooking.startTime)}
                 />
               </label>
 
               <label>
                 Bis
                 <input
-                  defaultValue={timeValue(editingBooking.endTime)}
-                  name="end"
-                  required
-                  step="1800"
-                  type="time"
+                  readOnly
+                  value={timeValue(editingBooking.endTime)}
+                />
+              </label>
+
+              <label>
+                Preis
+                <input
+                  readOnly
+                  value={formatCurrency(editingBooking.totalAmount)}
                 />
               </label>
 
               <button
                 className="admin-submit-button"
-                disabled={isUpdatingBooking}
-                type="submit"
+                onClick={() =>
+                  router.push(`/admin/bookings/${editingBooking.id}`)
+                }
+                type="button"
               >
-                {isUpdatingBooking
-                  ? "Buchung wird gespeichert..."
-                  : "Buchung speichern"}
+                Buchung öffnen
               </button>
-            </form>
-
-            <form
-              className="admin-calendar-cancel-form"
-              onSubmit={handleBookingCancel}
-            >
-              <input name="id" type="hidden" value={editingBooking.id} />
-
-              <button
-                className="admin-danger-button"
-                disabled={isUpdatingBooking || isCancellingBooking}
-                type="submit"
-              >
-                {isCancellingBooking
-                  ? "Buchung wird storniert..."
-                  : "Buchung stornieren"}
-              </button>
-            </form>
+            </div>
           </div>
         </div>
       )}

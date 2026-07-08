@@ -218,26 +218,78 @@ function bookingDetailsHtml(details: BookingEmailData) {
     )
     .join("");
 }
+function bookingDetailsHtmlLight(details: BookingEmailData) {
+  return buildBookingRows(details)
+    .map(
+      ([label, value]) => `
+        <tr>
+          <td style="padding:13px 0;color:#6b7280;font-size:14px;border-bottom:1px solid #e5e7eb;">
+            ${escapeHtml(label)}
+          </td>
+          <td style="padding:13px 0;color:#111111;font-size:14px;font-weight:800;text-align:right;border-bottom:1px solid #e5e7eb;">
+            ${escapeHtml(value)}
+          </td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+function bookingEmailUiCopy(language: InvoiceLanguage) {
+  const copy = {
+    de: {
+      questions:
+        "Bei Fragen oder Änderungen erreichen Sie uns per Telefon, WhatsApp oder E-Mail.",
+      greeting: "Freundliche Grüsse",
+      footer:
+        "JC Detailing · Sternmatt 4, 6242 Wauwil · +41 77 268 33 88 · jcdetailinglucerne@gmail.com",
+    },
+    en: {
+      questions:
+        "For questions or changes, you can reach us by phone, WhatsApp or email.",
+      greeting: "Kind regards",
+      footer:
+        "JC Detailing · Sternmatt 4, 6242 Wauwil · +41 77 268 33 88 · jcdetailinglucerne@gmail.com",
+    },
+    fr: {
+      questions:
+        "Pour toute question ou modification, vous pouvez nous joindre par téléphone, WhatsApp ou e-mail.",
+      greeting: "Meilleures salutations",
+      footer:
+        "JC Detailing · Sternmatt 4, 6242 Wauwil · +41 77 268 33 88 · jcdetailinglucerne@gmail.com",
+    },
+    it: {
+      questions:
+        "Per domande o modifiche, puoi contattarci per telefono, WhatsApp o e-mail.",
+      greeting: "Cordiali saluti",
+      footer:
+        "JC Detailing · Sternmatt 4, 6242 Wauwil · +41 77 268 33 88 · jcdetailinglucerne@gmail.com",
+    },
+  } as const;
+
+  return copy[language];
+}
 
 function renderBookingEmail({
   badge,
   details,
   intro,
   subject,
+  language = "de",
 }: {
   badge: string;
   details: BookingEmailData;
   intro: string;
   subject: string;
+  language?: InvoiceLanguage;
 }): EmailContent {
-  const baseUrl = siteUrl();
-  const logoUrl = `${baseUrl}/logo.png`;
+  const ui = bookingEmailUiCopy(language);
 
   const text =
     `${subject}\n\n` +
     `${intro}\n\n` +
     `${bookingDetailsText(details)}\n\n` +
-    "Freundliche Grüsse\nJC Detailing\n" +
+    `${ui.questions}\n\n` +
+    `${ui.greeting}\nJC Detailing\n` +
     "Sternmatt 4, 6242 Wauwil\n" +
     "+41 77 268 33 88\n" +
     "jcdetailinglucerne@gmail.com";
@@ -245,48 +297,57 @@ function renderBookingEmail({
   const html = `
     <!doctype html>
     <html>
-      <body style="margin:0;background:#05070b;padding:0;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#05070b;padding:32px 14px;">
+      <body style="margin:0;padding:0;background:#f5efe1;font-family:Arial,Helvetica,sans-serif;color:#111111;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5efe1;padding:24px 12px;">
           <tr>
             <td align="center">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#0b0f17;border:1px solid #202633;border-radius:24px;overflow:hidden;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #ded6c8;border-radius:14px;overflow:hidden;">
                 <tr>
-                  <td style="padding:28px 28px 18px;text-align:center;background:linear-gradient(135deg,#111827,#05070b);">
-                    <img src="${logoUrl}" alt="JC Detailing" width="150" style="display:block;margin:0 auto 18px;max-width:150px;height:auto;" />
-                    <div style="display:inline-block;padding:7px 12px;border-radius:999px;background:rgba(212,175,55,0.12);color:#d4af37;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;">
+                  <td style="padding:26px 24px 20px;text-align:center;background:#ffffff;border-bottom:1px solid #ece4d6;">
+                    <div style="font-size:22px;font-weight:800;color:#111111;letter-spacing:.02em;">
+                      JC Detailing
+                    </div>
+
+                    <div style="margin-top:4px;font-size:12px;color:#6b6256;">
+                      Luzern · Wauwil · Switzerland
+                    </div>
+
+                    <div style="display:inline-block;margin-top:20px;padding:7px 12px;border-radius:999px;background:#f1d675;color:#111111;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">
                       ${escapeHtml(badge)}
                     </div>
-                    <h1 style="margin:18px 0 10px;font-size:28px;line-height:1.2;color:#ffffff;">
+
+                    <h1 style="margin:18px 0 10px;font-size:26px;line-height:1.2;color:#111111;">
                       ${escapeHtml(subject)}
                     </h1>
-                    <p style="margin:0;color:#c7ccd6;font-size:15px;line-height:1.7;">
+
+                    <p style="margin:0 auto;max-width:460px;color:#4b5563;font-size:15px;line-height:1.7;">
                       ${escapeHtml(intro)}
                     </p>
                   </td>
                 </tr>
 
                 <tr>
-                  <td style="padding:8px 28px 28px;">
+                  <td style="padding:22px 24px 24px;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-                      ${bookingDetailsHtml(details)}
+                      ${bookingDetailsHtmlLight(details)}
                     </table>
 
-                    <div style="margin-top:28px;padding:18px;border-radius:18px;background:#111827;border:1px solid #263041;">
-                      <p style="margin:0;color:#c7ccd6;font-size:14px;line-height:1.7;">
-                        Bei Fragen oder Änderungen erreichst du uns per Telefon, WhatsApp oder E-Mail.
+                    <div style="margin-top:26px;padding:16px;border-radius:12px;background:#f8fafc;border:1px solid #e5e7eb;">
+                      <p style="margin:0;color:#374151;font-size:14px;line-height:1.7;">
+                        ${escapeHtml(ui.questions)}
                       </p>
                     </div>
 
-                    <p style="margin:28px 0 0;color:#ffffff;font-size:15px;line-height:1.7;">
-                      Freundliche Grüsse<br />
+                    <p style="margin:26px 0 0;color:#111111;font-size:15px;line-height:1.7;">
+                      ${escapeHtml(ui.greeting)}<br />
                       <strong>JC Detailing</strong>
                     </p>
                   </td>
                 </tr>
 
                 <tr>
-                  <td style="padding:20px 28px;background:#070a10;border-top:1px solid #202633;color:#8f98a8;font-size:12px;line-height:1.7;text-align:center;">
-                    JC Detailing · Sternmatt 4, 6242 Wauwil · +41 77 268 33 88 · jcdetailinglucerne@gmail.com
+                  <td style="padding:18px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;line-height:1.7;text-align:center;">
+                    ${escapeHtml(ui.footer)}
                   </td>
                 </tr>
               </table>
@@ -345,6 +406,7 @@ function bookingConfirmedEmail(
     subject: copy.subject,
     intro: copy.intro,
     details,
+    language,
   });
 }
 function bookingCancelledCopy(language: InvoiceLanguage) {
@@ -389,6 +451,7 @@ function bookingCancelledEmail(
     subject: copy.subject,
     intro: copy.intro,
     details,
+    language,
   });
 }
 
@@ -434,6 +497,7 @@ function bookingUpdatedEmail(
     subject: copy.subject,
     intro: copy.intro,
     details,
+    language,
   });
 }
 

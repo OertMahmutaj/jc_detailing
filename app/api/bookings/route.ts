@@ -159,6 +159,16 @@ function formatEmailTime(value: Date) {
   }).format(value);
 }
 
+function formatEmailTimeRange(
+  language: InvoiceLanguage,
+  start: Date,
+  end: Date,
+) {
+  const range = `${formatEmailTime(start)}–${formatEmailTime(end)}`;
+
+  return language === "de" ? `${range} Uhr` : range;
+}
+
 function formatEmailDuration(minutes: number) {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
@@ -282,9 +292,7 @@ function buildBookingRequestRows(
     [copy.labels.date, formatEmailDate(details.dateTime)],
     [
       copy.labels.time,
-      `${formatEmailTime(details.dateTime)}–${formatEmailTime(
-        details.endTime,
-      )} Uhr`,
+      formatEmailTimeRange(language, details.dateTime, details.endTime),
     ],
     [copy.labels.services, details.services],
     [copy.labels.vehicle, details.vehicleModel],
@@ -320,12 +328,12 @@ function bookingRequestDetailsHtml(
     .map(
       ([label, value]) => `
         <tr>
-          <td style="padding:12px 0;color:#8f98a8;font-size:14px;border-bottom:1px solid #202633;">${escapeHtml(
-            label,
-          )}</td>
-          <td style="padding:12px 0;color:#ffffff;font-size:14px;font-weight:600;text-align:right;border-bottom:1px solid #202633;">${escapeHtml(
-            value,
-          )}</td>
+          <td style="padding:13px 0;color:#6b7280;font-size:14px;border-bottom:1px solid #e5e7eb;">
+            ${escapeHtml(label)}
+          </td>
+          <td style="padding:13px 0;color:#111111;font-size:14px;font-weight:800;text-align:right;border-bottom:1px solid #e5e7eb;">
+            ${escapeHtml(value)}
+          </td>
         </tr>
       `,
     )
@@ -337,14 +345,13 @@ function bookingRequestReceivedEmail(
   details: BookingRequestEmailData,
 ): EmailContent {
   const copy = bookingRequestCopy(language);
-  const baseUrl = siteUrl();
-  const logoUrl = `${baseUrl}/logo.png`;
 
   const text =
     `${copy.subject}\n\n` +
     `${copy.intro}\n\n` +
     `${copy.notice}\n\n` +
     `${bookingRequestDetailsText(language, details)}\n\n` +
+    `${copy.question}\n\n` +
     `${copy.greeting}\nJC Detailing\n` +
     "Sternmatt 4, 6242 Wauwil\n" +
     "+41 77 268 33 88\n" +
@@ -353,33 +360,39 @@ function bookingRequestReceivedEmail(
   const html = `
     <!doctype html>
     <html>
-      <body style="margin:0;background:#05070b;padding:0;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#05070b;padding:32px 14px;">
+      <body style="margin:0;padding:0;background:#f5efe1;font-family:Arial,Helvetica,sans-serif;color:#111111;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5efe1;padding:24px 12px;">
           <tr>
             <td align="center">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#0b0f17;border:1px solid #202633;border-radius:18px;overflow:hidden;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #ded6c8;border-radius:14px;overflow:hidden;">
                 <tr>
-                  <td style="padding:28px 28px 18px;text-align:center;background:linear-gradient(135deg,#111827,#05070b);">
-                    <img src="${logoUrl}" alt="JC Detailing" width="150" style="display:block;margin:0 auto 18px;max-width:150px;height:auto;" />
+                  <td style="padding:26px 24px 20px;text-align:center;background:#ffffff;border-bottom:1px solid #ece4d6;">
+                    <div style="font-size:22px;font-weight:800;color:#111111;letter-spacing:.02em;">
+                      JC Detailing
+                    </div>
 
-                    <div style="display:inline-block;padding:7px 12px;border-radius:999px;background:rgba(212,175,55,0.12);color:#d4af37;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;">
+                    <div style="margin-top:4px;font-size:12px;color:#6b6256;">
+                      Luzern · Wauwil · Switzerland
+                    </div>
+
+                    <div style="display:inline-block;margin-top:20px;padding:7px 12px;border-radius:999px;background:#f1d675;color:#111111;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">
                       ${escapeHtml(copy.badge)}
                     </div>
 
-                    <h1 style="margin:18px 0 10px;font-size:28px;line-height:1.2;color:#ffffff;">
+                    <h1 style="margin:18px 0 10px;font-size:26px;line-height:1.2;color:#111111;">
                       ${escapeHtml(copy.subject)}
                     </h1>
 
-                    <p style="margin:0;color:#c7ccd6;font-size:15px;line-height:1.7;">
+                    <p style="margin:0 auto;max-width:460px;color:#4b5563;font-size:15px;line-height:1.7;">
                       ${escapeHtml(copy.intro)}
                     </p>
                   </td>
                 </tr>
 
                 <tr>
-                  <td style="padding:8px 28px 28px;">
-                    <div style="margin:18px 0 26px;padding:18px;border-radius:10px;background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.28);">
-                      <p style="margin:0;color:#f6e7b8;font-size:14px;line-height:1.7;">
+                  <td style="padding:22px 24px 24px;">
+                    <div style="margin:0 0 24px;padding:16px;border-radius:12px;background:#fff8db;border:1px solid #f1d675;">
+                      <p style="margin:0;color:#3f3520;font-size:14px;line-height:1.7;">
                         ${escapeHtml(copy.notice)}
                       </p>
                     </div>
@@ -388,13 +401,13 @@ function bookingRequestReceivedEmail(
                       ${bookingRequestDetailsHtml(language, details)}
                     </table>
 
-                    <div style="margin-top:28px;padding:18px;border-radius:10px;background:#111827;border:1px solid #263041;">
-                      <p style="margin:0;color:#c7ccd6;font-size:14px;line-height:1.7;">
+                    <div style="margin-top:26px;padding:16px;border-radius:12px;background:#f8fafc;border:1px solid #e5e7eb;">
+                      <p style="margin:0;color:#374151;font-size:14px;line-height:1.7;">
                         ${escapeHtml(copy.question)}
                       </p>
                     </div>
 
-                    <p style="margin:28px 0 0;color:#ffffff;font-size:15px;line-height:1.7;">
+                    <p style="margin:26px 0 0;color:#111111;font-size:15px;line-height:1.7;">
                       ${escapeHtml(copy.greeting)}<br />
                       <strong>JC Detailing</strong>
                     </p>
@@ -402,7 +415,7 @@ function bookingRequestReceivedEmail(
                 </tr>
 
                 <tr>
-                  <td style="padding:20px 28px;background:#070a10;border-top:1px solid #202633;color:#8f98a8;font-size:12px;line-height:1.7;text-align:center;">
+                  <td style="padding:18px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;line-height:1.7;text-align:center;">
                     JC Detailing · Sternmatt 4, 6242 Wauwil · +41 77 268 33 88 · jcdetailinglucerne@gmail.com
                   </td>
                 </tr>
@@ -442,7 +455,6 @@ function adminBookingEmail({
   const confirmUrl = `${bookingUrl}?action=confirm`;
   const rescheduleUrl = `${bookingUrl}?action=reschedule`;
   const cancelUrl = `${bookingUrl}?action=cancel`;
-  const logoUrl = `${baseUrl}/logo.png`;
 
   const rows = [
     ["Name", clientName],
@@ -469,10 +481,10 @@ function adminBookingEmail({
     .map(
       ([label, value]) => `
         <tr>
-          <td style="padding:12px 0;color:#8f98a8;font-size:14px;border-bottom:1px solid #202633;">
+          <td style="padding:13px 0;color:#6b7280;font-size:14px;border-bottom:1px solid #e5e7eb;">
             ${escapeHtml(label)}
           </td>
-          <td style="padding:12px 0;color:#ffffff;font-size:14px;font-weight:600;text-align:right;border-bottom:1px solid #202633;">
+          <td style="padding:13px 0;color:#111111;font-size:14px;font-weight:800;text-align:right;border-bottom:1px solid #e5e7eb;">
             ${escapeHtml(value)}
           </td>
         </tr>
@@ -491,65 +503,68 @@ function adminBookingEmail({
     `Stornieren: ${cancelUrl}`;
 
   const buttonStyle =
-    "display:inline-block;margin:0 8px 10px 0;padding:12px 16px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:800;line-height:1.2;text-align:center;";
+    "display:block;padding:12px 14px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:800;line-height:1.2;text-align:center;";
 
   const html = `
     <!doctype html>
     <html>
-      <body style="margin:0;background:#05070b;padding:0;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#05070b;padding:32px 14px;">
+      <body style="margin:0;padding:0;background:#f5efe1;font-family:Arial,Helvetica,sans-serif;color:#111111;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5efe1;padding:24px 12px;">
           <tr>
             <td align="center">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#0b0f17;border:1px solid #202633;border-radius:18px;overflow:hidden;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:660px;background:#ffffff;border:1px solid #ded6c8;border-radius:14px;overflow:hidden;">
                 <tr>
-                  <td style="padding:28px;text-align:center;background:linear-gradient(135deg,#111827,#05070b);">
-                    <img src="${logoUrl}" alt="JC Detailing" width="150" style="display:block;margin:0 auto 18px;max-width:150px;height:auto;" />
+                  <td style="padding:26px 24px 20px;text-align:center;background:#ffffff;border-bottom:1px solid #ece4d6;">
+                    <div style="font-size:22px;font-weight:800;color:#111111;letter-spacing:.02em;">
+                      JC Detailing Admin
+                    </div>
 
-                    <div style="display:inline-block;padding:7px 12px;border-radius:999px;background:rgba(212,175,55,0.12);color:#d4af37;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;">
+                    <div style="display:inline-block;margin-top:20px;padding:7px 12px;border-radius:999px;background:#f1d675;color:#111111;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">
                       Neue Buchungsanfrage
                     </div>
 
-                    <h1 style="margin:18px 0 10px;font-size:28px;line-height:1.2;color:#ffffff;">
+                    <h1 style="margin:18px 0 10px;font-size:26px;line-height:1.2;color:#111111;">
                       Neue Anfrage von ${escapeHtml(clientName)}
                     </h1>
 
-                    <p style="margin:0;color:#c7ccd6;font-size:15px;line-height:1.7;">
+                    <p style="margin:0 auto;max-width:460px;color:#4b5563;font-size:15px;line-height:1.7;">
                       Eine neue Terminanfrage wurde über die Website eingereicht.
                     </p>
                   </td>
                 </tr>
 
                 <tr>
-                  <td style="padding:26px 28px 10px;">
+                  <td style="padding:22px 24px 24px;">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:22px;">
-  <tr>
-    <td style="padding:0 8px 10px 0;">
-      <a href="${bookingUrl}" style="${buttonStyle}display:block;background:#f15a24;color:#ffffff;">
-        Buchung öffnen
-      </a>
-    </td>
-    <td style="padding:0 0 10px 0;">
-      <a href="${confirmUrl}" style="${buttonStyle}display:block;background:#10351f;color:#4ade80;border:1px solid #1f7a44;">
-        Bestätigen
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <td style="padding:0 8px 0 0;">
-      <a href="${rescheduleUrl}" style="${buttonStyle}display:block;background:#10243f;color:#60a5fa;border:1px solid #285f9e;">
-        Termin ändern
-      </a>
-    </td>
-    <td style="padding:0;">
-      <a href="${cancelUrl}" style="${buttonStyle}display:block;background:#3a1518;color:#f87171;border:1px solid #8a3038;">
-        Stornieren
-      </a>
-    </td>
-  </tr>
-</table>
+                      <tr>
+                        <td style="padding:0 6px 10px 0;width:50%;">
+                          <a href="${bookingUrl}" style="${buttonStyle}background:#f15a24;color:#ffffff;">
+                            Buchung öffnen
+                          </a>
+                        </td>
+                        <td style="padding:0 0 10px 6px;width:50%;">
+                          <a href="${confirmUrl}" style="${buttonStyle}background:#dcfce7;color:#166534;border:1px solid #86efac;">
+                            Bestätigen
+                          </a>
+                        </td>
+                      </tr>
 
-                    <div style="margin:0 0 24px;padding:16px;border-radius:14px;background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.24);">
-                      <p style="margin:0;color:#f6e7b8;font-size:14px;line-height:1.7;">
+                      <tr>
+                        <td style="padding:0 6px 0 0;width:50%;">
+                          <a href="${rescheduleUrl}" style="${buttonStyle}background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;">
+                            Termin ändern
+                          </a>
+                        </td>
+                        <td style="padding:0 0 0 6px;width:50%;">
+                          <a href="${cancelUrl}" style="${buttonStyle}background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;">
+                            Stornieren
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <div style="margin:0 0 24px;padding:16px;border-radius:12px;background:#fff8db;border:1px solid #f1d675;">
+                      <p style="margin:0;color:#3f3520;font-size:14px;line-height:1.7;">
                         Die Buttons öffnen die Admin-Seite. Die Buchung wird nicht direkt aus der E-Mail geändert.
                       </p>
                     </div>
@@ -561,7 +576,7 @@ function adminBookingEmail({
                 </tr>
 
                 <tr>
-                  <td style="padding:20px 28px;background:#070a10;border-top:1px solid #202633;color:#8f98a8;font-size:12px;line-height:1.7;text-align:center;">
+                  <td style="padding:18px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;line-height:1.7;text-align:center;">
                     JC Detailing Admin · ${escapeHtml(bookingId)}
                   </td>
                 </tr>
@@ -579,7 +594,6 @@ function adminBookingEmail({
     html,
   };
 }
-
 async function sendEmail({
   html,
   subject,

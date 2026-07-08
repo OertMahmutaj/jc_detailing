@@ -286,7 +286,7 @@ export function AdminBookingEditor({
                   >
                     {statusActionLabel === "Wird abgeschlossen..."
                       ? statusActionLabel
-                      : "Als abgeschlossen markieren"}
+                      : "Bestätigen"}
                   </button>
 
                   <button
@@ -304,7 +304,7 @@ export function AdminBookingEditor({
                 </>
               )}
 
-              {status === "COMPLETED" && (
+              {/* {status === "COMPLETED" && (
                 <p className="admin-status-note">
                   Diese Buchung ist abgeschlossen.
                 </p>
@@ -314,7 +314,7 @@ export function AdminBookingEditor({
                 <p className="admin-status-note">
                   Diese Buchung wurde storniert.
                 </p>
-              )}
+              )} */}
             </div>
           </div>
 

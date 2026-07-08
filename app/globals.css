@@ -7408,11 +7408,13 @@ details {
 .admin-status-pill.is-ready {
   background: #7fa15a;
   color: #101407;
+  border-radius: 2px;
 }
 
 .admin-status-pill.is-sent {
   background: #f1d56f;
   color: #171717;
+  border-radius: 2px;
 }
 
 .admin-status-pill.is-missing,
@@ -7420,6 +7422,7 @@ details {
 .admin-status-pill.is-cancelled {
   background: #f3c9c9;
   color: #171717;
+  border-radius: 2px;
 }
 
 .admin-modal,
@@ -7559,7 +7562,7 @@ details {
 .admin-public-link,
 .admin-logout-button,
 .admin-nav a {
-  border-radius: 0;
+  border-radius: 2px;
 }
 
 .admin-inline-form input[type="date"] {
@@ -7677,7 +7680,7 @@ details {
 .admin-danger-button {
   width: fit-content;
   border: 0;
-  border-radius: 0px;
+  border-radius: 2px;
   padding: 0.8rem 1rem;
   cursor: pointer;
   font: inherit;
@@ -7686,7 +7689,7 @@ details {
 }
 
 .admin-primary-button {
-  background: #111;
+  background: #2b692e;
   color: #fff;
 }
 
@@ -9326,7 +9329,7 @@ details {
 .public-gallery-filters button {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.42);
-  border-radius: 0;
+  border-radius: 2px;
   color: var(--muted);
   font-size: 11px;
   font-weight: 900;
@@ -9357,7 +9360,7 @@ details {
   aspect-ratio: 0.78;
   background: var(--panel);
   border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 0;
+  border-radius: 2px;
   cursor: zoom-in;
   min-width: 0;
   overflow: hidden;
@@ -9524,7 +9527,7 @@ details {
   align-items: center;
   background: #000;
   border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 0;
+  border-radius: 2px;
   color: var(--ink);
   display: flex;
   height: 42px;
@@ -11268,23 +11271,27 @@ details {
 }
 
 .admin-status-pending {
-  background: rgba(250, 204, 21, 0.12);
-  color: #facc15;
+  background: #dbb50b;
+  border-radius: 5px;
+  color: var(--white);
 }
 
 .admin-status-confirmed {
-  background: rgba(34, 197, 94, 0.12);
-  color: #4ade80;
+  background: #1a751f;
+  border-radius: 5px;
+  color: var(--white);
 }
 
 .admin-status-completed {
-  background: rgba(96, 165, 250, 0.12);
-  color: #60a5fa;
+  background: #0D2744;
+  border-radius: 5px;
+  color: var(--white);
 }
 
 .admin-status-cancelled {
-  background: rgba(248, 113, 113, 0.12);
-  color: #f87171;
+  background: #a61414;
+  border-radius: 5px;
+  color: var(--white);
 }
 
 .admin-status-actions {
@@ -11317,13 +11324,15 @@ details {
 }
 
 .admin-status-action-button.primary {
-  background: rgba(34, 197, 94, 0.14);
-  color: #4ade80;
+  background: #1a751f;
+  border-radius: 5px;
+  color: var(--white);
 }
 
 .admin-status-action-button.danger {
-  background: rgba(248, 113, 113, 0.12);
-  color: #f87171;
+  background: #a61414;
+  border-radius: 5px;
+  color: var(--white);
 }
 
 .admin-status-note {
@@ -11350,7 +11359,11 @@ details {
 
 .booking-confirmation-panel {
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.02)
+    ),
     #080b10;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 28px;
@@ -11445,8 +11458,8 @@ details {
 
 .booking-confirmation-footer a {
   align-items: center;
-  background: #075E54;
-  border-radius: 0px;
+  background: #075e54;
+  border-radius: 2px;
   color: #fff;
   display: inline-flex;
   font-weight: 800;
@@ -11461,7 +11474,7 @@ details {
 
 @media (max-width: 720px) {
   .booking-confirmation-panel {
-    border-radius: 0px;
+    border-radius: 2pxpx;
     padding: 1.3rem;
   }
 
@@ -11470,6 +11483,124 @@ details {
   }
 
   .booking-confirmation-footer a {
+    width: 100%;
+  }
+}
+
+/* Compact invoice filters */
+.admin-search-panel .admin-panel-head {
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-search-panel .admin-filter-form {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.admin-search-panel .admin-filter-form input,
+.admin-search-panel .admin-filter-form select {
+  width: auto;
+  min-width: 150px;
+  max-width: 260px;
+  height: 38px;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.admin-search-panel .admin-filter-form input[type="search"] {
+  min-width: 260px;
+}
+
+.admin-search-panel .admin-filter-form button,
+.admin-search-panel .admin-filter-form .admin-secondary-button {
+  height: 38px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Compact invoice table */
+.admin-invoices-table th,
+.admin-invoices-table td {
+  padding: 0.85rem 1rem;
+}
+
+.admin-invoices-table td {
+  vertical-align: middle;
+}
+
+.admin-invoices-table .admin-status-pill {
+  min-width: 130px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.72rem;
+}
+
+.admin-invoices-table .admin-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+}
+
+.admin-invoices-table .admin-action-button,
+.admin-invoices-table .admin-row-actions > button {
+  min-height: 38px;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Compact auto invoice filters */
+.admin-search-panel .admin-panel-head {
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-search-panel .admin-filter-form {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.admin-search-panel .admin-filter-form input,
+.admin-search-panel .admin-filter-form select {
+  width: auto;
+  height: 36px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.78rem;
+}
+
+.admin-search-panel .admin-filter-form input[type="search"] {
+  min-width: 260px;
+}
+
+.admin-search-panel .admin-filter-form select {
+  min-width: 150px;
+}
+
+@media (max-width: 1100px) {
+  .admin-search-panel .admin-panel-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-search-panel .admin-filter-form {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .admin-search-panel .admin-filter-form input,
+  .admin-search-panel .admin-filter-form select {
     width: 100%;
   }
 }
