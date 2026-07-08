@@ -17,7 +17,7 @@ export default function LeistungenPage() {
             <h1>Leistungen</h1>
           </HeroItem>
           <HeroItem>
-            <p>Vier klare Kategorien fuer professionelle Fahrzeugaufbereitung.</p>
+            <p>Vier klare Kategorien für professionelle Fahrzeugaufbereitung.</p>
           </HeroItem>
         </HeroIntro>
       </section>

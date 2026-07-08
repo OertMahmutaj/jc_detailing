@@ -1,7 +1,8 @@
 import { prisma } from "../../(admin)/admin/_lib/prisma";
 
 const ownerEmail = process.env.BOOKING_OWNER_EMAIL ?? "oert64@gmail.com";
-const fromEmail = process.env.BOOKING_FROM_EMAIL ?? "JC Detailing <onboarding@resend.dev>";
+const fromEmail =
+  process.env.BOOKING_FROM_EMAIL ?? "JC Detailing <onboarding@resend.dev>";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const rateLimitWindowMs = 15 * 60 * 1000;
 const maxRequestsPerWindow = 5;
@@ -41,18 +42,27 @@ function cleanText(value: unknown, maxLength: number) {
 
 function cleanIdArray(value: unknown) {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === "string" && item.length > 0).slice(0, 12);
+  return value
+    .filter(
+      (item): item is string => typeof item === "string" && item.length > 0,
+    )
+    .slice(0, 12);
 }
 
 function cleanLanguage(value: unknown): InvoiceLanguage {
   if (typeof value !== "string") return "de";
   const language = value.toLowerCase();
 
-  return language === "en" || language === "fr" || language === "it" ? language : "de";
+  return language === "en" || language === "fr" || language === "it"
+    ? language
+    : "de";
 }
 
 function getClientIp(request: Request) {
-  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const forwardedFor = request.headers
+    .get("x-forwarded-for")
+    ?.split(",")[0]
+    ?.trim();
   return forwardedFor || request.headers.get("x-real-ip") || "unknown";
 }
 
@@ -76,7 +86,10 @@ function isRateLimited(ip: string) {
 function isOverlapConstraintError(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const maybeError = error as { code?: string; message?: string };
-  return maybeError.code === "P2004" || Boolean(maybeError.message?.includes("Booking_no_active_time_overlap"));
+  return (
+    maybeError.code === "P2004" ||
+    Boolean(maybeError.message?.includes("Booking_no_active_time_overlap"))
+  );
 }
 
 function getZurichMinutes(date: Date) {
@@ -87,16 +100,28 @@ function getZurichMinutes(date: Date) {
     timeZone: "Europe/Zurich",
   }).formatToParts(date);
   const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0);
-  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0);
+  const minute = Number(
+    parts.find((part) => part.type === "minute")?.value ?? 0,
+  );
 
   return hour * 60 + minute;
 }
 
-async function sendEmail({ to, subject, text }: { to: string; subject: string; text: string }) {
+async function sendEmail({
+  to,
+  subject,
+  text,
+}: {
+  to: string;
+  subject: string;
+  text: string;
+}) {
   const key = process.env.RESEND_API_KEY;
 
   if (!key) {
-    console.error("EMAIL ERROR: RESEND_API_KEY is missing from environment variables.");
+    console.error(
+      "EMAIL ERROR: RESEND_API_KEY is missing from environment variables.",
+    );
     return;
   }
 
@@ -117,7 +142,9 @@ async function sendEmail({ to, subject, text }: { to: string; subject: string; t
   if (!response.ok) {
     const errorData = await response.json();
     const providerMessage =
-      typeof errorData?.message === "string" ? errorData.message : "Email provider rejected the request";
+      typeof errorData?.message === "string"
+        ? errorData.message
+        : "Email provider rejected the request";
     throw new Error(providerMessage);
   }
 }
@@ -126,14 +153,20 @@ function invoiceNumber() {
   return `RE-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
 }
 
-function customerTexts(language: InvoiceLanguage, name: string, invoice: string, total: number, summary: string) {
+function customerTexts(
+  language: InvoiceLanguage,
+  name: string,
+  invoice: string,
+  total: number,
+  summary: string,
+) {
   const formattedTotal = `CHF ${total.toFixed(2)}`;
   const texts = {
     de: {
       subject: "JC Detailing - Buchung erhalten",
       body:
         `Hallo ${name}\n\n` +
-        "Danke fuer deine Buchung bei JC Detailing. Deine Anfrage ist bei uns eingegangen.\n\n" +
+        "Danke für deine Buchung bei JC Detailing. Deine Anfrage ist bei uns eingegangen.\n\n" +
         `Deine Angaben:\n\n${summary}\n\n` +
         "Freundliche Gruesse\nJC Detailing",
     },
@@ -172,8 +205,11 @@ export async function POST(request: Request) {
 
     if (isRateLimited(clientIp)) {
       return Response.json(
-        { message: "Zu viele Anfragen. Bitte versuche es in einigen Minuten erneut." },
-        { status: 429 }
+        {
+          message:
+            "Zu viele Anfragen. Bitte versuche es in einigen Minuten erneut.",
+        },
+        { status: 429 },
       );
     }
 
@@ -193,15 +229,28 @@ export async function POST(request: Request) {
     const addOnIds = cleanIdArray(body.addOnIds);
     const serviceIds = cleanIdArray(body.serviceIds).length
       ? cleanIdArray(body.serviceIds)
-      : cleanIdArray(typeof body.serviceId === "string" ? [body.serviceId] : []);
-    const startBookingDate = typeof body.dateTime === "string" ? new Date(body.dateTime) : null;
+      : cleanIdArray(
+          typeof body.serviceId === "string" ? [body.serviceId] : [],
+        );
+    const startBookingDate =
+      typeof body.dateTime === "string" ? new Date(body.dateTime) : null;
 
     if (!name || !emailPattern.test(email) || !phone || !vehicleModel) {
-      return Response.json({ message: "Bitte prüfe Name, E-Mail, Telefon und Fahrzeugmodell." }, { status: 400 });
+      return Response.json(
+        { message: "Bitte prüfe Name, E-Mail, Telefon und Fahrzeugmodell." },
+        { status: 400 },
+      );
     }
 
-    if (!startBookingDate || Number.isNaN(startBookingDate.getTime()) || startBookingDate.getTime() <= Date.now()) {
-      return Response.json({ message: "Bitte wähle einen gültigen Termin in der Zukunft." }, { status: 400 });
+    if (
+      !startBookingDate ||
+      Number.isNaN(startBookingDate.getTime()) ||
+      startBookingDate.getTime() <= Date.now()
+    ) {
+      return Response.json(
+        { message: "Bitte wähle einen gültigen Termin in der Zukunft." },
+        { status: 400 },
+      );
     }
 
     const startMinutes = getZurichMinutes(startBookingDate);
@@ -209,12 +258,18 @@ export async function POST(request: Request) {
     if (startMinutes < 8 * 60 || startMinutes > 13 * 60 + 30) {
       return Response.json(
         { message: "Bitte waehle eine Uhrzeit zwischen 08:00 und 13:30." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!vehicleCategoryId || serviceIds.length === 0) {
-      return Response.json({ message: "Bitte wähle mindestens eine Leistung und eine Fahrzeuggrösse." }, { status: 400 });
+      return Response.json(
+        {
+          message:
+            "Bitte wähle mindestens eine Leistung und eine Fahrzeuggrösse.",
+        },
+        { status: 400 },
+      );
     }
 
     const uniqueServiceIds = [...new Set(serviceIds)];
@@ -222,40 +277,68 @@ export async function POST(request: Request) {
     const [dbServices, dbCategory, dbAddOns] = await Promise.all([
       prisma.service.findMany({ where: { id: { in: uniqueServiceIds } } }),
       prisma.vehicleCategory.findUnique({ where: { id: vehicleCategoryId } }),
-      uniqueAddOnIds.length ? prisma.addOn.findMany({ where: { id: { in: uniqueAddOnIds } } }) : Promise.resolve([]),
+      uniqueAddOnIds.length
+        ? prisma.addOn.findMany({ where: { id: { in: uniqueAddOnIds } } })
+        : Promise.resolve([]),
     ]);
 
     if (dbServices.length !== uniqueServiceIds.length) {
-      return Response.json({ message: "Eine ausgewählte Leistung wurde nicht gefunden." }, { status: 400 });
+      return Response.json(
+        { message: "Eine ausgewählte Leistung wurde nicht gefunden." },
+        { status: 400 },
+      );
     }
 
     if (!dbCategory) {
-      return Response.json({ message: "Die Fahrzeuggrösse wurde nicht gefunden." }, { status: 400 });
+      return Response.json(
+        { message: "Die Fahrzeuggrösse wurde nicht gefunden." },
+        { status: 400 },
+      );
     }
 
     if (dbAddOns.length !== uniqueAddOnIds.length) {
-      return Response.json({ message: "Eine Zusatzleistung wurde nicht gefunden." }, { status: 400 });
+      return Response.json(
+        { message: "Eine Zusatzleistung wurde nicht gefunden." },
+        { status: 400 },
+      );
     }
 
     const servicesByRequestOrder = uniqueServiceIds
       .map((id) => dbServices.find((service) => service.id === id))
-      .filter((service): service is (typeof dbServices)[number] => Boolean(service));
+      .filter((service): service is (typeof dbServices)[number] =>
+        Boolean(service),
+      );
     const allowedAddOnNames = new Set(
-      servicesByRequestOrder.flatMap((service) => allowedAddOnsByService[service.name] ?? [])
+      servicesByRequestOrder.flatMap(
+        (service) => allowedAddOnsByService[service.name] ?? [],
+      ),
     );
-    const hasInvalidAddOn = dbAddOns.some((addOn) => !allowedAddOnNames.has(addOn.name));
+    const hasInvalidAddOn = dbAddOns.some(
+      (addOn) => !allowedAddOnNames.has(addOn.name),
+    );
 
     if (hasInvalidAddOn) {
       return Response.json(
-        { message: "Eine Zusatzleistung passt nicht zu den ausgewählten Leistungen." },
-        { status: 400 }
+        {
+          message:
+            "Eine Zusatzleistung passt nicht zu den ausgewählten Leistungen.",
+        },
+        { status: 400 },
       );
     }
 
-    const baseDuration = servicesByRequestOrder.reduce((sum, service) => sum + service.durationMinutes, 0);
-    const addOnsDuration = dbAddOns.reduce((sum, item) => sum + item.additionalDuration, 0);
+    const baseDuration = servicesByRequestOrder.reduce(
+      (sum, service) => sum + service.durationMinutes,
+      0,
+    );
+    const addOnsDuration = dbAddOns.reduce(
+      (sum, item) => sum + item.additionalDuration,
+      0,
+    );
     const totalDuration = baseDuration + addOnsDuration;
-    const endBookingDate = new Date(startBookingDate.getTime() + totalDuration * 60000);
+    const endBookingDate = new Date(
+      startBookingDate.getTime() + totalDuration * 60000,
+    );
 
     const conflictingBooking = await prisma.booking.findFirst({
       where: {
@@ -274,21 +357,34 @@ export async function POST(request: Request) {
 
     if (conflictingBooking || conflictingBlock) {
       return Response.json(
-        { message: "Dieser Termin ist leider gerade vergeben worden. Bitte wähle eine andere Zeit." },
-        { status: 400 }
+        {
+          message:
+            "Dieser Termin ist leider gerade vergeben worden. Bitte wähle eine andere Zeit.",
+        },
+        { status: 400 },
       );
     }
 
-    const serviceNames = servicesByRequestOrder.map((service) => service.name).join(", ");
-    const addOnNames = dbAddOns.map((addOn) => addOn.name).join(", ") || "Keine";
+    const serviceNames = servicesByRequestOrder
+      .map((service) => service.name)
+      .join(", ");
+    const addOnNames =
+      dbAddOns.map((addOn) => addOn.name).join(", ") || "Keine";
     const internalNotes = [
       notes,
-      servicesByRequestOrder.length > 1 ? `Ausgewählte Leistungen: ${serviceNames}` : "",
-    ].filter(Boolean).join("\n\n");
+      servicesByRequestOrder.length > 1
+        ? `Ausgewählte Leistungen: ${serviceNames}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
 
     let createdBookingId = "";
     const estimatedTotal =
-      servicesByRequestOrder.reduce((sum, service) => sum + service.basePrice, 0) +
+      servicesByRequestOrder.reduce(
+        (sum, service) => sum + service.basePrice,
+        0,
+      ) +
       dbCategory.priceModifier +
       dbAddOns.reduce((sum, addOn) => sum + addOn.price, 0);
     const newInvoiceNumber = invoiceNumber();
@@ -326,13 +422,19 @@ export async function POST(request: Request) {
           `;
         }
       } catch (joinError) {
-        console.warn("Booking service join table is not available yet:", joinError);
+        console.warn(
+          "Booking service join table is not available yet:",
+          joinError,
+        );
       }
     } catch (createError) {
       if (isOverlapConstraintError(createError)) {
         return Response.json(
-          { message: "Dieser Termin ist leider gerade vergeben worden. Bitte wähle eine andere Zeit." },
-          { status: 400 }
+          {
+            message:
+              "Dieser Termin ist leider gerade vergeben worden. Bitte wähle eine andere Zeit.",
+          },
+          { status: 400 },
         );
       }
 
@@ -407,7 +509,13 @@ export async function POST(request: Request) {
       console.error("Failed to send admin alert email:", adminEmailError);
     }
 
-    const localizedCustomerEmail = customerTexts(language, name, newInvoiceNumber, estimatedTotal, summary);
+    const localizedCustomerEmail = customerTexts(
+      language,
+      name,
+      newInvoiceNumber,
+      estimatedTotal,
+      summary,
+    );
 
     try {
       await sendEmail({
@@ -418,13 +526,18 @@ export async function POST(request: Request) {
     } catch (customerEmailError) {
       console.warn(
         "Customer confirmation email could not be sent:",
-        customerEmailError instanceof Error ? customerEmailError.message : customerEmailError
+        customerEmailError instanceof Error
+          ? customerEmailError.message
+          : customerEmailError,
       );
     }
 
     return Response.json({ message: "Anfrage gesendet." });
   } catch (err) {
     console.error("Booking request failed:", err);
-    return Response.json({ message: "Fehler beim Verarbeiten der Anfrage." }, { status: 500 });
+    return Response.json(
+      { message: "Fehler beim Verarbeiten der Anfrage." },
+      { status: 500 },
+    );
   }
 }

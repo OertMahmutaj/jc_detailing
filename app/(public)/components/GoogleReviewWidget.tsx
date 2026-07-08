@@ -115,7 +115,7 @@ export function GoogleReviewWidget() {
             href={googleReviewsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Google Bewertungen auf Google Maps oeffnen"
+            aria-label="Google Bewertungen auf Google Maps öffnen"
           >
             G
           </a>
@@ -124,7 +124,7 @@ export function GoogleReviewWidget() {
             type="button"
             onClick={() => setOpen(true)}
             aria-expanded={open}
-            aria-label="Google Bewertungen oeffnen"
+            aria-label="Google Bewertungen öffnen"
           >
             <span className="google-rating">
               <strong>{rating.toFixed(1)}</strong>

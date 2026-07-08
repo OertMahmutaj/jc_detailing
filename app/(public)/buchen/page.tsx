@@ -11,12 +11,12 @@ export default function BookingPage() {
             <p className="eyebrow">Termin buchen</p>
           </HeroItem>
           <HeroItem>
-            <h1>Deine Anfrage fuer JC Detailing</h1>
+            <h1>Deine Anfrage für JC Detailing</h1>
           </HeroItem>
           <HeroItem>
             <p>
-              Schick uns die wichtigsten Angaben zu deinem Fahrzeug. Wir pruefen die Anfrage und
-              melden uns mit einer Terminbestaetigung oder einem passenden Vorschlag.
+              Schick uns die wichtigsten Angaben zu deinem Fahrzeug. Wir prüfen die Anfrage und
+              melden uns mit einer Terminbestätigung oder einem passenden Vorschlag.
             </p>
           </HeroItem>
         </HeroIntro>
@@ -27,8 +27,8 @@ export default function BookingPage() {
           <p className="mini-title">Anfrage</p>
           <h2>Fahrzeug, Leistung und Wunschdatum.</h2>
           <p>
-            Die Anfrage ist noch keine verbindliche Buchung. Du erhaeltst zuerst eine
-            Bestaetigung per E-Mail, sobald der Termin geprueft wurde.
+            Die Anfrage ist noch keine verbindliche Buchung. Du erhältst zuerst eine
+            Bestätigung per E-Mail, sobald der Termin geprüft wurde.
           </p>
         </div>
 

@@ -15,7 +15,7 @@ export default function GermanOffersPage() {
             <h1>Pakete & Preise</h1>
           </HeroItem>
           <HeroItem>
-            <p>Klare Einstiegspreise. Der finale Preis haengt von Fahrzeuggroesse und Zustand ab.</p>
+            <p>Klare Einstiegspreise. Der finale Preis hängt von Fahrzeuggrösse und Zustand ab.</p>
           </HeroItem>
         </HeroIntro>
       </section>

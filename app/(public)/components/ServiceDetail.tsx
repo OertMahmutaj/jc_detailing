@@ -88,7 +88,7 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
       </section>
 
       <LightReveal className="cta-band">
-        <h2>Bereit fuer {service.title}?</h2>
+        <h2>Bereit für {service.title}?</h2>
         <p>Schick uns dein Fahrzeugmodell, Zustand und Wunschdatum.</p>
         <Link href="/#contact">
           Kontakt aufnehmen

@@ -17,17 +17,17 @@ const navItems = [
       {
         label: "Innenreinigung",
         href: "/leistungen/innenreinigung",
-        text: "Tiefenpflege fuer Leder, Stoffe und Innenraumdetails.",
+        text: "Tiefenpflege für Leder, Stoffe und Innenraumdetails.",
       },
       {
         label: "Aussenreinigung",
         href: "/leistungen/aussenreinigung",
-        text: "Schonende Handwaesche, Felgenpflege und Schutzfinish.",
+        text: "Schonende Handwäsche, Felgenpflege und Schutzfinish.",
       },
       {
         label: "Politur",
         href: "/leistungen/politur",
-        text: "Mehr Tiefe, Schaerfe und Glanz fuer den Lack.",
+        text: "Mehr Tiefe, Schärfe und Glanz für den Lack.",
       },
       {
         label: "Keramikversiegelung",
@@ -231,7 +231,7 @@ export function Navbar() {
               className="language-button"
               type="button"
               onClick={() => setLanguageOpen((open) => !open)}
-              aria-label="Sprache waehlen"
+              aria-label="Sprache wählen"
               aria-expanded={languageOpen}
               whileTap={{ scale: 0.96 }}
             >
@@ -278,7 +278,7 @@ export function Navbar() {
             setMobileNavActive(true);
             setMobileOpen((open) => !open);
           }}
-          aria-label={mobileOpen ? "Menue schliessen" : "Menue oeffnen"}
+          aria-label={mobileOpen ? "Menue schliessen" : "Menue öffnen"}
           aria-expanded={mobileOpen}
           whileTap={{ scale: 0.94 }}
         >

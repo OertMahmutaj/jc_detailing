@@ -488,7 +488,7 @@ export function AdminCalendarClient({
 
           {!selectedBookings.length && !selectedBlocks.length && (
             <p className="admin-empty">
-              Keine Termine oder Sperren fuer diesen Tag.
+              Keine Termine oder Sperren für diesen Tag.
             </p>
           )}
         </div>

@@ -131,7 +131,7 @@ export default async function AdminClientsPage({
 
         <div className="admin-pagination">
           <Link aria-disabled={page <= 1} href={pageHref(Math.max(1, page - 1), query)}>
-            Zurueck
+            Zurück
           </Link>
           <span>
             Seite {page} von {totalPages}

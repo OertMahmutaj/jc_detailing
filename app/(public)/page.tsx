@@ -32,12 +32,12 @@ const faqs = [
   {
     question: "Was ist Car Detailing?",
     answer:
-      "Car Detailing ist eine praezise Fahrzeugaufbereitung, die deutlich weiter geht als eine normale Autowaesche. Innenraum, Lack, Felgen und Details werden gereinigt, gepflegt und geschuetzt.",
+      "Car Detailing ist eine präzise Fahrzeugaufbereitung, die deutlich weiter geht als eine normale Autowäsche. Innenraum, Lack, Felgen und Details werden gereinigt, gepflegt und geschützt.",
   },
   {
     question: "Bietet JC Detailing mobilen Service an?",
     answer:
-      "Aktuell finden alle Behandlungen in der Garage statt, damit Licht, Ausstattung und Arbeitsbedingungen fuer hochwertige Ergebnisse stimmen.",
+      "Aktuell finden alle Behandlungen in der Garage statt, damit Licht, Ausstattung und Arbeitsbedingungen für hochwertige Ergebnisse stimmen.",
   },
   {
     question: "Wie lange dauert ein Termin?",
@@ -45,7 +45,7 @@ const faqs = [
       "Je nach Zustand und Paket dauert eine Innenreinigung etwa 3 bis 8 Stunden, eine Komplettaufbereitung etwa 6 bis 10 Stunden und Lackkorrektur mit Versiegelung 1 bis 2 Tage.",
   },
   {
-    question: "Wie ist der Unterschied zwischen einer normalen Autowaesche und Detailing?",
+    question: "Wie ist der Unterschied zwischen einer normalen Autowäsche und Detailing?",
     answer: `Eine Autowäsche entfernt oberflächlichen Schmutz in kurzer Zeit.
   Car Detailing hingegen ist ein zeitintensiver, präziser Prozess, bei dem:
 
@@ -177,7 +177,7 @@ export default function Home() {
                 <ul>
                   <li>
                     <Check size={16} />
-                    Sorgfaeltige Fahrzeugkontrolle vor Beginn
+                    Sorgfältige Fahrzeugkontrolle vor Beginn
                   </li>
                   <li>
                     <Check size={16} />
@@ -211,7 +211,7 @@ export default function Home() {
             <h3>Saubere Arbeit, ruhige Hand, echter Anspruch.</h3>
 
             <p>
-              JC Detailing steht fuer professionelle Autoaufbereitung in der
+              JC Detailing steht für professionelle Autoaufbereitung in der
               Zentralschweiz. Ob Innenreinigung, Aussenreinigung, Politur oder
               Keramikversiegelung: jedes Fahrzeug wird mit Sorgfalt,
               hochwertigen Produkten und viel Liebe zum Detail behandelt.
@@ -272,10 +272,10 @@ export default function Home() {
         <LightReveal className="contact-panel">
           <div>
             <p className="mini-title">Kontakt</p>
-            <h2>Bereit fuer ein frisch aufbereitetes Fahrzeug?</h2>
+            <h2>Bereit für ein frisch aufbereitetes Fahrzeug?</h2>
             <p>
-              Termine sind auf Anfrage verfuegbar. Schick eine kurze Nachricht
-              mit Fahrzeug, gewuenschter Leistung und Wunschdatum.
+              Termine sind auf Anfrage verfügbar. Schick eine kurze Nachricht
+              mit Fahrzeug, gewünschter Leistung und Wunschdatum.
             </p>
           </div>
 
