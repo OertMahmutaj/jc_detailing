@@ -107,14 +107,489 @@ function getZurichMinutes(date: Date) {
   return hour * 60 + minute;
 }
 
-async function sendEmail({
-  to,
-  subject,
-  text,
-}: {
-  to: string;
+type BookingRequestEmailData = {
+  addOns: string;
+  clientEmail: string;
+  clientName: string;
+  clientPhone: string;
+  dateTime: Date;
+  durationMinutes: number;
+  endTime: Date;
+  notes?: string | null;
+  services: string;
+  vehicleCategory: string;
+  vehicleModel: string;
+};
+
+type EmailContent = {
   subject: string;
   text: string;
+  html: string;
+};
+
+function siteUrl() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.jcdetailing.ch"
+  ).replace(/\/$/, "");
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatEmailDate(value: Date) {
+  return new Intl.DateTimeFormat("de-CH", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Europe/Zurich",
+  }).format(value);
+}
+
+function formatEmailTime(value: Date) {
+  return new Intl.DateTimeFormat("de-CH", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Zurich",
+  }).format(value);
+}
+
+function formatEmailDuration(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+
+  if (!hours) return `${rest} Min.`;
+  if (!rest) return `${hours}h`;
+
+  return `${hours}h ${rest} Min.`;
+}
+
+function bookingRequestCopy(language: InvoiceLanguage) {
+  const copy = {
+    de: {
+      badge: "Terminanfrage erhalten",
+      subject: "JC Detailing - Terminanfrage erhalten",
+      intro:
+        "Danke für deine Anfrage bei JC Detailing. Deine Terminanfrage ist bei uns eingegangen.",
+      notice:
+        "Wichtig: Der Termin ist noch nicht bestätigt. Wir prüfen deine Anfrage und senden dir so schnell wie möglich eine separate Terminbestätigung per E-Mail.",
+      labels: {
+        date: "Datum",
+        time: "Uhrzeit",
+        services: "Leistung",
+        vehicle: "Fahrzeug",
+        category: "Fahrzeuggrösse",
+        addOns: "Zusatzleistungen",
+        duration: "Geschätzte Dauer",
+        name: "Name",
+        email: "E-Mail",
+        phone: "Telefon",
+        notes: "Hinweise",
+      },
+      greeting: "Freundliche Grüsse",
+      question:
+        "Bei Fragen oder Änderungen erreichst du uns per Telefon, WhatsApp oder E-Mail.",
+    },
+    en: {
+      badge: "Request received",
+      subject: "JC Detailing - Appointment request received",
+      intro:
+        "Thank you for your request with JC Detailing. We have received your appointment request.",
+      notice:
+        "Important: Your appointment is not confirmed yet. We will review your request and send you a separate confirmation email as soon as possible.",
+      labels: {
+        date: "Date",
+        time: "Time",
+        services: "Service",
+        vehicle: "Vehicle",
+        category: "Vehicle size",
+        addOns: "Add-ons",
+        duration: "Estimated duration",
+        name: "Name",
+        email: "Email",
+        phone: "Phone",
+        notes: "Notes",
+      },
+      greeting: "Kind regards",
+      question:
+        "For questions or changes, you can reach us by phone, WhatsApp or email.",
+    },
+    fr: {
+      badge: "Demande reçue",
+      subject: "JC Detailing - Demande de rendez-vous reçue",
+      intro:
+        "Merci pour votre demande chez JC Detailing. Nous avons bien reçu votre demande de rendez-vous.",
+      notice:
+        "Important : le rendez-vous n’est pas encore confirmé. Nous vérifions votre demande et vous enverrons une confirmation séparée par e-mail dès que possible.",
+      labels: {
+        date: "Date",
+        time: "Heure",
+        services: "Service",
+        vehicle: "Véhicule",
+        category: "Taille du véhicule",
+        addOns: "Services supplémentaires",
+        duration: "Durée estimée",
+        name: "Nom",
+        email: "E-mail",
+        phone: "Téléphone",
+        notes: "Remarques",
+      },
+      greeting: "Meilleures salutations",
+      question:
+        "Pour toute question ou modification, vous pouvez nous contacter par téléphone, WhatsApp ou e-mail.",
+    },
+    it: {
+      badge: "Richiesta ricevuta",
+      subject: "JC Detailing - Richiesta appuntamento ricevuta",
+      intro:
+        "Grazie per la tua richiesta presso JC Detailing. Abbiamo ricevuto la tua richiesta di appuntamento.",
+      notice:
+        "Importante: l’appuntamento non è ancora confermato. Controlleremo la tua richiesta e ti invieremo una conferma separata via e-mail il prima possibile.",
+      labels: {
+        date: "Data",
+        time: "Orario",
+        services: "Servizio",
+        vehicle: "Veicolo",
+        category: "Dimensione veicolo",
+        addOns: "Servizi aggiuntivi",
+        duration: "Durata stimata",
+        name: "Nome",
+        email: "E-mail",
+        phone: "Telefono",
+        notes: "Note",
+      },
+      greeting: "Cordiali saluti",
+      question:
+        "Per domande o modifiche puoi contattarci via telefono, WhatsApp o e-mail.",
+    },
+  } as const;
+
+  return copy[language];
+}
+
+function buildBookingRequestRows(
+  language: InvoiceLanguage,
+  details: BookingRequestEmailData,
+) {
+  const copy = bookingRequestCopy(language);
+
+  const rows = [
+    [copy.labels.date, formatEmailDate(details.dateTime)],
+    [
+      copy.labels.time,
+      `${formatEmailTime(details.dateTime)}–${formatEmailTime(
+        details.endTime,
+      )} Uhr`,
+    ],
+    [copy.labels.services, details.services],
+    [copy.labels.vehicle, details.vehicleModel],
+    [copy.labels.category, details.vehicleCategory],
+    [copy.labels.addOns, details.addOns],
+    [copy.labels.duration, formatEmailDuration(details.durationMinutes)],
+    [copy.labels.name, details.clientName],
+    [copy.labels.email, details.clientEmail],
+    [copy.labels.phone, details.clientPhone],
+  ];
+
+  if (details.notes?.trim()) {
+    rows.push([copy.labels.notes, details.notes.trim()]);
+  }
+
+  return rows;
+}
+
+function bookingRequestDetailsText(
+  language: InvoiceLanguage,
+  details: BookingRequestEmailData,
+) {
+  return buildBookingRequestRows(language, details)
+    .map(([label, value]) => `${label}: ${value}`)
+    .join("\n");
+}
+
+function bookingRequestDetailsHtml(
+  language: InvoiceLanguage,
+  details: BookingRequestEmailData,
+) {
+  return buildBookingRequestRows(language, details)
+    .map(
+      ([label, value]) => `
+        <tr>
+          <td style="padding:12px 0;color:#8f98a8;font-size:14px;border-bottom:1px solid #202633;">${escapeHtml(
+            label,
+          )}</td>
+          <td style="padding:12px 0;color:#ffffff;font-size:14px;font-weight:600;text-align:right;border-bottom:1px solid #202633;">${escapeHtml(
+            value,
+          )}</td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
+function bookingRequestReceivedEmail(
+  language: InvoiceLanguage,
+  details: BookingRequestEmailData,
+): EmailContent {
+  const copy = bookingRequestCopy(language);
+  const baseUrl = siteUrl();
+  const logoUrl = `${baseUrl}/logo.png`;
+
+  const text =
+    `${copy.subject}\n\n` +
+    `${copy.intro}\n\n` +
+    `${copy.notice}\n\n` +
+    `${bookingRequestDetailsText(language, details)}\n\n` +
+    `${copy.greeting}\nJC Detailing\n` +
+    "Sternmatt 4, 6242 Wauwil\n" +
+    "+41 77 268 33 88\n" +
+    "jcdetailinglucerne@gmail.com";
+
+  const html = `
+    <!doctype html>
+    <html>
+      <body style="margin:0;background:#05070b;padding:0;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#05070b;padding:32px 14px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#0b0f17;border:1px solid #202633;border-radius:18px;overflow:hidden;">
+                <tr>
+                  <td style="padding:28px 28px 18px;text-align:center;background:linear-gradient(135deg,#111827,#05070b);">
+                    <img src="${logoUrl}" alt="JC Detailing" width="150" style="display:block;margin:0 auto 18px;max-width:150px;height:auto;" />
+
+                    <div style="display:inline-block;padding:7px 12px;border-radius:999px;background:rgba(212,175,55,0.12);color:#d4af37;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;">
+                      ${escapeHtml(copy.badge)}
+                    </div>
+
+                    <h1 style="margin:18px 0 10px;font-size:28px;line-height:1.2;color:#ffffff;">
+                      ${escapeHtml(copy.subject)}
+                    </h1>
+
+                    <p style="margin:0;color:#c7ccd6;font-size:15px;line-height:1.7;">
+                      ${escapeHtml(copy.intro)}
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:8px 28px 28px;">
+                    <div style="margin:18px 0 26px;padding:18px;border-radius:10px;background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.28);">
+                      <p style="margin:0;color:#f6e7b8;font-size:14px;line-height:1.7;">
+                        ${escapeHtml(copy.notice)}
+                      </p>
+                    </div>
+
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                      ${bookingRequestDetailsHtml(language, details)}
+                    </table>
+
+                    <div style="margin-top:28px;padding:18px;border-radius:10px;background:#111827;border:1px solid #263041;">
+                      <p style="margin:0;color:#c7ccd6;font-size:14px;line-height:1.7;">
+                        ${escapeHtml(copy.question)}
+                      </p>
+                    </div>
+
+                    <p style="margin:28px 0 0;color:#ffffff;font-size:15px;line-height:1.7;">
+                      ${escapeHtml(copy.greeting)}<br />
+                      <strong>JC Detailing</strong>
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:20px 28px;background:#070a10;border-top:1px solid #202633;color:#8f98a8;font-size:12px;line-height:1.7;text-align:center;">
+                    JC Detailing · Sternmatt 4, 6242 Wauwil · +41 77 268 33 88 · jcdetailinglucerne@gmail.com
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+
+  return {
+    subject: copy.subject,
+    text,
+    html,
+  };
+}
+
+function adminBookingEmail({
+  addOns,
+  bookingId,
+  clientEmail,
+  clientName,
+  clientPhone,
+  dateTime,
+  durationMinutes,
+  endTime,
+  notes,
+  services,
+  vehicleCategory,
+  vehicleModel,
+}: BookingRequestEmailData & {
+  bookingId: string;
+}): EmailContent {
+  const baseUrl = siteUrl();
+  const bookingUrl = `${baseUrl}/admin/bookings/${bookingId}`;
+  const confirmUrl = `${bookingUrl}?action=confirm`;
+  const rescheduleUrl = `${bookingUrl}?action=reschedule`;
+  const cancelUrl = `${bookingUrl}?action=cancel`;
+  const logoUrl = `${baseUrl}/logo.png`;
+
+  const rows = [
+    ["Name", clientName],
+    ["E-Mail", clientEmail],
+    ["Telefon", clientPhone],
+    ["Datum", formatEmailDate(dateTime)],
+    ["Uhrzeit", `${formatEmailTime(dateTime)}–${formatEmailTime(endTime)} Uhr`],
+    ["Leistung", services],
+    ["Fahrzeug", vehicleModel],
+    ["Fahrzeuggrösse", vehicleCategory],
+    ["Zusatzleistungen", addOns],
+    ["Geschätzte Dauer", formatEmailDuration(durationMinutes)],
+  ];
+
+  if (notes?.trim()) {
+    rows.push(["Hinweise", notes.trim()]);
+  }
+
+  const detailsText = rows
+    .map(([label, value]) => `${label}: ${value}`)
+    .join("\n");
+
+  const detailsHtml = rows
+    .map(
+      ([label, value]) => `
+        <tr>
+          <td style="padding:12px 0;color:#8f98a8;font-size:14px;border-bottom:1px solid #202633;">
+            ${escapeHtml(label)}
+          </td>
+          <td style="padding:12px 0;color:#ffffff;font-size:14px;font-weight:600;text-align:right;border-bottom:1px solid #202633;">
+            ${escapeHtml(value)}
+          </td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  const subject = `Neue Buchungsanfrage: ${services}`;
+
+  const text =
+    `${subject}\n\n` +
+    `${detailsText}\n\n` +
+    `Buchung öffnen: ${bookingUrl}\n` +
+    `Bestätigen: ${confirmUrl}\n` +
+    `Termin ändern: ${rescheduleUrl}\n` +
+    `Stornieren: ${cancelUrl}`;
+
+  const buttonStyle =
+    "display:inline-block;margin:0 8px 10px 0;padding:12px 16px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:800;line-height:1.2;text-align:center;";
+
+  const html = `
+    <!doctype html>
+    <html>
+      <body style="margin:0;background:#05070b;padding:0;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#05070b;padding:32px 14px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#0b0f17;border:1px solid #202633;border-radius:18px;overflow:hidden;">
+                <tr>
+                  <td style="padding:28px;text-align:center;background:linear-gradient(135deg,#111827,#05070b);">
+                    <img src="${logoUrl}" alt="JC Detailing" width="150" style="display:block;margin:0 auto 18px;max-width:150px;height:auto;" />
+
+                    <div style="display:inline-block;padding:7px 12px;border-radius:999px;background:rgba(212,175,55,0.12);color:#d4af37;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;">
+                      Neue Buchungsanfrage
+                    </div>
+
+                    <h1 style="margin:18px 0 10px;font-size:28px;line-height:1.2;color:#ffffff;">
+                      Neue Anfrage von ${escapeHtml(clientName)}
+                    </h1>
+
+                    <p style="margin:0;color:#c7ccd6;font-size:15px;line-height:1.7;">
+                      Eine neue Terminanfrage wurde über die Website eingereicht.
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:26px 28px 10px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:22px;">
+  <tr>
+    <td style="padding:0 8px 10px 0;">
+      <a href="${bookingUrl}" style="${buttonStyle}display:block;background:#f15a24;color:#ffffff;">
+        Buchung öffnen
+      </a>
+    </td>
+    <td style="padding:0 0 10px 0;">
+      <a href="${confirmUrl}" style="${buttonStyle}display:block;background:#10351f;color:#4ade80;border:1px solid #1f7a44;">
+        Bestätigen
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:0 8px 0 0;">
+      <a href="${rescheduleUrl}" style="${buttonStyle}display:block;background:#10243f;color:#60a5fa;border:1px solid #285f9e;">
+        Termin ändern
+      </a>
+    </td>
+    <td style="padding:0;">
+      <a href="${cancelUrl}" style="${buttonStyle}display:block;background:#3a1518;color:#f87171;border:1px solid #8a3038;">
+        Stornieren
+      </a>
+    </td>
+  </tr>
+</table>
+
+                    <div style="margin:0 0 24px;padding:16px;border-radius:14px;background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.24);">
+                      <p style="margin:0;color:#f6e7b8;font-size:14px;line-height:1.7;">
+                        Die Buttons öffnen die Admin-Seite. Die Buchung wird nicht direkt aus der E-Mail geändert.
+                      </p>
+                    </div>
+
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                      ${detailsHtml}
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:20px 28px;background:#070a10;border-top:1px solid #202633;color:#8f98a8;font-size:12px;line-height:1.7;text-align:center;">
+                    JC Detailing Admin · ${escapeHtml(bookingId)}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+
+  return {
+    subject,
+    text,
+    html,
+  };
+}
+
+async function sendEmail({
+  html,
+  subject,
+  text,
+  to,
+}: {
+  html?: string;
+  subject: string;
+  text: string;
+  to: string;
 }) {
   const key = process.env.RESEND_API_KEY;
 
@@ -136,6 +611,7 @@ async function sendEmail({
       to,
       subject,
       text,
+      ...(html ? { html } : {}),
     }),
   });
 
@@ -145,58 +621,9 @@ async function sendEmail({
       typeof errorData?.message === "string"
         ? errorData.message
         : "Email provider rejected the request";
+
     throw new Error(providerMessage);
   }
-}
-
-function invoiceNumber() {
-  return `RE-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
-}
-
-function customerTexts(
-  language: InvoiceLanguage,
-  name: string,
-  invoice: string,
-  total: number,
-  summary: string,
-) {
-  const formattedTotal = `CHF ${total.toFixed(2)}`;
-  const texts = {
-    de: {
-      subject: "JC Detailing - Buchung erhalten",
-      body:
-        `Hallo ${name}\n\n` +
-        "Danke für deine Buchung bei JC Detailing. Deine Anfrage ist bei uns eingegangen.\n\n" +
-        `Deine Angaben:\n\n${summary}\n\n` +
-        "Freundliche Gruesse\nJC Detailing",
-    },
-    en: {
-      subject: "JC Detailing - Booking received",
-      body:
-        `Hello ${name}\n\n` +
-        "Thank you for your booking with JC Detailing. We have received your request.\n\n" +
-        `Your details:\n\n${summary}\n\n` +
-        "Kind regards\nJC Detailing",
-    },
-    fr: {
-      subject: "JC Detailing - Reservation recues",
-      body:
-        `Bonjour ${name}\n\n` +
-        "Merci pour votre reservation chez JC Detailing. Nous avons bien recu votre demande.\n\n" +
-        `Vos informations:\n\n${summary}\n\n` +
-        "Meilleures salutations\nJC Detailing",
-    },
-    it: {
-      subject: "JC Detailing - Prenotazione ricevuta",
-      body:
-        `Ciao ${name}\n\n` +
-        "Grazie per la tua prenotazione presso JC Detailing. Abbiamo ricevuto la tua richiesta.\n\n" +
-        `I tuoi dati:\n\n${summary}\n\n` +
-        "Cordiali saluti\nJC Detailing",
-    },
-  } as const;
-
-  return texts[language];
 }
 
 export async function POST(request: Request) {
@@ -387,13 +814,14 @@ export async function POST(request: Request) {
       ) +
       dbCategory.priceModifier +
       dbAddOns.reduce((sum, addOn) => sum + addOn.price, 0);
-    const newInvoiceNumber = invoiceNumber();
+    // const newInvoiceNumber = invoiceNumber();
 
     try {
       const createdBooking = await prisma.booking.create({
         data: {
           dateTime: startBookingDate,
           endTime: endBookingDate,
+          language,
           vehicleModel,
           notes: internalNotes,
           imageUrls: [],
@@ -441,49 +869,49 @@ export async function POST(request: Request) {
       throw createError;
     }
 
-    const invoice = await prisma.invoice.create({
-      data: {
-        bookingId: createdBookingId,
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        emailOverride: email,
-        invoiceNumber: newInvoiceNumber,
-        language,
-        sentAt: new Date(),
-        status: "SENT",
-        totalAmount: estimatedTotal,
-        vatRate: 8.1,
-      },
-    });
+    // const invoice = await prisma.invoice.create({
+    //   data: {
+    //     bookingId: createdBookingId,
+    //     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    //     emailOverride: email,
+    //     invoiceNumber: newInvoiceNumber,
+    //     language,
+    //     sentAt: new Date(),
+    //     status: "SENT",
+    //     totalAmount: estimatedTotal,
+    //     vatRate: 8.1,
+    //   },
+    // });
 
-    await prisma.invoiceItem.createMany({
-      data: [
-        ...servicesByRequestOrder.map((service) => ({
-          description: service.name,
-          invoiceId: invoice.id,
-          pricePerUnit: service.basePrice,
-          quantity: 1,
-          unit: "Stk.",
-        })),
-        ...(dbCategory.priceModifier > 0
-          ? [
-              {
-                description: `Fahrzeuggroesse: ${dbCategory.name}`,
-                invoiceId: invoice.id,
-                pricePerUnit: dbCategory.priceModifier,
-                quantity: 1,
-                unit: "Stk.",
-              },
-            ]
-          : []),
-        ...dbAddOns.map((addOn) => ({
-          description: addOn.name,
-          invoiceId: invoice.id,
-          pricePerUnit: addOn.price,
-          quantity: 1,
-          unit: "Stk.",
-        })),
-      ],
-    });
+    // await prisma.invoiceItem.createMany({
+    //   data: [
+    //     ...servicesByRequestOrder.map((service) => ({
+    //       description: service.name,
+    //       invoiceId: invoice.id,
+    //       pricePerUnit: service.basePrice,
+    //       quantity: 1,
+    //       unit: "Stk.",
+    //     })),
+    //     ...(dbCategory.priceModifier > 0
+    //       ? [
+    //           {
+    //             description: `Fahrzeuggroesse: ${dbCategory.name}`,
+    //             invoiceId: invoice.id,
+    //             pricePerUnit: dbCategory.priceModifier,
+    //             quantity: 1,
+    //             unit: "Stk.",
+    //           },
+    //         ]
+    //       : []),
+    //     ...dbAddOns.map((addOn) => ({
+    //       description: addOn.name,
+    //       invoiceId: invoice.id,
+    //       pricePerUnit: addOn.price,
+    //       quantity: 1,
+    //       unit: "Stk.",
+    //     })),
+    //   ],
+    // });
 
     const summary = [
       `Name: ${name}`,
@@ -499,33 +927,56 @@ export async function POST(request: Request) {
       `Hinweise/Nachricht: ${notes || "-"}`,
     ].join("\n");
 
+    const adminEmail = adminBookingEmail({
+      addOns: addOnNames,
+      bookingId: createdBookingId,
+      clientEmail: email,
+      clientName: name,
+      clientPhone: phone,
+      dateTime: startBookingDate,
+      durationMinutes: totalDuration,
+      endTime: endBookingDate,
+      notes: notes || null,
+      services: serviceNames,
+      vehicleCategory: dbCategory.name,
+      vehicleModel,
+    });
+
     try {
       await sendEmail({
         to: ownerEmail,
-        subject: `Neue Buchungsanfrage: ${serviceNames}`,
-        text: `Eine neue Buchungsanfrage wurde eingereicht:\n\n${summary}`,
+        subject: adminEmail.subject,
+        text: adminEmail.text,
+        html: adminEmail.html,
       });
     } catch (adminEmailError) {
       console.error("Failed to send admin alert email:", adminEmailError);
     }
 
-    const localizedCustomerEmail = customerTexts(
-      language,
-      name,
-      newInvoiceNumber,
-      estimatedTotal,
-      summary,
-    );
+    const customerRequestEmail = bookingRequestReceivedEmail(language, {
+      addOns: addOnNames,
+      clientEmail: email,
+      clientName: name,
+      clientPhone: phone,
+      dateTime: startBookingDate,
+      durationMinutes: totalDuration,
+      endTime: endBookingDate,
+      notes: notes || null,
+      services: serviceNames,
+      vehicleCategory: dbCategory.name,
+      vehicleModel,
+    });
 
     try {
       await sendEmail({
         to: email,
-        subject: localizedCustomerEmail.subject,
-        text: localizedCustomerEmail.body,
+        subject: customerRequestEmail.subject,
+        text: customerRequestEmail.text,
+        html: customerRequestEmail.html,
       });
     } catch (customerEmailError) {
       console.warn(
-        "Customer confirmation email could not be sent:",
+        "Customer request email could not be sent:",
         customerEmailError instanceof Error
           ? customerEmailError.message
           : customerEmailError,

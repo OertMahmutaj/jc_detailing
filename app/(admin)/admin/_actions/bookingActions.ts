@@ -73,19 +73,23 @@ function readablePrismaError(error: unknown) {
   return "Die Änderung konnte nicht gespeichert werden. Bitte versuche es erneut.";
 }
 
-function cleanLanguage(value: FormDataEntryValue | null): InvoiceLanguage {
+function normalizeLanguage(value: unknown): InvoiceLanguage {
   return value === "en" || value === "fr" || value === "it" ? value : "de";
+}
+
+function cleanLanguage(value: FormDataEntryValue | null): InvoiceLanguage {
+  return normalizeLanguage(value);
 }
 
 function buildDateTime(date: string, time: string) {
   return new Date(`${date}T${time}:00`);
 }
 
-function invoiceNumber() {
-  return `RE-${Date.now().toString().slice(-6)}-${Math.floor(
-    100 + Math.random() * 900,
-  )}`;
-}
+// function invoiceNumber() {
+//   return `RE-${Date.now().toString().slice(-6)}-${Math.floor(
+//     100 + Math.random() * 900,
+//   )}`;
+// }
 
 function formatDateTime(value: Date) {
   return new Intl.DateTimeFormat("de-CH", {
@@ -113,55 +117,426 @@ function getNameList(items: { name: string }[]) {
   return items.length ? items.map((item) => item.name).join(", ") : "Keine";
 }
 
-async function sendEmail(to: string, subject: string, text: string) {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return;
+type BookingEmailData = {
+  addOns: string;
+  clientEmail: string;
+  clientName: string;
+  clientPhone: string;
+  dateTime: Date;
+  endTime: Date;
+  notes?: string | null;
+  services: string;
+  totalAmount?: number;
+  vehicleCategory: string;
+  vehicleModel: string;
+};
 
-  await fetch("https://api.resend.com/emails", {
-    body: JSON.stringify({
-      from:
-        process.env.BOOKING_FROM_EMAIL ??
-        "JC Detailing <onboarding@resend.dev>",
-      subject,
-      text,
-      to,
-    }),
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-    method: "POST",
-  }).catch((error) => console.warn("Admin booking email failed:", error));
+type EmailContent = {
+  subject: string;
+  text: string;
+  html: string;
+};
+
+function siteUrl() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.jcdetailing.ch"
+  ).replace(/\/$/, "");
 }
 
-function customerText(
-  language: InvoiceLanguage,
-  name: string,
-  invoice: string,
-  total: number,
-) {
-  const amount = `CHF ${total.toFixed(2)}`;
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
-  const texts = {
+function formatDate(value: Date) {
+  return new Intl.DateTimeFormat("de-CH", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Europe/Zurich",
+  }).format(value);
+}
+
+function formatTime(value: Date) {
+  return new Intl.DateTimeFormat("de-CH", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Zurich",
+  }).format(value);
+}
+
+function formatCurrency(value: number) {
+  return `CHF ${value.toFixed(2)}`;
+}
+
+function buildBookingRows(details: BookingEmailData) {
+  const rows = [
+    ["Datum", formatDate(details.dateTime)],
+    [
+      "Uhrzeit",
+      `${formatTime(details.dateTime)}–${formatTime(details.endTime)} Uhr`,
+    ],
+    ["Leistung", details.services],
+    ["Fahrzeug", details.vehicleModel],
+    ["Fahrzeuggrösse", details.vehicleCategory],
+    ["Zusatzleistungen", details.addOns],
+    ["Name", details.clientName],
+    ["E-Mail", details.clientEmail],
+    ["Telefon", details.clientPhone],
+  ];
+
+  if (typeof details.totalAmount === "number") {
+    rows.push(["Geschätzter Preis", formatCurrency(details.totalAmount)]);
+  }
+
+  if (details.notes?.trim()) {
+    rows.push(["Hinweise", details.notes.trim()]);
+  }
+
+  return rows;
+}
+
+function bookingDetailsText(details: BookingEmailData) {
+  return buildBookingRows(details)
+    .map(([label, value]) => `${label}: ${value}`)
+    .join("\n");
+}
+
+function bookingDetailsHtml(details: BookingEmailData) {
+  return buildBookingRows(details)
+    .map(
+      ([label, value]) => `
+        <tr>
+          <td style="padding:12px 0;color:#8f98a8;font-size:14px;border-bottom:1px solid #202633;">${escapeHtml(label)}</td>
+          <td style="padding:12px 0;color:#ffffff;font-size:14px;font-weight:600;text-align:right;border-bottom:1px solid #202633;">${escapeHtml(value)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
+function renderBookingEmail({
+  badge,
+  details,
+  intro,
+  subject,
+}: {
+  badge: string;
+  details: BookingEmailData;
+  intro: string;
+  subject: string;
+}): EmailContent {
+  const baseUrl = siteUrl();
+  const logoUrl = `${baseUrl}/logo.png`;
+
+  const text =
+    `${subject}\n\n` +
+    `${intro}\n\n` +
+    `${bookingDetailsText(details)}\n\n` +
+    "Freundliche Grüsse\nJC Detailing\n" +
+    "Sternmatt 4, 6242 Wauwil\n" +
+    "+41 77 268 33 88\n" +
+    "jcdetailinglucerne@gmail.com";
+
+  const html = `
+    <!doctype html>
+    <html>
+      <body style="margin:0;background:#05070b;padding:0;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#05070b;padding:32px 14px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#0b0f17;border:1px solid #202633;border-radius:24px;overflow:hidden;">
+                <tr>
+                  <td style="padding:28px 28px 18px;text-align:center;background:linear-gradient(135deg,#111827,#05070b);">
+                    <img src="${logoUrl}" alt="JC Detailing" width="150" style="display:block;margin:0 auto 18px;max-width:150px;height:auto;" />
+                    <div style="display:inline-block;padding:7px 12px;border-radius:999px;background:rgba(212,175,55,0.12);color:#d4af37;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;">
+                      ${escapeHtml(badge)}
+                    </div>
+                    <h1 style="margin:18px 0 10px;font-size:28px;line-height:1.2;color:#ffffff;">
+                      ${escapeHtml(subject)}
+                    </h1>
+                    <p style="margin:0;color:#c7ccd6;font-size:15px;line-height:1.7;">
+                      ${escapeHtml(intro)}
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:8px 28px 28px;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                      ${bookingDetailsHtml(details)}
+                    </table>
+
+                    <div style="margin-top:28px;padding:18px;border-radius:18px;background:#111827;border:1px solid #263041;">
+                      <p style="margin:0;color:#c7ccd6;font-size:14px;line-height:1.7;">
+                        Bei Fragen oder Änderungen erreichst du uns per Telefon, WhatsApp oder E-Mail.
+                      </p>
+                    </div>
+
+                    <p style="margin:28px 0 0;color:#ffffff;font-size:15px;line-height:1.7;">
+                      Freundliche Grüsse<br />
+                      <strong>JC Detailing</strong>
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:20px 28px;background:#070a10;border-top:1px solid #202633;color:#8f98a8;font-size:12px;line-height:1.7;text-align:center;">
+                    JC Detailing · Sternmatt 4, 6242 Wauwil · +41 77 268 33 88 · jcdetailinglucerne@gmail.com
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+
+  return {
+    subject,
+    text,
+    html,
+  };
+}
+function bookingConfirmedCopy(language: InvoiceLanguage) {
+  const copy = {
     de: {
-      subject: `JC Detailing - Buchung ${invoice}`,
-      text: `Hallo ${name}\n\nDeine Buchung wurde erstellt.\n\nRechnung: ${invoice}\nBetrag: ${amount}\n\nFreundliche Gruesse\nJC Detailing`,
+      badge: "Termin bestätigt",
+      subject: "Dein Termin bei JC Detailing ist bestätigt",
+      intro:
+        "Deine Terminanfrage wurde geprüft und bestätigt. Unten findest du alle wichtigen Angaben zu deinem Termin.",
     },
     en: {
-      subject: `JC Detailing - Booking ${invoice}`,
-      text: `Hello ${name}\n\nYour booking has been created.\n\nInvoice: ${invoice}\nAmount: ${amount}\n\nKind regards\nJC Detailing`,
+      badge: "Appointment confirmed",
+      subject: "Your appointment with JC Detailing is confirmed",
+      intro:
+        "Your appointment request has been reviewed and confirmed. Below you will find all important details for your appointment.",
     },
     fr: {
-      subject: `JC Detailing - Reservation ${invoice}`,
-      text: `Bonjour ${name}\n\nVotre reservation a ete creee.\n\nFacture: ${invoice}\nMontant: ${amount}\n\nMeilleures salutations\nJC Detailing`,
+      badge: "Rendez-vous confirmé",
+      subject: "Votre rendez-vous chez JC Detailing est confirmé",
+      intro:
+        "Votre demande de rendez-vous a été vérifiée et confirmée. Vous trouverez ci-dessous tous les détails importants.",
     },
     it: {
-      subject: `JC Detailing - Prenotazione ${invoice}`,
-      text: `Ciao ${name}\n\nLa tua prenotazione e stata creata.\n\nFattura: ${invoice}\nImporto: ${amount}\n\nCordiali saluti\nJC Detailing`,
+      badge: "Appuntamento confermato",
+      subject: "Il tuo appuntamento da JC Detailing è confermato",
+      intro:
+        "La tua richiesta di appuntamento è stata controllata e confermata. Qui sotto trovi tutti i dettagli importanti.",
     },
   } as const;
 
-  return texts[language];
+  return copy[language];
+}
+
+function bookingConfirmedEmail(
+  language: InvoiceLanguage,
+  details: BookingEmailData,
+) {
+  const copy = bookingConfirmedCopy(language);
+
+  return renderBookingEmail({
+    badge: copy.badge,
+    subject: copy.subject,
+    intro: copy.intro,
+    details,
+  });
+}
+function bookingCancelledCopy(language: InvoiceLanguage) {
+  const copy = {
+    de: {
+      badge: "Termin storniert",
+      subject: "Dein Termin bei JC Detailing wurde storniert",
+      intro:
+        "Dein Termin bei JC Detailing wurde storniert. Unten findest du die Angaben zur stornierten Buchung.",
+    },
+    en: {
+      badge: "Appointment cancelled",
+      subject: "Your appointment with JC Detailing has been cancelled",
+      intro:
+        "Your appointment with JC Detailing has been cancelled. Below you will find the details of the cancelled booking.",
+    },
+    fr: {
+      badge: "Rendez-vous annulé",
+      subject: "Votre rendez-vous chez JC Detailing a été annulé",
+      intro:
+        "Votre rendez-vous chez JC Detailing a été annulé. Vous trouverez ci-dessous les détails de la réservation annulée.",
+    },
+    it: {
+      badge: "Appuntamento annullato",
+      subject: "Il tuo appuntamento da JC Detailing è stato annullato",
+      intro:
+        "Il tuo appuntamento da JC Detailing è stato annullato. Qui sotto trovi i dettagli della prenotazione annullata.",
+    },
+  } as const;
+
+  return copy[language];
+}
+
+function bookingCancelledEmail(
+  language: InvoiceLanguage,
+  details: BookingEmailData,
+) {
+  const copy = bookingCancelledCopy(language);
+
+  return renderBookingEmail({
+    badge: copy.badge,
+    subject: copy.subject,
+    intro: copy.intro,
+    details,
+  });
+}
+
+function bookingUpdatedCopy(language: InvoiceLanguage) {
+  const copy = {
+    de: {
+      badge: "Termin aktualisiert",
+      subject: "Dein Termin bei JC Detailing wurde aktualisiert",
+      intro:
+        "Dein bestätigter Termin wurde aktualisiert. Unten findest du die neuen Termindaten.",
+    },
+    en: {
+      badge: "Appointment updated",
+      subject: "Your appointment with JC Detailing has been updated",
+      intro:
+        "Your confirmed appointment has been updated. Below you will find the new appointment details.",
+    },
+    fr: {
+      badge: "Rendez-vous mis à jour",
+      subject: "Votre rendez-vous chez JC Detailing a été mis à jour",
+      intro:
+        "Votre rendez-vous confirmé a été mis à jour. Vous trouverez ci-dessous les nouvelles informations.",
+    },
+    it: {
+      badge: "Appuntamento aggiornato",
+      subject: "Il tuo appuntamento da JC Detailing è stato aggiornato",
+      intro:
+        "Il tuo appuntamento confermato è stato aggiornato. Qui sotto trovi i nuovi dettagli.",
+    },
+  } as const;
+
+  return copy[language];
+}
+
+function bookingUpdatedEmail(
+  language: InvoiceLanguage,
+  details: BookingEmailData,
+) {
+  const copy = bookingUpdatedCopy(language);
+
+  return renderBookingEmail({
+    badge: copy.badge,
+    subject: copy.subject,
+    intro: copy.intro,
+    details,
+  });
+}
+
+async function sendEmail({
+  html,
+  subject,
+  text,
+  to,
+}: {
+  html: string;
+  subject: string;
+  text: string;
+  to: string;
+}): Promise<boolean> {
+  const key = process.env.RESEND_API_KEY;
+
+  if (!key) {
+    console.warn("RESEND_API_KEY is missing. Email was not sent.");
+    return false;
+  }
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      body: JSON.stringify({
+        from:
+          process.env.BOOKING_FROM_EMAIL ??
+          "JC Detailing <onboarding@resend.dev>",
+        html,
+        subject,
+        text,
+        to,
+      }),
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn("Booking email failed:", errorText);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.warn("Booking email request failed:", error);
+    return false;
+  }
+}
+
+function selectedBookingServices(booking: {
+  service: { name: string; basePrice: number };
+  services: { name: string; basePrice: number }[];
+}) {
+  return booking.services.length ? booking.services : [booking.service];
+}
+
+function bookingEmailDetails(booking: {
+  addOns: { name: string; price: number }[];
+  client: {
+    email: string;
+    name: string;
+    phone: string;
+  };
+  dateTime: Date;
+  endTime: Date;
+  notes?: string | null;
+  service: {
+    name: string;
+    basePrice: number;
+  };
+  services: {
+    name: string;
+    basePrice: number;
+  }[];
+  vehicleCategory: {
+    name: string;
+    priceModifier: number;
+  };
+  vehicleModel: string;
+}): BookingEmailData {
+  const services = selectedBookingServices(booking);
+
+  const totalAmount =
+    services.reduce((sum, service) => sum + service.basePrice, 0) +
+    booking.vehicleCategory.priceModifier +
+    booking.addOns.reduce((sum, addOn) => sum + addOn.price, 0);
+
+  return {
+    addOns: getNameList(booking.addOns),
+    clientEmail: booking.client.email,
+    clientName: booking.client.name,
+    clientPhone: booking.client.phone,
+    dateTime: booking.dateTime,
+    endTime: booking.endTime,
+    services: getNameList(services),
+    totalAmount,
+    vehicleCategory: booking.vehicleCategory.name,
+    vehicleModel: booking.vehicleModel,
+    notes: booking.notes || null,
+  };
 }
 
 /*
@@ -313,6 +688,7 @@ export async function createAdminBooking(formData: FormData): Promise<{
         endTime,
         imageUrls: [],
         status: "CONFIRMED",
+        language,
         vehicleModel,
         client: selectedClient
           ? {
@@ -362,60 +738,71 @@ export async function createAdminBooking(formData: FormData): Promise<{
       category.priceModifier +
       addOns.reduce((sum, addOn) => sum + addOn.price, 0);
 
-    const number = invoiceNumber();
+    // const number = invoiceNumber();
 
-    const invoice = await prisma.invoice.create({
-      data: {
-        bookingId: booking.id,
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        emailOverride: bookingClient.email,
-        invoiceNumber: number,
-        language,
-        sentAt: new Date(),
-        status: "SENT",
-        totalAmount,
-        vatRate: 8.1,
-      },
-    });
+    // const invoice = await prisma.invoice.create({
+    //   data: {
+    //     bookingId: booking.id,
+    //     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    //     emailOverride: bookingClient.email,
+    //     invoiceNumber: number,
+    //     language,
+    //     sentAt: new Date(),
+    //     status: "SENT",
+    //     totalAmount,
+    //     vatRate: 8.1,
+    //   },
+    // });
 
-    await prisma.invoiceItem.createMany({
-      data: [
-        {
-          description: service.name,
-          invoiceId: invoice.id,
-          pricePerUnit: service.basePrice,
-          quantity: 1,
-          unit: "Stk.",
-        },
-        ...(category.priceModifier > 0
-          ? [
-              {
-                description: `Fahrzeuggroesse: ${category.name}`,
-                invoiceId: invoice.id,
-                pricePerUnit: category.priceModifier,
-                quantity: 1,
-                unit: "Stk.",
-              },
-            ]
-          : []),
-        ...addOns.map((addOn) => ({
-          description: addOn.name,
-          invoiceId: invoice.id,
-          pricePerUnit: addOn.price,
-          quantity: 1,
-          unit: "Stk.",
-        })),
-      ],
-    });
+    // await prisma.invoiceItem.createMany({
+    //   data: [
+    //     {
+    //       description: service.name,
+    //       invoiceId: invoice.id,
+    //       pricePerUnit: service.basePrice,
+    //       quantity: 1,
+    //       unit: "Stk.",
+    //     },
+    //     ...(category.priceModifier > 0
+    //       ? [
+    //           {
+    //             description: `Fahrzeuggroesse: ${category.name}`,
+    //             invoiceId: invoice.id,
+    //             pricePerUnit: category.priceModifier,
+    //             quantity: 1,
+    //             unit: "Stk.",
+    //           },
+    //         ]
+    //       : []),
+    //     ...addOns.map((addOn) => ({
+    //       description: addOn.name,
+    //       invoiceId: invoice.id,
+    //       pricePerUnit: addOn.price,
+    //       quantity: 1,
+    //       unit: "Stk.",
+    //     })),
+    //   ],
+    // });
 
-    const localized = customerText(
-      language,
-      bookingClient.name,
-      number,
+    const confirmationEmail = bookingConfirmedEmail(language, {
+      addOns: getNameList(addOns),
+      clientEmail: bookingClient.email,
+      clientName: bookingClient.name,
+      clientPhone: bookingClient.phone,
+      dateTime,
+      endTime,
+      services: service.name,
       totalAmount,
-    );
+      vehicleCategory: category.name,
+      vehicleModel,
+    });
 
-    await sendEmail(bookingClient.email, localized.subject, localized.text);
+    await sendEmail({
+      to: bookingClient.email,
+      subject: confirmationEmail.subject,
+      text: confirmationEmail.text,
+      html: confirmationEmail.html,
+    });
 
     revalidatePath("/admin/bookings");
     revalidatePath("/admin/clients");
@@ -492,6 +879,7 @@ export async function updateAdminBooking(
       prisma.booking.findUnique({
         where: { id: bookingId },
         include: {
+          client: true,
           service: true,
           services: true,
           vehicleCategory: true,
@@ -608,6 +996,9 @@ export async function updateAdminBooking(
         )} auf ${formatDateTime(dateTime)} geändert`,
       );
     }
+    const didDateTimeChange =
+      currentBooking.dateTime.getTime() !== dateTime.getTime() ||
+      currentBooking.endTime.getTime() !== endTime.getTime();
 
     if (currentBooking.status !== statusValue) {
       changes.push(
@@ -663,6 +1054,16 @@ export async function updateAdminBooking(
     if (!changes.length) {
       return success("Keine Änderungen an der Buchung vorgenommen.");
     }
+    const shouldSendConfirmationEmail =
+      currentBooking.status !== "CONFIRMED" && statusValue === "CONFIRMED";
+
+    const shouldSendCancellationEmail =
+      currentBooking.status !== "CANCELLED" && statusValue === "CANCELLED";
+
+    const shouldSendUpdatedAppointmentEmail =
+      currentBooking.status === "CONFIRMED" &&
+      statusValue === "CONFIRMED" &&
+      didDateTimeChange;
 
     await prisma.$transaction(async (tx) => {
       await tx.booking.update({
@@ -738,6 +1139,91 @@ export async function updateAdminBooking(
       }
     });
 
+    let emailStatusMessage = "";
+
+    if (shouldSendConfirmationEmail) {
+      const bookingLanguage = normalizeLanguage(currentBooking.language);
+
+      const confirmationEmail = bookingConfirmedEmail(bookingLanguage, {
+        addOns: getNameList(addOns),
+        clientEmail: currentBooking.client.email,
+        clientName: currentBooking.client.name,
+        clientPhone: currentBooking.client.phone,
+        dateTime,
+        endTime,
+        services: getNameList(allSelectedServices),
+        totalAmount,
+        vehicleCategory: vehicleCategory.name,
+        vehicleModel,
+        notes: newNotes || null,
+      });
+
+      const emailSent = await sendEmail({
+        to: currentBooking.client.email,
+        subject: confirmationEmail.subject,
+        text: confirmationEmail.text,
+        html: confirmationEmail.html,
+      });
+
+      emailStatusMessage = emailSent
+        ? " Bestätigungs-E-Mail wurde gesendet."
+        : " Bestätigungs-E-Mail konnte nicht gesendet werden.";
+    } else if (shouldSendCancellationEmail) {
+      const bookingLanguage = normalizeLanguage(currentBooking.language);
+
+      const cancelledEmail = bookingCancelledEmail(bookingLanguage, {
+        addOns: getNameList(addOns),
+        clientEmail: currentBooking.client.email,
+        clientName: currentBooking.client.name,
+        clientPhone: currentBooking.client.phone,
+        dateTime,
+        endTime,
+        services: getNameList(allSelectedServices),
+        totalAmount,
+        vehicleCategory: vehicleCategory.name,
+        vehicleModel,
+        notes: newNotes || null,
+      });
+
+      const emailSent = await sendEmail({
+        to: currentBooking.client.email,
+        subject: cancelledEmail.subject,
+        text: cancelledEmail.text,
+        html: cancelledEmail.html,
+      });
+
+      emailStatusMessage = emailSent
+        ? " Stornierungs-E-Mail wurde gesendet."
+        : " Stornierungs-E-Mail konnte nicht gesendet werden.";
+    } else if (shouldSendUpdatedAppointmentEmail) {
+      const bookingLanguage = normalizeLanguage(currentBooking.language);
+
+      const updatedEmail = bookingUpdatedEmail(bookingLanguage, {
+        addOns: getNameList(addOns),
+        clientEmail: currentBooking.client.email,
+        clientName: currentBooking.client.name,
+        clientPhone: currentBooking.client.phone,
+        dateTime,
+        endTime,
+        services: getNameList(allSelectedServices),
+        totalAmount,
+        vehicleCategory: vehicleCategory.name,
+        vehicleModel,
+        notes: newNotes || null,
+      });
+
+      const emailSent = await sendEmail({
+        to: currentBooking.client.email,
+        subject: updatedEmail.subject,
+        text: updatedEmail.text,
+        html: updatedEmail.html,
+      });
+
+      emailStatusMessage = emailSent
+        ? " Aktualisierungs-E-Mail wurde gesendet."
+        : " Aktualisierungs-E-Mail konnte nicht gesendet werden.";
+    }
+
     revalidatePath("/admin/bookings");
     revalidatePath(`/admin/bookings/${bookingId}`);
     revalidatePath("/admin/clients");
@@ -745,7 +1231,9 @@ export async function updateAdminBooking(
     revalidatePath("/admin/invoices");
     revalidatePath("/admin/dashboard");
 
-    return success(`Buchung aktualisiert: ${changes.join(". ")}.`);
+    return success(
+      `Buchung aktualisiert: ${changes.join(". ")}.${emailStatusMessage}`,
+    );
   } catch (error) {
     console.error("Admin booking update failed:", error);
 
@@ -758,6 +1246,113 @@ export async function updateAdminBooking(
   Used only by the new AdminBookingEditor.
   It does not redirect; the client component will show a toast and navigate.
 */
+
+export async function updateBookingStatus(
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const bookingId = String(
+      formData.get("id") ?? formData.get("bookingId") ?? "",
+    ).trim();
+
+    const statusValue = String(formData.get("status") ?? "").trim();
+
+    if (!bookingId) {
+      return failure("Die Buchung wurde nicht gefunden.");
+    }
+
+    if (!isBookingStatus(statusValue)) {
+      return failure("Der ausgewählte Buchungsstatus ist ungültig.");
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: {
+        id: bookingId,
+      },
+      include: {
+        client: true,
+        service: true,
+        services: true,
+        vehicleCategory: true,
+        addOns: true,
+      },
+    });
+
+    if (!booking) {
+      return failure("Die Buchung wurde nicht gefunden.");
+    }
+
+    if (booking.status === statusValue) {
+      return success("Keine Änderung am Buchungsstatus vorgenommen.");
+    }
+
+    const oldStatus = booking.status;
+    const language = normalizeLanguage(booking.language);
+
+    await prisma.booking.update({
+      where: {
+        id: bookingId,
+      },
+      data: {
+        status: statusValue,
+      },
+    });
+
+    let emailStatusMessage = "";
+
+    if (oldStatus !== "CONFIRMED" && statusValue === "CONFIRMED") {
+      const confirmationEmail = bookingConfirmedEmail(
+        language,
+        bookingEmailDetails(booking),
+      );
+
+      const emailSent = await sendEmail({
+        to: booking.client.email,
+        subject: confirmationEmail.subject,
+        text: confirmationEmail.text,
+        html: confirmationEmail.html,
+      });
+
+      emailStatusMessage = emailSent
+        ? " Bestätigungs-E-Mail wurde gesendet."
+        : " Bestätigungs-E-Mail konnte nicht gesendet werden.";
+    }
+
+    if (oldStatus !== "CANCELLED" && statusValue === "CANCELLED") {
+      const cancelledEmail = bookingCancelledEmail(
+        language,
+        bookingEmailDetails(booking),
+      );
+
+      const emailSent = await sendEmail({
+        to: booking.client.email,
+        subject: cancelledEmail.subject,
+        text: cancelledEmail.text,
+        html: cancelledEmail.html,
+      });
+
+      emailStatusMessage = emailSent
+        ? " Stornierungs-E-Mail wurde gesendet."
+        : " Stornierungs-E-Mail konnte nicht gesendet werden.";
+    }
+
+    revalidatePath("/admin/bookings");
+    revalidatePath(`/admin/bookings/${bookingId}`);
+    revalidatePath("/admin/calendar");
+    revalidatePath("/admin/dashboard");
+
+    return success(
+      `Status wurde von ${bookingStatusLabel(oldStatus)} zu ${bookingStatusLabel(
+        statusValue,
+      )} geändert.${emailStatusMessage}`,
+    );
+  } catch (error) {
+    console.error("Booking status update failed:", error);
+
+    return failure(readablePrismaError(error));
+  }
+}
+
 export async function deleteAdminBooking(
   formData: FormData,
 ): Promise<ActionResult> {

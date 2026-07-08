@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   deleteAdminBooking,
@@ -58,6 +59,35 @@ type BookingEditorProps = {
   addOns: AddOn[];
 };
 
+type BookingStatus = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+
+const statusLabels: Record<BookingStatus, string> = {
+  PENDING: "Offen",
+  CONFIRMED: "Bestätigt",
+  COMPLETED: "Abgeschlossen",
+  CANCELLED: "Storniert",
+};
+
+const statusDescriptions: Record<BookingStatus, string> = {
+  PENDING: "Diese Anfrage ist noch offen und wartet auf eine Bestätigung.",
+  CONFIRMED: "Der Termin ist bestätigt und kann später abgeschlossen werden.",
+  COMPLETED: "Die Buchung wurde abgeschlossen.",
+  CANCELLED: "Die Buchung wurde storniert.",
+};
+
+function toBookingStatus(value: string): BookingStatus {
+  if (
+    value === "PENDING" ||
+    value === "CONFIRMED" ||
+    value === "COMPLETED" ||
+    value === "CANCELLED"
+  ) {
+    return value;
+  }
+
+  return "PENDING";
+}
+
 function getDateValue(value: string) {
   const date = new Date(value);
 
@@ -86,12 +116,21 @@ export function AdminBookingEditor({
   const router = useRouter();
   const { showNotification } = useAdminNotification();
 
+  const formRef = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
+  const [status, setStatus] = useState<BookingStatus>(() =>
+    toBookingStatus(booking.status)
+  );
+  const [statusActionLabel, setStatusActionLabel] = useState<string | null>(null);
 
-  function handleUpdate(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const formData = new FormData(event.currentTarget);
+  function runBookingUpdate(
+    formData: FormData,
+    options?: {
+      loadingLabel?: string;
+      successStatus?: BookingStatus;
+    }
+  ) {
+    setStatusActionLabel(options?.loadingLabel ?? null);
 
     startTransition(async () => {
       try {
@@ -100,6 +139,10 @@ export function AdminBookingEditor({
         if (!result.success) {
           showNotification(result.error, "error");
           return;
+        }
+
+        if (options?.successStatus) {
+          setStatus(options.successStatus);
         }
 
         showNotification(result.message, "success");
@@ -111,13 +154,38 @@ export function AdminBookingEditor({
           "Die Buchung konnte nicht gespeichert werden. Bitte versuche es erneut.",
           "error"
         );
+      } finally {
+        setStatusActionLabel(null);
       }
     });
   }
 
+  function handleUpdate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    formData.set("status", status);
+
+    runBookingUpdate(formData);
+  }
+
+  function handleQuickStatusUpdate(
+    nextStatus: BookingStatus,
+    loadingLabel: string
+  ) {
+    if (!formRef.current) return;
+
+    const formData = new FormData(formRef.current);
+    formData.set("status", nextStatus);
+
+    runBookingUpdate(formData, {
+      loadingLabel,
+      successStatus: nextStatus,
+    });
+  }
   return (
     <div className="admin-booking-editor">
-      <form className="admin-booking-form" onSubmit={handleUpdate}>
+      <form ref={formRef} className="admin-booking-form" onSubmit={handleUpdate}>
         <input name="bookingId" type="hidden" value={booking.id} />
 
         <div className="admin-form-grid">
@@ -153,13 +221,102 @@ export function AdminBookingEditor({
 
           <label>
             <span>Status</span>
-            <select defaultValue={booking.status} name="status" required>
+            <select
+              name="status"
+              onChange={(event) => setStatus(event.target.value as BookingStatus)}
+              required
+              value={status}
+            >
               <option value="PENDING">Offen</option>
               <option value="CONFIRMED">Bestätigt</option>
               <option value="COMPLETED">Abgeschlossen</option>
               <option value="CANCELLED">Storniert</option>
             </select>
           </label>
+
+          <div className="admin-status-panel">
+            <div>
+              <span className={`admin-status-pill admin-status-${status.toLowerCase()}`}>
+                {statusLabels[status]}
+              </span>
+
+              <p>{statusDescriptions[status]}</p>
+            </div>
+
+            <div className="admin-status-actions">
+              {status === "PENDING" && (
+                <>
+                  <button
+                    className="admin-status-action-button primary"
+                    disabled={isPending}
+                    onClick={() =>
+                      handleQuickStatusUpdate("CONFIRMED", "Wird bestätigt...")
+                    }
+                    type="button"
+                  >
+                    {statusActionLabel === "Wird bestätigt..."
+                      ? statusActionLabel
+                      : "Bestätigen"}
+                  </button>
+
+                  <button
+                    className="admin-status-action-button danger"
+                    disabled={isPending}
+                    onClick={() =>
+                      handleQuickStatusUpdate("CANCELLED", "Wird storniert...")
+                    }
+                    type="button"
+                  >
+                    {statusActionLabel === "Wird storniert..."
+                      ? statusActionLabel
+                      : "Stornieren"}
+                  </button>
+                </>
+              )}
+
+              {status === "CONFIRMED" && (
+                <>
+                  <button
+                    className="admin-status-action-button primary"
+                    disabled={isPending}
+                    onClick={() =>
+                      handleQuickStatusUpdate("COMPLETED", "Wird abgeschlossen...")
+                    }
+                    type="button"
+                  >
+                    {statusActionLabel === "Wird abgeschlossen..."
+                      ? statusActionLabel
+                      : "Als abgeschlossen markieren"}
+                  </button>
+
+                  <button
+                    className="admin-status-action-button danger"
+                    disabled={isPending}
+                    onClick={() =>
+                      handleQuickStatusUpdate("CANCELLED", "Wird storniert...")
+                    }
+                    type="button"
+                  >
+                    {statusActionLabel === "Wird storniert..."
+                      ? statusActionLabel
+                      : "Stornieren"}
+                  </button>
+                </>
+              )}
+
+              {status === "COMPLETED" && (
+                <p className="admin-status-note">
+                  Diese Buchung ist abgeschlossen.
+                </p>
+              )}
+
+              {status === "CANCELLED" && (
+                <p className="admin-status-note">
+                  Diese Buchung wurde storniert.
+                </p>
+              )}
+            </div>
+          </div>
 
           <label>
             <span>Fahrzeugmodell</span>
@@ -282,7 +439,7 @@ export function AdminBookingEditor({
             </p>
           </div>
 
-          <BookingPhotoUploader bookingId={booking.id}/>
+          <BookingPhotoUploader bookingId={booking.id} />
         </section>
 
         {/* <button

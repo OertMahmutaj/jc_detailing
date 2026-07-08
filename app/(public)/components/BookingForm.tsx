@@ -28,6 +28,20 @@ type ServiceDetail = {
   sections: Array<{ title: string; items: string[] }>;
 };
 
+type SubmittedBookingSummary = {
+  addOns: string;
+  dateTime: Date;
+  duration: string;
+  email: string;
+  endTime: Date;
+  estimatedTotal: number;
+  name: string;
+  phone: string;
+  services: string;
+  vehicleCategory: string;
+  vehicleModel: string;
+};
+
 const addOnDescriptions: Record<string, string> = {
   Tierhaarentfernung: "Effektive Entfernung hartnäckiger Tierhaare.",
   "Sitze Tiefenreinigung": "Intensive Polsterreinigung für hygienische Sitze.",
@@ -274,6 +288,23 @@ function formatDuration(minutes: number) {
   return `${hours}h${rest.toString().padStart(2, "0")}`;
 }
 
+function formatConfirmationDate(value: Date) {
+  return new Intl.DateTimeFormat("de-CH", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Europe/Zurich",
+  }).format(value);
+}
+
+function formatConfirmationTime(value: Date) {
+  return new Intl.DateTimeFormat("de-CH", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Zurich",
+  }).format(value);
+}
+
 function generateTimeSlots() {
   const slots: string[] = [];
 
@@ -295,6 +326,8 @@ export function BookingForm() {
   const [loadingData, setLoadingData] = useState(true);
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
+  const [submittedBooking, setSubmittedBooking] =
+    useState<SubmittedBookingSummary | null>(null);
   const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
   const [detailService, setDetailService] = useState<Service | null>(null);
   const [showAllServices, setShowAllServices] = useState(false);
@@ -463,13 +496,28 @@ export function BookingForm() {
         throw new Error(data.message ?? "Die Anfrage konnte nicht gesendet werden.");
       }
 
+      const endDateTime = new Date(
+        combinedDateTime.getTime() + totalDuration * 60000,
+      );
+
+      setSubmittedBooking({
+        addOns: selectedAddOns.length
+          ? selectedAddOns.map((addOn) => addOn.name).join(", ")
+          : "Keine",
+        dateTime: combinedDateTime,
+        duration: formatDuration(totalDuration),
+        email: String(formPayload.email ?? ""),
+        endTime: endDateTime,
+        estimatedTotal: calculateTotal(),
+        name: String(formPayload.name ?? ""),
+        phone: String(formPayload.phone ?? ""),
+        services: selectedServices.map((service) => service.name).join(", "),
+        vehicleCategory: selectedCategory?.name ?? "Fahrzeuggrösse",
+        vehicleModel: String(formPayload.vehicle ?? ""),
+      });
+
       setStatus("success");
-      setMessage("Danke. Deine Anfrage wurde gesendet und du erhältst eine Bestätigung per E-Mail.");
-      setSelectedServices([]);
-      setSelectedAddOns([]);
-      setSelectedDate("");
-      setSelectedTime("");
-      if (dbData.categories.length > 0) setSelectedCategory(dbData.categories[0]);
+      setMessage("");
       setStep(0);
     } catch (error) {
       setStatus("error");
@@ -482,6 +530,93 @@ export function BookingForm() {
       <div className="booking-loading">
         <Loader2 className="spin" size={32} />
       </div>
+    );
+  }
+  if (submittedBooking) {
+    return (
+      <section className="booking-confirmation-panel">
+        <div className="booking-confirmation-icon">
+          <CalendarCheck size={34} />
+        </div>
+
+        <span className="booking-confirmation-eyebrow">
+          Terminanfrage erhalten
+        </span>
+
+        <h2>Danke für deine Anfrage, {submittedBooking.name}.</h2>
+
+        <p>
+          Deine Terminanfrage wurde erfolgreich gesendet. Du erhältst eine
+          Eingangsbestätigung per E-Mail. Der Termin ist noch nicht bestätigt.
+          Sobald JC Detailing den Termin geprüft hat, erhältst du eine separate
+          Terminbestätigung.
+        </p>
+
+        <div className="booking-confirmation-notice">
+          Bitte prüfe auch deinen Spam-Ordner, falls du die E-Mail nicht direkt
+          findest.
+        </div>
+
+        <div className="booking-confirmation-grid">
+          <div>
+            <span>Datum</span>
+            <strong>{formatConfirmationDate(submittedBooking.dateTime)}</strong>
+          </div>
+
+          <div>
+            <span>Uhrzeit</span>
+            <strong>
+              {formatConfirmationTime(submittedBooking.dateTime)}–
+              {formatConfirmationTime(submittedBooking.endTime)} Uhr
+            </strong>
+          </div>
+
+          <div>
+            <span>Leistung</span>
+            <strong>{submittedBooking.services}</strong>
+          </div>
+
+          <div>
+            <span>Fahrzeug</span>
+            <strong>{submittedBooking.vehicleModel}</strong>
+          </div>
+
+          <div>
+            <span>Fahrzeuggrösse</span>
+            <strong>{submittedBooking.vehicleCategory}</strong>
+          </div>
+
+          <div>
+            <span>Zusatzleistungen</span>
+            <strong>{submittedBooking.addOns}</strong>
+          </div>
+
+          <div>
+            <span>Dauer</span>
+            <strong>ca. {submittedBooking.duration}</strong>
+          </div>
+
+          <div>
+            <span>Geschätzter Preis</span>
+            <strong>CHF {submittedBooking.estimatedTotal.toFixed(2)}</strong>
+          </div>
+
+          <div>
+            <span>E-Mail</span>
+            <strong>{submittedBooking.email}</strong>
+          </div>
+
+          <div>
+            <span>Telefon</span>
+            <strong>{submittedBooking.phone}</strong>
+          </div>
+        </div>
+
+        <div className="booking-confirmation-footer">
+          <a href="/">Zur Startseite</a>
+          <a href="https://wa.me/41772683388">WhatsApp öffnen</a>
+        </div>
+      </section>
     );
   }
 

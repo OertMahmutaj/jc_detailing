@@ -6,7 +6,8 @@ import { AdminBookingCreator } from "../_components/AdminBookingCreator";
 import { createAdminBooking } from "../_actions/bookingActions";
 import { AdminBookingScheduleForm } from "../_components/AdminBookingScheduleForm";
 import { AdminBookingStatusForm } from "../_components/AdminBookingStatusForm";
-import { AdminBookingDeleteForm } from "../_components/AdminBookingDeleteForm";
+// import { AdminBookingDeleteForm } from "../_components/AdminBookingDeleteForm";
+import { updateBookingStatus } from "../_actions/bookingActions";
 
 const PAGE_SIZE = 5;
 
@@ -17,44 +18,44 @@ const statusLabels = {
   CANCELLED: "Storniert",
 } as const;
 
-async function updateBookingStatus(formData: FormData): Promise<{
-  success: boolean;
-  error?: string;
-}> {
-  "use server";
+// async function updateBookingStatus(formData: FormData): Promise<{
+//   success: boolean;
+//   error?: string;
+// }> {
+//   "use server";
 
-  try {
-    const id = String(formData.get("id") ?? "");
-    const status = String(formData.get("status") ?? "");
+//   try {
+//     const id = String(formData.get("id") ?? "");
+//     const status = String(formData.get("status") ?? "");
 
-    if (!id || !Object.keys(statusLabels).includes(status)) {
-      return {
-        success: false,
-        error: "Ungültiger Buchungsstatus.",
-      };
-    }
+//     if (!id || !Object.keys(statusLabels).includes(status)) {
+//       return {
+//         success: false,
+//         error: "Ungültiger Buchungsstatus.",
+//       };
+//     }
 
-    await prisma.booking.update({
-      where: { id },
-      data: {
-        status: status as keyof typeof statusLabels,
-      },
-    });
+//     await prisma.booking.update({
+//       where: { id },
+//       data: {
+//         status: status as keyof typeof statusLabels,
+//       },
+//     });
 
-    revalidatePath("/admin/bookings");
-    revalidatePath("/admin/calendar");
-    revalidatePath("/admin/dashboard");
+//     revalidatePath("/admin/bookings");
+//     revalidatePath("/admin/calendar");
+//     revalidatePath("/admin/dashboard");
 
-    return { success: true };
-  } catch (error) {
-    console.error("Booking status update failed:", error);
+//     return { success: true };
+//   } catch (error) {
+//     console.error("Booking status update failed:", error);
 
-    return {
-      success: false,
-      error: "Der Buchungsstatus konnte nicht gespeichert werden.",
-    };
-  }
-}
+//     return {
+//       success: false,
+//       error: "Der Buchungsstatus konnte nicht gespeichert werden.",
+//     };
+//   }
+// }
 
 async function updateBookingSchedule(formData: FormData): Promise<{
   success: boolean;

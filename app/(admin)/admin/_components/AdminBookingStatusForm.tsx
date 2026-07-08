@@ -9,6 +9,7 @@ type BookingStatus = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 type Props = {
   action: (formData: FormData) => Promise<{
     success: boolean;
+    message?: string;
     error?: string;
   }>;
   bookingId: string;
@@ -18,7 +19,7 @@ type Props = {
 const statusLabels: Record<BookingStatus, string> = {
   PENDING: "Offen",
   CONFIRMED: "Bestätigt",
-  COMPLETED: "Erledigt",
+  COMPLETED: "Abgeschlossen",
   CANCELLED: "Storniert",
 };
 
@@ -51,7 +52,10 @@ export function AdminBookingStatusForm({
         return;
       }
 
-      showNotification("Buchungsstatus wurde gespeichert.", "success");
+      showNotification(
+        result.message || "Buchungsstatus wurde gespeichert.",
+        "success"
+      );
       router.refresh();
     } catch (error) {
       console.error("Booking status update failed:", error);

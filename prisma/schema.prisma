@@ -75,6 +75,7 @@ model Booking {
   dateTime          DateTime
   endTime           DateTime
   status            BookingStatus   @default(PENDING)
+  language          String          @default("de")
   vehicleModel      String
   notes             String?
   imageUrls         String[]        @default([])
