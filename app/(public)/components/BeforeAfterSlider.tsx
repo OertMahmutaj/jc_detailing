@@ -1,8 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import Image from "next/image";
 
 type BeforeAfterSliderProps = {
   after: string;
@@ -10,29 +10,36 @@ type BeforeAfterSliderProps = {
   index: number;
 };
 
-export function BeforeAfterSlider({ after, before, index }: BeforeAfterSliderProps) {
+export function BeforeAfterSlider({
+  after,
+  before,
+  index,
+}: BeforeAfterSliderProps) {
   const [position, setPosition] = useState(50);
+
+  const comparisonLabel = `Vorher-Nachher Vergleich ${index} von JC Detailing in Wauwil`;
 
   return (
     <article
+      aria-label={comparisonLabel}
       className="before-after"
       style={{ "--split": `${position}%` } as CSSProperties}
     >
       <Image
+        alt={`Nachher Ergebnis der Autoaufbereitung bei JC Detailing in Wauwil – Vergleich ${index}`}
         className="before-after-image"
-        src={after}
-        alt={`Nachher ${index}`}
         fill
         sizes="(max-width: 768px) 100vw, 50vw"
+        src={after}
       />
 
       <div className="before-after-before">
         <Image
+          alt={`Vorher Zustand vor der Autoaufbereitung bei JC Detailing in Wauwil – Vergleich ${index}`}
           className="before-after-image"
-          src={before}
-          alt={`Vorher ${index}`}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
+          src={before}
         />
       </div>
 
@@ -44,7 +51,7 @@ export function BeforeAfterSlider({ after, before, index }: BeforeAfterSliderPro
       </div>
 
       <input
-        aria-label={`Vorher Nachher Vergleich ${index}`}
+        aria-label={`${comparisonLabel} Regler`}
         className="before-after-range"
         max="100"
         min="0"

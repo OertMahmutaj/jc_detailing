@@ -4,9 +4,13 @@ import type { Metadata } from "next";
 import { LegalPage } from "../components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Datenschutz | JC Detailing",
+  title: "Datenschutz",
+  description:
+    "Datenschutzerklärung von JC Detailing in Wauwil, Luzern. Informationen zur Verarbeitung personenbezogener Daten bei Kontaktanfragen und Terminbuchungen.",
+  alternates: {
+    canonical: "/datenschutz",
+  },
 };
-
 export default function DatenschutzPage() {
   return (
     <LegalPage
@@ -21,7 +25,7 @@ export default function DatenschutzPage() {
         {
           title: "2. Erhebung und Verarbeitung von Daten",
           body: [
-            "Wir erheben personenbezogene Daten nur, wenn Sie uns diese freiwillig mitteilen, z.B. durch Buchung über unsere Website (Detailr), Kontakt per E-Mail oder WhatsApp sowie Terminvereinbarung.",
+            "Wir erheben personenbezogene Daten nur, wenn Sie uns diese freiwillig mitteilen, z.B. durch eine Terminbuchung über unsere Website, Kontakt per E-Mail oder WhatsApp sowie Terminvereinbarung.",
             "Folgende Daten können erhoben werden: Name, Telefonnummer, E-Mail-Adresse und Fahrzeugdaten.",
           ],
         },
@@ -42,9 +46,9 @@ export default function DatenschutzPage() {
           body: ["Unsere Website kann Cookies verwenden, um die Benutzerfreundlichkeit zu verbessern."],
         },
         {
-          title: "6. Buchungssystem",
+          title: "6. Terminbuchung über die Website",
           body: [
-            "Für Terminbuchungen verwenden wir externe Tools (Detailr). Es gelten zusätzlich deren Datenschutzbestimmungen.",
+            "Für Terminbuchungen verarbeiten wir die Angaben, die Sie im Buchungsformular übermitteln. Dazu gehören insbesondere Name, Kontaktdaten, Fahrzeugdaten, gewünschte Leistung und gewünschter Termin.",
           ],
         },
         {

@@ -3820,7 +3820,7 @@ summary {
 .contact-panel {
   background:
     linear-gradient(90deg, rgba(5, 5, 5, 0.9), rgba(0, 0, 0, 0.62)),
-    url("/kontakt_background_img.jpg");
+    url("/kontakt_background_img.webp");
   background-position: center;
   background-size: cover;
   border: 1px solid rgba(0, 0, 0, 0.959);
@@ -10754,9 +10754,7 @@ details {
 .admin-modal-backdrop
   .admin-delete-confirmation-actions
   .admin-secondary-button,
-.admin-modal-backdrop
-  .admin-delete-confirmation-actions
-  .admin-danger-button {
+.admin-modal-backdrop .admin-delete-confirmation-actions .admin-danger-button {
   align-items: center;
   box-sizing: border-box;
   display: inline-flex;
@@ -10775,9 +10773,7 @@ details {
   color: var(--admin-ink);
 }
 
-.admin-modal-backdrop
-  .admin-delete-confirmation-actions
-  .admin-danger-button {
+.admin-modal-backdrop .admin-delete-confirmation-actions .admin-danger-button {
   background: #c81424;
   color: #ffffff;
 }
@@ -11133,4 +11129,112 @@ details {
   max-width: 100%;
   object-fit: contain !important;
   width: 100%;
+}
+/* SEO service detail image as real image instead of background image */
+
+.detail-hero-image {
+  min-height: 420px;
+  overflow: hidden;
+  position: relative;
+}
+
+.detail-hero-image img {
+  object-fit: cover;
+}
+
+.footer-business-info {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1.2rem;
+}
+
+.footer-business-info a,
+.footer-business-info span {
+  align-items: center;
+  color: inherit;
+  display: flex;
+  gap: 0.5rem;
+  opacity: 0.78;
+  text-decoration: none;
+}
+
+.footer-business-info a:hover {
+  opacity: 1;
+}
+
+/* SEO image handling for service cards */
+
+.service-image {
+  overflow: hidden;
+  position: relative;
+}
+
+.service-image img {
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.service-card:hover .service-image img {
+  transform: scale(1.04);
+}
+
+/* Homepage section CTA */
+
+.section-action {
+  display: flex;
+  justify-content: center;
+  margin-top: 2.5rem;
+}
+
+.section-action a {
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: inherit;
+  display: inline-flex;
+  gap: 0.55rem;
+  padding: 0.85rem 1.1rem;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+/* .section-action a:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.34);
+  transform: translateY(-1px);
+} */
+
+.video-background {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.hero-poster-image,
+.video-background video {
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+
+.hero-poster-image {
+  z-index: 0;
+}
+
+.video-background video {
+  z-index: 1;
+}
+
+.about-image {
+  overflow: hidden;
+  position: relative;
+}
+
+.about-image img {
+  object-fit: cover;
 }

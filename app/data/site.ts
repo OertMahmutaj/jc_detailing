@@ -7,7 +7,7 @@ export const services = {
     title: "Innenreinigung",
     eyebrow: "Interior detailing",
     short: "Tiefenreinigung von Sitzen, Teppichen, Leder, Kunststoff und Scheiben.",
-    image: "/innenreinigung.jpeg",
+    image: "/innenreinigung.webp",
     includes: [
       "Staubsaugen von Innenraum und Kofferraum",
       "Shampoo- und Fleckenbehandlung",
@@ -26,7 +26,7 @@ export const services = {
     title: "Aussenreinigung",
     eyebrow: "Exterior detailing",
     short: "Schonende Handwäsche, Felgenreinigung, Insektenentfernung und Reifenpflege.",
-    image: "/aussenreinigung.jpg",
+    image: "/aussenreinigung.webp",
     includes: [
       "Snow-Foam-Vorwäsche",
       "Schonende Handwäsche",
@@ -45,7 +45,7 @@ export const services = {
     title: "Politur",
     eyebrow: "Paint correction",
     short: "Lackaufbereitung für mehr Glanz, Tiefe und weniger Swirls.",
-    image: "/politur.jpeg",
+    image: "/politur.webp",
     includes: [
       "Lackanalyse",
       "Schonende Vorreinigung",
@@ -64,7 +64,7 @@ export const services = {
     title: "Keramikversiegelung",
     eyebrow: "Ceramic coating",
     short: "Hydrophober Lackschutz mit hochwertigem Glanz-Finish.",
-    image: "/keramikversiegelung.jpeg",
+    image: "/keramikversiegelung.webp",
     includes: [
       "Gründliche Lackvorbereitung",
       "Entfettung der Oberfläche",

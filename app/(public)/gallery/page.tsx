@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/app/(admin)/admin/_lib/prisma";
 import {
@@ -10,6 +11,33 @@ import {
 } from "./GalleryGrid";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Vorher-Nachher Galerie",
+  description:
+    "Vorher-Nachher Galerie von JC Detailing in Wauwil, Luzern. Sieh echte Ergebnisse professioneller Fahrzeugaufbereitung, Politur, Innenreinigung und Keramikversiegelung.",
+
+  alternates: {
+    canonical: "/gallery",
+  },
+
+  openGraph: {
+    title: "Vorher-Nachher Galerie | JC Detailing",
+    description:
+      "Echte Vorher-Nachher Ergebnisse professioneller Autoaufbereitung in Wauwil, Kanton Luzern.",
+    url: "/gallery",
+    type: "website",
+    locale: "de_CH",
+    siteName: "JC Detailing",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "Vorher-Nachher Galerie | JC Detailing",
+    description:
+      "Echte Ergebnisse von JC Detailing: Fahrzeugaufbereitung, Politur, Innenreinigung und Keramikversiegelung in Wauwil, Luzern.",
+  },
+};
 
 export default async function GalleryPage() {
   const managedComparisons = await prisma.galleryComparison.findMany({

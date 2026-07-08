@@ -50,27 +50,27 @@ const vehicleDetails: Record<string, { title: string; description: string; image
   "City Car": {
     title: "City Car",
     description: "Kleine Fahrzeuge (Mini, Fiat 500)",
-    image: "/city_car.png",
+    image: "/city_car.webp",
   },
   Sedan: {
     title: "Limousine",
     description: "Standardfahrzeuge (Audi A4, Mercedes C-Klasse)",
-    image: "/sedan.png",
+    image: "/sedan.webp",
   },
   "Sports Car": {
     title: "Sportwagen",
     description: "Sportliche Fahrzeuge (Porsche, Ferrari)",
-    image: "/sports_car.png",
+    image: "/sports_car.webp",
   },
   SUV: {
     title: "SUV",
     description: "Grössere Fahrzeuge (Peugeot 5008, Range Rover)",
-    image: "/suv.png",
+    image: "/suv.webp",
   },
   Van: {
     title: "Van",
     description: "Minivans und Transporter",
-    image: "/van.png",
+    image: "/van.webp",
   },
 };
 
@@ -572,7 +572,7 @@ export function BookingForm() {
                 >
                   <span
                     className="booking-vehicle-image"
-                    style={{ backgroundImage: `url(${vehicleDetails[category.name]?.image ?? "/IMG_4623.jpeg"})` }}
+                    style={{ backgroundImage: `url(${vehicleDetails[category.name]?.image ?? "/IMG_4623.webp"})` }}
                   />
                   <span className="booking-vehicle-copy">
                     <strong>{vehicleDetails[category.name]?.title ?? category.name}</strong>

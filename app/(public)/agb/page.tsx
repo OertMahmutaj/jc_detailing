@@ -4,69 +4,75 @@ import type { Metadata } from "next";
 import { LegalPage } from "../components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "AGB | JC Detailing",
+  title: "AGB",
+  description:
+    "Allgemeine Geschäftsbedingungen von JC Detailing in Wauwil, Luzern.",
+  alternates: {
+    canonical: "/agb",
+  },
 };
 
-export default function AgbPage() {
+export default function AGBPage() {
   return (
     <LegalPage
-      title="AGB JC Detailing"
+      title="Allgemeine Geschäftsbedingungen"
+      intro={[
+        "JC Detailing",
+        "Juljan Cela",
+        "Sternmatt 4, 6242 Wauwil, Schweiz",
+      ]}
       sections={[
         {
           title: "1. Geltungsbereich",
           body: [
-            "Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für alle Dienstleistungen von JC Detailing im Bereich Fahrzeugaufbereitung.",
+            "Diese Allgemeinen Geschäftsbedingungen gelten für Dienstleistungen von JC Detailing im Bereich Fahrzeugaufbereitung, Innenreinigung, Aussenreinigung, Politur, Lackpflege und Keramikversiegelung.",
           ],
         },
         {
           title: "2. Terminvereinbarung",
-          body: ["Termine können online oder direkt vereinbart werden und sind verbindlich."],
+          body: [
+            "Terminanfragen über die Website sind unverbindlich, bis sie von JC Detailing bestätigt wurden.",
+            "Der Kunde ist dafür verantwortlich, korrekte Angaben zum Fahrzeug, Zustand, gewünschter Leistung und Terminwunsch zu machen.",
+          ],
         },
         {
-          title: "3. Stornierung",
+          title: "3. Preise",
           body: [
-            "Kostenlose Stornierung bis 24 Stunden vor Termin.",
-            "Bei säterer Absage oder Nichterscheinen werden 50% des gebuchten Betrags verrechnet.",
+            "Alle angegebenen Preise sind Einstiegspreise. Der finale Preis kann je nach Fahrzeuggrösse, Zustand, Verschmutzungsgrad und gewünschtem Leistungsumfang abweichen.",
+            "Der endgültige Umfang und Preis werden vor Beginn der Arbeit mit dem Kunden abgestimmt.",
           ],
         },
         {
           title: "4. Fahrzeugzustand",
           body: [
-            "Der Kunde verpflichtet sich, den Zustand des Fahrzeugs korrekt anzugeben.",
-            "Bei stärkerer Verschmutzung oder nicht angegebenen Zusatzarbeiten behalten wir uns vor, einen Aufpreis von CHF 30-100 zu verrechnen.",
+            "Bestehende Schäden, Kratzer, Defekte, lose Teile oder empfindliche Materialien können das Ergebnis beeinflussen.",
+            "JC Detailing übernimmt keine Haftung für bereits vorhandene Schäden oder Schäden, die durch verschlissene, beschädigte oder unsachgemäss reparierte Fahrzeugteile entstehen.",
           ],
         },
         {
-          title: "5. Haftung",
+          title: "5. Zahlung",
           body: [
-            "Für bestehende Schäden (Kratzer, Abnutzung etc.) wird keine Haftung übernommen.",
-            "Schäden, die durch unsere Dienstleistung entstehen, werden im Rahmen der Betriebshaftpflicht reguliert.",
-            "Empfindliche Materialien werden auf eigenes Risiko bearbeitet.",
+            "Die Zahlung erfolgt, sofern nicht anders vereinbart, nach Abschluss der Dienstleistung bei Übergabe des Fahrzeugs.",
           ],
         },
         {
-          title: "6. Wertgegenstände",
+          title: "6. Stornierung und Terminverschiebung",
           body: [
-            "Der Kunde ist verpflichtet, persönliche Gegenstände aus dem Fahrzeug zu entfernen.",
-            "Für verlorene oder beschädigte Gegenstände wird keine Haftung übernommen.",
+            "Terminänderungen sollten so früh wie möglich mitgeteilt werden.",
+            "Bei kurzfristigen Absagen oder Nichterscheinen behält sich JC Detailing vor, zukünftige Termine nur nach vorheriger Absprache anzunehmen.",
           ],
         },
         {
-          title: "7. Bezahlung",
+          title: "7. Gewährleistung",
           body: [
-            "Die Bezahlung erfolgt vor Ort oder online per TWINT, Karte oder Bar.",
-            "Bei grösseren Dienstleistungen kann eine Anzahlung verlangt werden.",
+            "Sollte der Kunde mit einer ausgeführten Leistung nicht zufrieden sein, ist dies zeitnah nach Übergabe mitzuteilen, damit JC Detailing die Beanstandung prüfen kann.",
           ],
         },
         {
-          title: "8. Verspätung",
+          title: "8. Kontakt",
           body: [
-            "Bei Verspätung des Kunden kann sich die Dauer der Dienstleistung verkürzen oder der Termin verschoben werden.",
+            "Bei Fragen zu diesen AGB kontaktieren Sie JC Detailing per E-Mail unter jcdetailinglucerne@gmail.com.",
           ],
-        },
-        {
-          title: "9. Gerichtsstand",
-          body: ["Gerichtsstand ist der Sitz des Unternehmens (Wauwil, Luzern)."],
         },
       ]}
     />

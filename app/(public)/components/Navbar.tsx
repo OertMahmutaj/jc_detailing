@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { MouseEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarCheck, ChevronDown, Languages } from "lucide-react";
+import { CalendarCheck, ChevronDown } from "lucide-react";
 
 const navItems = [
   { label: "Startseite", href: "/#top" },
@@ -27,7 +27,7 @@ const navItems = [
       {
         label: "Politur",
         href: "/leistungen/politur",
-        text: "Mehr Tiefe, Schärfe und Glanz für den Lack.",
+        text: "Mehr Tiefe, Klarheit und Glanz für den Lack.",
       },
       {
         label: "Keramikversiegelung",
@@ -36,34 +36,19 @@ const navItems = [
       },
     ],
   },
-  {
-    label: "Angebote",
-    href: "/angebote",
-    children: [
-      {
-        label: "Angebote DE",
-        href: "/angebote/de",
-        text: "Pakete und Preise auf Deutsch ansehen.",
-      },
-      {
-        label: "Offers EN",
-        href: "/angebote/en",
-        text: "Packages and pricing for English-speaking clients.",
-      },
-    ],
-  },
-  { label: "Über uns", href: "/#about" },
+  { label: "Pakete & Preise", href: "/angebote/de" },
   { label: "Galerie", href: "/gallery" },
+  { label: "Über uns", href: "/#about" },
   { label: "Kontakt", href: "/#contact" },
 ];
 
 const menuEase = [0.22, 1, 0.36, 1] as const;
-const languageOptions = [
-  { label: "DE", name: "Deutsch", href: "/de" },
-  { label: "EN", name: "English", href: "/en" },
-  { label: "FR", name: "Francais", href: "/fr" },
-  { label: "IT", name: "Italiano", href: "/it" },
-];
+// const languageOptions = [
+//   { label: "DE", name: "Deutsch", href: "/de" },
+//   { label: "EN", name: "English", href: "/en" },
+//   { label: "FR", name: "Francais", href: "/fr" },
+//   { label: "IT", name: "Italiano", href: "/it" },
+// ];
 
 export function Navbar() {
   const pathname = usePathname();
@@ -72,10 +57,8 @@ export function Navbar() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [dropdownCycle, setDropdownCycle] = useState(0);
-  const activeLanguage =
-    languageOptions.find((language) => pathname === language.href || pathname.startsWith(`${language.href}/`)) ??
-    languageOptions[0];
-  const bookingUrl = `/buchen?lang=${activeLanguage.label.toLowerCase()}`;
+  const bookingUrl = "/buchen?lang=de";
+  // const bookingUrl = `/buchen?lang=${activeLanguage.label.toLowerCase()}`;
 
   function closeMenu() {
     setMobileOpen(false);
@@ -147,7 +130,15 @@ export function Navbar() {
         <Link className="brand" href="/#top" onClick={(event) => handleNavClick("/#top", event)}>
           {/* <span className="brand-mark">JC</span> */}
           <p>
-            <Image className="nav-logo" priority width={350} height={150} src="/logo.png" alt="logo" />
+            <Image
+              className="nav-logo"
+              priority
+              width={186}
+              height={124}
+              sizes="186px"
+              src="/logo.png"
+              alt="JC Detailing Autoaufbereitung Wauwil"
+            />
             {/* <strong>JC Detailing</strong>
             <small>Luzern</small> */}
           </p>
@@ -226,7 +217,7 @@ export function Navbar() {
             Termin buchen
           </Link>
 
-          <div className="language-selector">
+          {/* <div className="language-selector">
             <motion.button
               className="language-button"
               type="button"
@@ -268,7 +259,7 @@ export function Navbar() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </div> */}
         </div>
 
         <motion.button
@@ -356,17 +347,17 @@ export function Navbar() {
                 <Link href={bookingUrl} onClick={closeMenu}>
                   Termin buchen
                 </Link>
-              </motion.div>
+                {/* </motion.div> */}
 
-              <motion.div
+                {/* <motion.div
                 className="mobile-nav-group mobile-language-group"
                 variants={{
                   open: { opacity: 1, y: 0 },
                   closed: { opacity: 0, y: 14 },
                 }}
                 transition={{ duration: 0.28, ease: menuEase }}
-              >
-                <span>Sprache</span>
+              > */}
+                {/* <span>Sprache</span>
                 <div>
                   {languageOptions.map((language) => (
                     <Link
@@ -378,7 +369,7 @@ export function Navbar() {
                       {language.label}
                     </Link>
                   ))}
-                </div>
+                </div> */}
               </motion.div>
             </motion.div>
           </motion.div>

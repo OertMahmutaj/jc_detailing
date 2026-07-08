@@ -4,7 +4,12 @@ import type { Metadata } from "next";
 import { LegalPage } from "../components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Impressum | JC Detailing",
+  title: "Impressum",
+  description:
+    "Impressum von JC Detailing, Juljan Cela, Sternmatt 4, 6242 Wauwil, Schweiz.",
+  alternates: {
+    canonical: "/impressum",
+  },
 };
 
 export default function ImpressumPage() {
