@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { AlertTriangle, X } from "lucide-react";
+import { AlertTriangle, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAdminNotification } from "./AdminNotificationProvider";
 
@@ -15,51 +15,55 @@ type DeleteActionResult =
       error: string;
     };
 
-type Props = {
+type AdminGalleryProjectDeleteFormProps = {
   action: (formData: FormData) => Promise<DeleteActionResult>;
-  bookingId: string;
-  clientName: string;
+  projectId: string;
+  projectTitle: string;
 };
 
-export function AdminBookingDeleteForm({
+export function AdminGalleryProjectDeleteForm({
   action,
-  bookingId,
-  clientName,
-}: Props) {
+  projectId,
+  projectTitle,
+}: AdminGalleryProjectDeleteFormProps) {
   const router = useRouter();
   const { showNotification } = useAdminNotification();
 
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  function closeModal() {
-    if (!isPending) {
-      setIsOpen(false);
-    }
-  }
-
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
 
     const previousBodyOverflow = document.body.style.overflow;
     const previousHtmlOverflow = document.documentElement.style.overflow;
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        closeModal();
+      if (event.key === "Escape" && !isPending) {
+        setIsOpen(false);
       }
     }
 
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
+
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       document.body.style.overflow = previousBodyOverflow;
       document.documentElement.style.overflow = previousHtmlOverflow;
+
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, isPending]);
+
+  function closeModal() {
+    if (!isPending) {
+      setIsOpen(false);
+    }
+  }
 
   function handleDelete(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,15 +80,16 @@ export function AdminBookingDeleteForm({
         }
 
         setIsOpen(false);
+
         showNotification(result.message, "success");
 
-        router.push("/admin/bookings");
+        router.push("/admin/gallery");
         router.refresh();
       } catch (error) {
-        console.error("Booking deletion failed:", error);
+        console.error("Gallery project deletion failed:", error);
 
         showNotification(
-          "Die Buchung konnte nicht gelöscht werden. Bitte versuche es erneut.",
+          "Das Galerie-Projekt konnte nicht gelöscht werden.",
           "error"
         );
       }
@@ -94,16 +99,16 @@ export function AdminBookingDeleteForm({
   return (
     <>
       <button
-        className="admin-danger-button admin-booking-delete-trigger"
+        className="admin-danger-button"
         onClick={() => setIsOpen(true)}
         type="button"
       >
-        Löschen
+        <Trash2 size={16} />
+        Projekt löschen
       </button>
 
-      {isOpen && (
+      {isOpen ? (
         <div
-          aria-label="Buchung löschen"
           aria-modal="true"
           className="admin-modal-backdrop"
           onMouseDown={(event) => {
@@ -114,38 +119,36 @@ export function AdminBookingDeleteForm({
           role="dialog"
         >
           <form
-            className="admin-modal admin-delete-confirmation-modal"
+            className="admin-delete-confirmation"
             onSubmit={handleDelete}
           >
-            <input name="bookingId" type="hidden" value={bookingId} />
+            <input name="projectId" type="hidden" value={projectId} />
 
             <button
-              aria-label="Modal schliessen"
-              className="admin-modal-close"
+              aria-label="Dialog schließen"
+              className="admin-delete-confirmation-close"
               disabled={isPending}
               onClick={closeModal}
               type="button"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
             <div className="admin-delete-confirmation-content">
-              <span className="admin-delete-confirmation-icon">
-                <AlertTriangle size={24} />
-              </span>
+              <AlertTriangle size={24} />
 
               <div>
-                <span className="admin-delete-confirmation-eyebrow">
-                  Buchung löschen
-                </span>
-
-                <h2>Buchung wirklich löschen?</h2>
+                <span>ENDGÜLTIG LÖSCHEN</span>
+                <h2>Galerie-Projekt löschen?</h2>
 
                 <p>
-                  Die Buchung von <strong>{clientName}</strong> wird dauerhaft
-                  entfernt. Eine vorhandene Rechnung wird ebenfalls gelöscht.
-                  Hochgeladene Fotos bleiben gespeichert; veröffentlichte
-                  Vorher-Nachher-Vergleiche bleiben in der Galerie sichtbar.
+                  <strong>{projectTitle}</strong> wird inklusive aller
+                  Vergleiche, Bilder und Veröffentlichungen dauerhaft
+                  gelöscht.
+                </p>
+
+                <p>
+                  Diese Aktion kann nicht rückgängig gemacht werden.
                 </p>
               </div>
             </div>
@@ -157,7 +160,7 @@ export function AdminBookingDeleteForm({
                 onClick={closeModal}
                 type="button"
               >
-                Nein, behalten
+                Abbrechen
               </button>
 
               <button
@@ -165,12 +168,12 @@ export function AdminBookingDeleteForm({
                 disabled={isPending}
                 type="submit"
               >
-                {isPending ? "Wird gelöscht..." : "Ja, löschen"}
+                {isPending ? "Wird gelöscht..." : "Endgültig löschen"}
               </button>
             </div>
           </form>
         </div>
-      )}
+      ) : null}
     </>
   );
 }

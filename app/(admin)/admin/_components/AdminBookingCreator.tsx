@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { CalendarPlus, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useAdminNotification } from "../_components/AdminNotificationProvider";
 
 type Option = {
@@ -10,10 +11,18 @@ type Option = {
   price?: number;
 };
 
+type ExistingClient = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+};
+
 export function AdminBookingCreator({
   action,
   addOns,
   categories,
+  client,
   defaultDate,
   services,
 }: {
@@ -23,36 +32,37 @@ export function AdminBookingCreator({
   }>;
   addOns: Option[];
   categories: Option[];
+  client?: ExistingClient;
   defaultDate?: string;
   services: Option[];
 }) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const router = useRouter();
   const { showNotification } = useAdminNotification();
 
+  const isExistingClientBooking = Boolean(client);
+
   useEffect(() => {
-  if (!open) return;
+    if (!open) return;
 
-  const previousBodyOverflow = document.body.style.overflow;
-  const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
 
-  document.body.style.overflow = "hidden";
-  document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
 
-  return () => {
-    document.body.style.overflow = previousBodyOverflow;
-    document.documentElement.style.overflow = previousHtmlOverflow;
-  };
-}, [open]);
-
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [open]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (isSubmitting) return;
-
-    
 
     const formData = new FormData(event.currentTarget);
 
@@ -70,6 +80,8 @@ export function AdminBookingCreator({
       }
 
       setOpen(false);
+      router.refresh();
+
       showNotification("Buchung wurde erfolgreich erstellt.", "success");
     } catch (error) {
       console.error("Booking creation failed:", error);
@@ -91,7 +103,9 @@ export function AdminBookingCreator({
         type="button"
       >
         <CalendarPlus size={16} />
-        Neue Buchung
+        {isExistingClientBooking
+          ? "Neue Buchung für diesen Kunden"
+          : "Neue Buchung"}
       </button>
 
       {open && (
@@ -114,6 +128,8 @@ export function AdminBookingCreator({
               <X size={22} />
             </button>
 
+            {client && <input name="clientId" type="hidden" value={client.id} />}
+
             <div className="admin-panel-head">
               <div>
                 <span>Buchung</span>
@@ -122,20 +138,41 @@ export function AdminBookingCreator({
             </div>
 
             <div className="admin-form-grid">
-              <label>
-                Name
-                <input name="name" required type="text" />
-              </label>
+              {client ? (
+                <>
+                  <label>
+                    Name
+                    <input readOnly type="text" value={client.name} />
+                  </label>
 
-              <label>
-                E-Mail
-                <input name="email" required type="email" />
-              </label>
+                  <label>
+                    E-Mail
+                    <input readOnly type="email" value={client.email} />
+                  </label>
 
-              <label>
-                Telefon
-                <input name="phone" required type="tel" />
-              </label>
+                  <label>
+                    Telefon
+                    <input readOnly type="tel" value={client.phone} />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <label>
+                    Name
+                    <input name="name" required type="text" />
+                  </label>
+
+                  <label>
+                    E-Mail
+                    <input name="email" required type="email" />
+                  </label>
+
+                  <label>
+                    Telefon
+                    <input name="phone" required type="tel" />
+                  </label>
+                </>
+              )}
 
               <label>
                 Fahrzeug
@@ -233,7 +270,9 @@ export function AdminBookingCreator({
               disabled={isSubmitting}
               type="submit"
             >
-              {isSubmitting ? "Buchung wird gespeichert..." : "Buchung speichern"}
+              {isSubmitting
+                ? "Buchung wird gespeichert..."
+                : "Buchung speichern"}
             </button>
           </form>
         </div>

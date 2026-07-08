@@ -7,6 +7,9 @@ import {
   updateAdminBooking,
 } from "../_actions/bookingActions";
 import { useAdminNotification } from "./AdminNotificationProvider";
+import { BookingPhotoUploader } from "./BookingPhotoUploader";
+import { AdminBookingDeleteForm } from "./AdminBookingDeleteForm";
+import { AdminBookingGalleryLink } from "./AdminBookingGalleryLink";
 
 type Service = {
   id: string;
@@ -39,6 +42,11 @@ type BookingEditorProps = {
     vehicleCategoryId: string;
     serviceIds: string[];
     addOnIds: string[];
+    galleryProject: {
+      id: string;
+      title: string;
+      comparisonCount: number;
+    } | null;
     client: {
       name: string;
       email: string;
@@ -79,7 +87,6 @@ export function AdminBookingEditor({
   const { showNotification } = useAdminNotification();
 
   const [isPending, startTransition] = useTransition();
-  const [isDeleting, setIsDeleting] = useState(false);
 
   function handleUpdate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -87,88 +94,66 @@ export function AdminBookingEditor({
     const formData = new FormData(event.currentTarget);
 
     startTransition(async () => {
-      const result = await updateAdminBooking(formData);
+      try {
+        const result = await updateAdminBooking(formData);
 
-      if (!result.success) {
-        showNotification(result.error, "error");
-        return;
+        if (!result.success) {
+          showNotification(result.error, "error");
+          return;
+        }
+
+        showNotification(result.message, "success");
+        router.refresh();
+      } catch (error) {
+        console.error("Booking update failed:", error);
+
+        showNotification(
+          "Die Buchung konnte nicht gespeichert werden. Bitte versuche es erneut.",
+          "error"
+        );
       }
-
-      showNotification(result.message, "success");
-      router.refresh();
-    });
-  }
-
-  function handleDelete(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const confirmed = window.confirm(
-      "Diese Buchung wirklich löschen?\n\nDie zugehörige Rechnung wird ebenfalls gelöscht."
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setIsDeleting(true);
-
-    const formData = new FormData(event.currentTarget);
-
-    startTransition(async () => {
-      const result = await deleteAdminBooking(formData);
-
-      if (!result.success) {
-        setIsDeleting(false);
-        showNotification(result.error, "error");
-        return;
-      }
-
-      showNotification(result.message, "success");
-
-      router.push("/admin/bookings");
-      router.refresh();
     });
   }
 
   return (
     <div className="admin-booking-editor">
       <form className="admin-booking-form" onSubmit={handleUpdate}>
-        <input type="hidden" name="bookingId" value={booking.id} />
+        <input name="bookingId" type="hidden" value={booking.id} />
 
         <div className="admin-form-grid">
           <label>
             <span>Datum</span>
             <input
-              type="date"
-              name="date"
               defaultValue={getDateValue(booking.dateTime)}
+              name="date"
               required
+              type="date"
             />
           </label>
 
           <label>
             <span>Startzeit</span>
             <input
-              type="time"
-              name="start"
               defaultValue={getTimeValue(booking.dateTime)}
+              name="start"
               required
+              type="time"
             />
           </label>
 
           <label>
             <span>Endzeit</span>
             <input
-              type="time"
-              name="end"
               defaultValue={getTimeValue(booking.endTime)}
+              name="end"
               required
+              type="time"
             />
           </label>
 
           <label>
             <span>Status</span>
-            <select name="status" defaultValue={booking.status} required>
+            <select defaultValue={booking.status} name="status" required>
               <option value="PENDING">Offen</option>
               <option value="CONFIRMED">Bestätigt</option>
               <option value="COMPLETED">Abgeschlossen</option>
@@ -179,18 +164,18 @@ export function AdminBookingEditor({
           <label>
             <span>Fahrzeugmodell</span>
             <input
-              type="text"
-              name="vehicleModel"
               defaultValue={booking.vehicleModel}
+              name="vehicleModel"
               required
+              type="text"
             />
           </label>
 
           <label>
             <span>Fahrzeugkategorie</span>
             <select
-              name="vehicleCategoryId"
               defaultValue={booking.vehicleCategoryId}
+              name="vehicleCategoryId"
               required
             >
               {vehicleCategories.map((category) => (
@@ -203,7 +188,11 @@ export function AdminBookingEditor({
 
           <label>
             <span>Hauptleistung</span>
-            <select name="serviceId" defaultValue={booking.serviceId} required>
+            <select
+              defaultValue={booking.serviceId}
+              name="serviceId"
+              required
+            >
               {services.map((service) => (
                 <option key={service.id} value={service.id}>
                   {service.name} — CHF {service.basePrice.toFixed(2)}
@@ -220,12 +209,12 @@ export function AdminBookingEditor({
             {services
               .filter((service) => service.id !== booking.serviceId)
               .map((service) => (
-                <label key={service.id} className="admin-checkbox-label">
+                <label className="admin-checkbox-label" key={service.id}>
                   <input
-                    type="checkbox"
-                    name="additionalServiceIds"
-                    value={service.id}
                     defaultChecked={booking.serviceIds.includes(service.id)}
+                    name="additionalServiceIds"
+                    type="checkbox"
+                    value={service.id}
                   />
 
                   <span>
@@ -241,12 +230,12 @@ export function AdminBookingEditor({
 
           <div className="admin-checkbox-grid">
             {addOns.map((addOn) => (
-              <label key={addOn.id} className="admin-checkbox-label">
+              <label className="admin-checkbox-label" key={addOn.id}>
                 <input
-                  type="checkbox"
-                  name="addOnIds"
-                  value={addOn.id}
                   defaultChecked={booking.addOnIds.includes(addOn.id)}
+                  name="addOnIds"
+                  type="checkbox"
+                  value={addOn.id}
                 />
 
                 <span>
@@ -261,40 +250,73 @@ export function AdminBookingEditor({
           <span>Notizen</span>
 
           <textarea
-            name="notes"
             defaultValue={booking.notes ?? ""}
-            rows={5}
+            name="notes"
             placeholder="Interne oder Kunden-Notizen..."
+            rows={5}
           />
         </label>
 
-        <button
-          type="submit"
+        <section className="admin-booking-gallery-section">
+          <div>
+            <h3>Vorher / Nachher Galerie</h3>
+            <p>
+              Öffentliche Vorher-Nachher-Vergleiche werden zentral im Gallery Manager
+              verwaltet. Dort können Bilder einzeln ersetzt, gelöscht und
+              veröffentlicht werden.
+            </p>
+          </div>
+
+          <AdminBookingGalleryLink
+            bookingId={booking.id}
+            galleryProject={booking.galleryProject}
+          />
+        </section>
+
+        <section className="admin-booking-photo-section">
+          <div>
+            <h3>Schäden / Dokumentation</h3>
+            <p>
+              Private Beweisdokumentation. Diese Fotos können nie veröffentlicht
+              werden.
+            </p>
+          </div>
+
+          <BookingPhotoUploader bookingId={booking.id}/>
+        </section>
+
+        {/* <button
           className="admin-primary-button"
-          disabled={isPending || isDeleting}
+          disabled={isPending}
+          type="submit"
         >
-          {isPending && !isDeleting
-            ? "Wird gespeichert..."
-            : "Buchung speichern"}
+          {isPending ? "Wird gespeichert..." : "Buchung speichern"}
+        </button> */}
+
+        <button
+          className="admin-primary-button"
+          disabled={isPending}
+          type="submit"
+        >
+          {isPending ? "Wird gespeichert..." : "Buchung speichern"}
         </button>
       </form>
 
-      <form className="admin-danger-zone" onSubmit={handleDelete}>
-        <input type="hidden" name="bookingId" value={booking.id} />
-
+      <div className="admin-danger-zone">
         <div>
           <strong>Buchung löschen</strong>
-          <p>Diese Aktion kann nicht rückgängig gemacht werden.</p>
+          <p>
+            Diese Aktion kann nicht rückgängig gemacht werden. Hochgeladene
+            Fotos und veröffentlichte Galerie-Vergleiche bleiben erhalten.
+          </p>
         </div>
 
-        <button
-          type="submit"
-          className="admin-danger-button"
-          disabled={isPending || isDeleting}
-        >
-          {isDeleting ? "Wird gelöscht..." : "Buchung löschen"}
-        </button>
-      </form>
+        <AdminBookingDeleteForm
+          action={deleteAdminBooking}
+          bookingId={booking.id}
+          clientName={booking.client.name}
+        />
+      </div>
     </div>
   );
 }

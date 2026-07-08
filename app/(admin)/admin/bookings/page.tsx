@@ -324,11 +324,18 @@ export default async function AdminBookingsPage({
                     />
                   </td>
                   <td className="admin-booking-actions-cell">
-                    <AdminBookingDeleteForm
+                    <Link
+                      className="admin-action-button"
+                      href={`/admin/bookings/${booking.id}`}
+                    >
+                      Buchung bearbeiten
+                    </Link>
+
+                    {/* <AdminBookingDeleteForm
                       action={deleteBooking}
                       bookingId={booking.id}
                       clientName={booking.client.name}
-                    />
+                    /> */}
                   </td>
                 </tr>
               ))}

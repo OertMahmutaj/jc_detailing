@@ -21,6 +21,12 @@ enum InvoiceStatus {
   PAID
 }
 
+enum BookingPhotoCategory {
+  BEFORE
+  AFTER
+  DAMAGE
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -73,6 +79,9 @@ model Booking {
   notes             String?
   imageUrls         String[]        @default([])
 
+  photos BookingPhoto[]
+  galleryProjects GalleryProject[] @relation("GalleryProjectBooking")
+
   clientId          String
   client            Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
@@ -124,6 +133,72 @@ model InvoiceItem {
   quantity     Float    @default(1.0)
   unit         String   @default("Stk.") // Stk., h, etc.
   pricePerUnit Float    
+}
+
+model BookingPhoto {
+  id             String               @id @default(uuid())
+  bookingId      String?
+  booking        Booking?             @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  galleryGroupId String
+  storagePath    String               @unique
+  category       BookingPhotoCategory
+  isPublished    Boolean              @default(false)
+  publishedAt    DateTime?
+  sortOrder      Int                  @default(0)
+  createdAt      DateTime             @default(now())
+
+  @@index([bookingId, category])
+  @@index([galleryGroupId, category, sortOrder])
+  @@index([isPublished, category, createdAt])
+}
+
+model GalleryProject {
+  id          String              @id @default(uuid())
+  title       String              @default("Neues Galerie-Projekt")
+  bookingId   String?
+  booking     Booking?            @relation("GalleryProjectBooking", fields: [bookingId], references: [id], onDelete: SetNull)
+  comparisons GalleryComparison[]
+  mediaAssets GalleryMediaAsset[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([bookingId])
+  @@index([createdAt])
+}
+
+model GalleryMediaAsset {
+  id               String              @id @default(uuid())
+  projectId        String
+  project          GalleryProject      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  storagePath      String              @unique
+  originalFileName String?
+  mimeType         String
+  fileSize         Int
+  createdAt        DateTime            @default(now())
+
+  usedAsBefore GalleryComparison? @relation("GalleryComparisonBeforeAsset")
+  usedAsAfter  GalleryComparison? @relation("GalleryComparisonAfterAsset")
+
+  @@index([projectId, createdAt])
+}
+
+model GalleryComparison {
+  id            String             @id @default(uuid())
+  projectId     String
+  project       GalleryProject     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  label         String?
+  beforeAssetId String?            @unique
+  afterAssetId  String?            @unique
+  beforeAsset   GalleryMediaAsset? @relation("GalleryComparisonBeforeAsset", fields: [beforeAssetId], references: [id], onDelete: SetNull)
+  afterAsset    GalleryMediaAsset? @relation("GalleryComparisonAfterAsset", fields: [afterAssetId], references: [id], onDelete: SetNull)
+  isPublished   Boolean            @default(false)
+  publishedAt   DateTime?
+  sortOrder     Int                @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([projectId, sortOrder])
+  @@index([isPublished, publishedAt])
 }
 
 model AvailabilityBlock {

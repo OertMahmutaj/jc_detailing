@@ -83,7 +83,7 @@ function buildDateTime(date: string, time: string) {
 
 function invoiceNumber() {
   return `RE-${Date.now().toString().slice(-6)}-${Math.floor(
-    100 + Math.random() * 900
+    100 + Math.random() * 900,
   )}`;
 }
 
@@ -138,7 +138,7 @@ function customerText(
   language: InvoiceLanguage,
   name: string,
   invoice: string,
-  total: number
+  total: number,
 ) {
   const amount = `CHF ${total.toFixed(2)}`;
 
@@ -174,8 +174,11 @@ export async function createAdminBooking(formData: FormData): Promise<{
   error?: string;
 }> {
   try {
+    const clientId = String(formData.get("clientId") ?? "").trim();
     const name = String(formData.get("name") ?? "").trim();
-    const email = String(formData.get("email") ?? "").trim().toLowerCase();
+    const email = String(formData.get("email") ?? "")
+      .trim()
+      .toLowerCase();
     const phone = String(formData.get("phone") ?? "").trim();
     const vehicleModel = String(formData.get("vehicleModel") ?? "").trim();
     const serviceId = String(formData.get("serviceId") ?? "");
@@ -186,10 +189,10 @@ export async function createAdminBooking(formData: FormData): Promise<{
     const language = cleanLanguage(formData.get("language"));
     const addOnIds = formData.getAll("addOnIds").map(String).filter(Boolean);
 
+    const isExistingClientBooking = Boolean(clientId);
+
     if (
-      !name ||
-      !email ||
-      !phone ||
+      (!isExistingClientBooking && (!name || !email || !phone)) ||
       !vehicleModel ||
       !serviceId ||
       !vehicleCategoryId ||
@@ -206,10 +209,7 @@ export async function createAdminBooking(formData: FormData): Promise<{
     const dateTime = buildDateTime(date, start);
     const endTime = buildDateTime(date, end);
 
-    if (
-      Number.isNaN(dateTime.getTime()) ||
-      Number.isNaN(endTime.getTime())
-    ) {
+    if (Number.isNaN(dateTime.getTime()) || Number.isNaN(endTime.getTime())) {
       return {
         success: false,
         error: "Datum oder Uhrzeit ist ungültig.",
@@ -263,20 +263,49 @@ export async function createAdminBooking(formData: FormData): Promise<{
       };
     }
 
-    const [service, category, addOns] = await Promise.all([
-      prisma.service.findUnique({ where: { id: serviceId } }),
-      prisma.vehicleCategory.findUnique({ where: { id: vehicleCategoryId } }),
+    const [service, category, addOns, selectedClient] = await Promise.all([
+      prisma.service.findUnique({
+        where: { id: serviceId },
+      }),
+      prisma.vehicleCategory.findUnique({
+        where: { id: vehicleCategoryId },
+      }),
       addOnIds.length
-        ? prisma.addOn.findMany({ where: { id: { in: addOnIds } } })
+        ? prisma.addOn.findMany({
+            where: {
+              id: {
+                in: addOnIds,
+              },
+            },
+          })
         : Promise.resolve([]),
+      clientId
+        ? prisma.client.findUnique({
+            where: { id: clientId },
+          })
+        : Promise.resolve(null),
     ]);
 
     if (!service || !category) {
       return {
         success: false,
-        error: "Die gewählte Leistung oder Fahrzeugklasse wurde nicht gefunden.",
+        error:
+          "Die gewählte Leistung oder Fahrzeugklasse wurde nicht gefunden.",
       };
     }
+
+    if (clientId && !selectedClient) {
+      return {
+        success: false,
+        error: "Der ausgewählte Kunde wurde nicht gefunden.",
+      };
+    }
+
+    const bookingClient = selectedClient ?? {
+      name,
+      email,
+      phone,
+    };
 
     const booking = await prisma.booking.create({
       data: {
@@ -285,16 +314,46 @@ export async function createAdminBooking(formData: FormData): Promise<{
         imageUrls: [],
         status: "CONFIRMED",
         vehicleModel,
-        client: {
-          connectOrCreate: {
-            create: { email, name, phone },
-            where: { email },
+        client: selectedClient
+          ? {
+              connect: {
+                id: selectedClient.id,
+              },
+            }
+          : {
+              connectOrCreate: {
+                create: {
+                  email,
+                  name,
+                  phone,
+                },
+                where: {
+                  email,
+                },
+              },
+            },
+        service: {
+          connect: {
+            id: service.id,
           },
         },
-        service: { connect: { id: service.id } },
-        services: { connect: [{ id: service.id }] },
-        vehicleCategory: { connect: { id: category.id } },
-        addOns: { connect: addOns.map((addOn) => ({ id: addOn.id })) },
+        services: {
+          connect: [
+            {
+              id: service.id,
+            },
+          ],
+        },
+        vehicleCategory: {
+          connect: {
+            id: category.id,
+          },
+        },
+        addOns: {
+          connect: addOns.map((addOn) => ({
+            id: addOn.id,
+          })),
+        },
       },
     });
 
@@ -309,7 +368,7 @@ export async function createAdminBooking(formData: FormData): Promise<{
       data: {
         bookingId: booking.id,
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        emailOverride: email,
+        emailOverride: bookingClient.email,
         invoiceNumber: number,
         language,
         sentAt: new Date(),
@@ -349,22 +408,33 @@ export async function createAdminBooking(formData: FormData): Promise<{
       ],
     });
 
-    const localized = customerText(language, name, number, totalAmount);
+    const localized = customerText(
+      language,
+      bookingClient.name,
+      number,
+      totalAmount,
+    );
 
-    await sendEmail(email, localized.subject, localized.text);
+    await sendEmail(bookingClient.email, localized.subject, localized.text);
 
     revalidatePath("/admin/bookings");
+    revalidatePath("/admin/clients");
+    revalidatePath(`/admin/clients/${booking.clientId}`);
     revalidatePath("/admin/calendar");
     revalidatePath("/admin/invoices");
     revalidatePath("/admin/dashboard");
+    revalidatePath("/gallery");
 
-    return { success: true };
+    return {
+      success: true,
+    };
   } catch (error) {
     console.error("Admin booking creation failed:", error);
 
     return {
       success: false,
-      error: "Die Buchung konnte nicht gespeichert werden. Bitte versuche es erneut.",
+      error:
+        "Die Buchung konnte nicht gespeichert werden. Bitte versuche es erneut.",
     };
   }
 }
@@ -375,16 +445,13 @@ export async function createAdminBooking(formData: FormData): Promise<{
   It returns a detailed result for the notification toast.
 */
 export async function updateAdminBooking(
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult> {
   try {
     const bookingId = getRequiredValue(formData, "bookingId");
     const vehicleModel = getRequiredValue(formData, "vehicleModel");
     const serviceId = getRequiredValue(formData, "serviceId");
-    const vehicleCategoryId = getRequiredValue(
-      formData,
-      "vehicleCategoryId"
-    );
+    const vehicleCategoryId = getRequiredValue(formData, "vehicleCategoryId");
 
     const date = getRequiredValue(formData, "date");
     const start = getRequiredValue(formData, "start");
@@ -395,7 +462,7 @@ export async function updateAdminBooking(
 
     const additionalServiceIds = getSelectedIds(
       formData,
-      "additionalServiceIds"
+      "additionalServiceIds",
     ).filter((id) => id !== serviceId);
 
     const addOnIds = getSelectedIds(formData, "addOnIds");
@@ -407,10 +474,7 @@ export async function updateAdminBooking(
     const dateTime = buildDateTime(date, start);
     const endTime = buildDateTime(date, end);
 
-    if (
-      Number.isNaN(dateTime.getTime()) ||
-      Number.isNaN(endTime.getTime())
-    ) {
+    if (Number.isNaN(dateTime.getTime()) || Number.isNaN(endTime.getTime())) {
       return failure("Datum oder Uhrzeit ist ungültig.");
     }
 
@@ -475,7 +539,7 @@ export async function updateAdminBooking(
 
     if (additionalServices.length !== additionalServiceIds.length) {
       return failure(
-        "Eine oder mehrere zusätzliche Leistungen wurden nicht gefunden."
+        "Eine oder mehrere zusätzliche Leistungen wurden nicht gefunden.",
       );
     }
 
@@ -521,17 +585,14 @@ export async function updateAdminBooking(
       }).format(conflictingBooking.endTime);
 
       return failure(
-        `Dieser Zeitraum ist bereits belegt: ${conflictStart}–${conflictEnd} Uhr.`
+        `Dieser Zeitraum ist bereits belegt: ${conflictStart}–${conflictEnd} Uhr.`,
       );
     }
 
     const allSelectedServices = [primaryService, ...additionalServices];
 
     const totalAmount =
-      allSelectedServices.reduce(
-        (sum, service) => sum + service.basePrice,
-        0
-      ) +
+      allSelectedServices.reduce((sum, service) => sum + service.basePrice, 0) +
       vehicleCategory.priceModifier +
       addOns.reduce((sum, addOn) => sum + addOn.price, 0);
 
@@ -543,45 +604,45 @@ export async function updateAdminBooking(
     ) {
       changes.push(
         `Termin von ${formatDateTime(
-          currentBooking.dateTime
-        )} auf ${formatDateTime(dateTime)} geändert`
+          currentBooking.dateTime,
+        )} auf ${formatDateTime(dateTime)} geändert`,
       );
     }
 
     if (currentBooking.status !== statusValue) {
       changes.push(
         `Status von ${bookingStatusLabel(
-          currentBooking.status
-        )} zu ${bookingStatusLabel(statusValue)} geändert`
+          currentBooking.status,
+        )} zu ${bookingStatusLabel(statusValue)} geändert`,
       );
     }
 
     if (currentBooking.vehicleModel !== vehicleModel) {
       changes.push(
-        `Fahrzeug von ${currentBooking.vehicleModel} zu ${vehicleModel} geändert`
+        `Fahrzeug von ${currentBooking.vehicleModel} zu ${vehicleModel} geändert`,
       );
     }
 
     if (currentBooking.vehicleCategoryId !== vehicleCategoryId) {
       changes.push(
-        `Fahrzeugkategorie von ${currentBooking.vehicleCategory.name} zu ${vehicleCategory.name} geändert`
+        `Fahrzeugkategorie von ${currentBooking.vehicleCategory.name} zu ${vehicleCategory.name} geändert`,
       );
     }
 
     if (currentBooking.serviceId !== serviceId) {
       changes.push(
-        `Hauptleistung von ${currentBooking.service.name} zu ${primaryService.name} geändert`
+        `Hauptleistung von ${currentBooking.service.name} zu ${primaryService.name} geändert`,
       );
     }
 
     const currentServiceIds = currentBooking.services.map(
-      (service) => service.id
+      (service) => service.id,
     );
     const newServiceIds = allSelectedServices.map((service) => service.id);
 
     if (!sameIds(currentServiceIds, newServiceIds)) {
       changes.push(
-        `Leistungen auf ${getNameList(allSelectedServices)} geändert`
+        `Leistungen auf ${getNameList(allSelectedServices)} geändert`,
       );
     }
 
@@ -698,7 +759,7 @@ export async function updateAdminBooking(
   It does not redirect; the client component will show a toast and navigate.
 */
 export async function deleteAdminBooking(
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionResult> {
   try {
     const bookingId = getRequiredValue(formData, "bookingId");
@@ -735,8 +796,8 @@ export async function deleteAdminBooking(
 
     return success(
       `Buchung von ${booking.client.name} am ${formatDateTime(
-        booking.dateTime
-      )} wurde gelöscht.`
+        booking.dateTime,
+      )} wurde gelöscht.`,
     );
   } catch (error) {
     console.error("Admin booking deletion failed:", error);

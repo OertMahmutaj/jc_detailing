@@ -26,6 +26,21 @@ export default async function AdminBookingDetailPage({
                         items: true,
                     },
                 },
+                galleryProjects: {
+                    orderBy: {
+                        createdAt: "asc",
+                    },
+                    select: {
+                        id: true,
+                        title: true,
+                        _count: {
+                            select: {
+                                comparisons: true,
+                            },
+                        },
+                    },
+                    take: 1,
+                },
             },
         }),
         prisma.service.findMany({
@@ -84,11 +99,19 @@ export default async function AdminBookingDetailPage({
                         vehicleCategoryId: booking.vehicleCategoryId,
                         serviceIds: booking.services.map((service) => service.id),
                         addOnIds: booking.addOns.map((addOn) => addOn.id),
+                        galleryProject: booking.galleryProjects[0]
+                            ? {
+                                id: booking.galleryProjects[0].id,
+                                title: booking.galleryProjects[0].title,
+                                comparisonCount: booking.galleryProjects[0]._count.comparisons,
+                            }
+                            : null,
                         client: {
                             name: booking.client.name,
                             email: booking.client.email,
                             phone: booking.client.phone,
                         },
+
                     }}
                     services={services}
                     vehicleCategories={vehicleCategories}

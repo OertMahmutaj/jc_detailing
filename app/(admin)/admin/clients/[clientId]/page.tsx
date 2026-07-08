@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "../../_lib/prisma";
+import { createAdminBooking } from "../../_actions/bookingActions";
+import { AdminBookingCreator } from "../../_components/AdminBookingCreator";
 import { AdminClientEditor } from "../../_components/AdminClientEditor";
 
 function formatDate(value?: Date | null) {
@@ -24,6 +26,23 @@ function formatMoney(value?: number | null) {
   }).format(value);
 }
 
+function getBookingServiceNames(booking: {
+  service: {
+    id: string;
+    name: string;
+  };
+  services: {
+    id: string;
+    name: string;
+  }[];
+}) {
+  const allServices = [booking.service, ...booking.services];
+
+  return Array.from(
+    new Map(allServices.map((service) => [service.id, service.name])).values()
+  );
+}
+
 export default async function AdminClientDetailPage({
   params,
 }: {
@@ -31,29 +50,73 @@ export default async function AdminClientDetailPage({
 }) {
   const { clientId } = await params;
 
-  const client = await prisma.client.findUnique({
-    where: {
-      id: clientId,
-    },
-    include: {
-      bookings: {
-        orderBy: {
-          dateTime: "desc",
-        },
-        include: {
-          service: true,
-          services: true,
-          vehicleCategory: true,
-          addOns: true,
-          invoice: true,
+  const [client, services, vehicleCategories, addOns] = await Promise.all([
+    prisma.client.findUnique({
+      where: {
+        id: clientId,
+      },
+      include: {
+        bookings: {
+          orderBy: {
+            dateTime: "desc",
+          },
+          include: {
+            service: true,
+            services: true,
+            vehicleCategory: true,
+            addOns: true,
+            invoice: true,
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.service.findMany({
+      orderBy: {
+        name: "asc",
+      },
+    }),
+    prisma.vehicleCategory.findMany({
+      orderBy: {
+        name: "asc",
+      },
+    }),
+    prisma.addOn.findMany({
+      orderBy: {
+        name: "asc",
+      },
+    }),
+  ]);
 
   if (!client) {
     notFound();
   }
+
+  const now = new Date();
+
+  const lastAppointment =
+    client.bookings.find(
+      (booking) =>
+        booking.status !== "CANCELLED" && booking.dateTime.getTime() <= now.getTime()
+    ) ?? null;
+
+  const totalSpend = client.bookings.reduce((total, booking) => {
+    if (
+      booking.status === "CANCELLED" ||
+      booking.invoice?.status !== "PAID"
+    ) {
+      return total;
+    }
+
+    return total + booking.invoice.totalAmount;
+  }, 0);
+
+  const lastVehicle = lastAppointment
+    ? `${lastAppointment.vehicleModel} · ${lastAppointment.vehicleCategory.name}`
+    : "-";
+
+  const lastService = lastAppointment
+    ? getBookingServiceNames(lastAppointment).join(", ")
+    : "-";
 
   return (
     <div className="admin-page">
@@ -73,7 +136,47 @@ export default async function AdminClientDetailPage({
             }).format(client.createdAt)}
           </p>
         </div>
+
+        <AdminBookingCreator
+          action={createAdminBooking}
+          addOns={addOns}
+          categories={vehicleCategories}
+          client={{
+            id: client.id,
+            name: client.name,
+            email: client.email,
+            phone: client.phone,
+          }}
+          services={services}
+        />
       </header>
+
+      <section className="admin-client-summary">
+        <article className="admin-client-summary-card">
+          <span>Buchungen insgesamt</span>
+          <strong>{client.bookings.length}</strong>
+        </article>
+
+        <article className="admin-client-summary-card">
+          <span>Gesamtausgaben</span>
+          <strong>{formatMoney(totalSpend)}</strong>
+        </article>
+
+        <article className="admin-client-summary-card">
+          <span>Letzter Termin</span>
+          <strong>{formatDate(lastAppointment?.dateTime)}</strong>
+        </article>
+
+        <article className="admin-client-summary-card">
+          <span>Letztes Fahrzeug</span>
+          <strong>{lastVehicle}</strong>
+        </article>
+
+        <article className="admin-client-summary-card">
+          <span>Letzte Leistung</span>
+          <strong>{lastService}</strong>
+        </article>
+      </section>
 
       <section className="admin-panel">
         <div className="admin-panel-head">
@@ -113,10 +216,7 @@ export default async function AdminClientDetailPage({
 
             <tbody>
               {client.bookings.map((booking) => {
-                const services = [
-                  booking.service.name,
-                  ...booking.services.map((service) => service.name),
-                ];
+                const serviceNames = getBookingServiceNames(booking);
 
                 return (
                   <tr key={booking.id}>
@@ -130,7 +230,7 @@ export default async function AdminClientDetailPage({
                     </td>
 
                     <td>
-                      <strong>{services.join(", ")}</strong>
+                      <strong>{serviceNames.join(", ")}</strong>
 
                       {!!booking.addOns.length && (
                         <span>

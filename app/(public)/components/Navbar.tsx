@@ -53,7 +53,7 @@ const navItems = [
     ],
   },
   { label: "Über uns", href: "/#about" },
-  { label: "Galerie", href: "/#work" },
+  { label: "Galerie", href: "/gallery" },
   { label: "Kontakt", href: "/#contact" },
 ];
 
