@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -14,24 +14,19 @@ import {
   publicLocales,
   sharedCopy,
 } from "../i18n";
+import { usePublicLocale } from "./usePublicLocale";
 
 const menuEase = [0.22, 1, 0.36, 1] as const;
 
 export function Navbar() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const activeLocale = usePublicLocale();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileNavActive, setMobileNavActive] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [dropdownCycle, setDropdownCycle] = useState(0);
   const lockedScrollY = useRef(0);
-  const localeSegment = pathname.split("/").filter(Boolean)[0]?.toLowerCase();
-  const activeLocale = publicLocales.includes(searchParams.get("lang") as (typeof publicLocales)[number])
-    ? (searchParams.get("lang") as (typeof publicLocales)[number])
-    : publicLocales.includes(localeSegment as (typeof publicLocales)[number])
-      ? (localeSegment as (typeof publicLocales)[number])
-      : "de";
   const copy = sharedCopy[activeLocale];
   const homePath = localeHome(activeLocale);
   const bookingUrl = localizePublicHref("/buchen", activeLocale);
