@@ -202,7 +202,7 @@ export default async function AdminClientDetailPage({
         </div>
 
         <div className="admin-table-wrap">
-          <table className="admin-table">
+          <table className="admin-table admin-client-bookings-table">
             <thead>
               <tr>
                 <th>Termin</th>
@@ -220,16 +220,16 @@ export default async function AdminClientDetailPage({
 
                 return (
                   <tr key={booking.id}>
-                    <td>
+                    <td data-label="Termin">
                       <strong>{formatDate(booking.dateTime)}</strong>
                     </td>
 
-                    <td>
+                    <td data-label="Fahrzeug">
                       <strong>{booking.vehicleModel}</strong>
                       <span>{booking.vehicleCategory.name}</span>
                     </td>
 
-                    <td>
+                    <td data-label="Leistung">
                       <strong>{serviceNames.join(", ")}</strong>
 
                       {!!booking.addOns.length && (
@@ -240,11 +240,11 @@ export default async function AdminClientDetailPage({
                       )}
                     </td>
 
-                    <td>
+                    <td data-label="Status">
                       <strong>{booking.status}</strong>
                     </td>
 
-                    <td>
+                    <td data-label="Rechnung">
                       {booking.invoice ? (
                         <>
                           <strong>{booking.invoice.invoiceNumber}</strong>
@@ -258,7 +258,7 @@ export default async function AdminClientDetailPage({
                       )}
                     </td>
 
-                    <td>
+                    <td data-label="Aktion">
                       <Link
                         href={`/admin/bookings/${booking.id}`}
                         className="admin-table-action"

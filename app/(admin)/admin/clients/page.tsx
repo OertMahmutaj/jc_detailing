@@ -76,7 +76,7 @@ export default async function AdminClientsPage({
         </div>
 
         <div className="admin-table-wrap">
-          <table className="admin-table">
+          <table className="admin-table admin-clients-table">
             <thead>
               <tr>
                 <th>Name</th>
@@ -93,26 +93,26 @@ export default async function AdminClientsPage({
 
                 return (
                   <tr key={client.id}>
-                    <td>
+                    <td data-label="Name">
                       <strong>{client.name}</strong>
                       <span>Seit {formatDate(client.createdAt)}</span>
                     </td>
-                    <td>
+                    <td data-label="Kontakt">
                       <strong>{client.email}</strong>
                       <span>{client.phone}</span>
                     </td>
-                    <td>
+                    <td data-label="Buchungen">
                       <strong>{client.bookings.length}</strong>
                       <span>Termine</span>
                     </td>
-                    <td>
+                    <td data-label="Letzter Termin">
                       <strong>{formatDate(lastBooking?.dateTime)}</strong>
                       <span>{lastBooking?.status ?? "-"}</span>
                     </td>
-                    <td>
+                    <td data-label="Letzte Leistung">
                       <strong>{lastBooking ? lastBooking.service.name : "-"}</strong>
                     </td>
-                    <td>
+                    <td data-label="Aktion">
                       <Link
                         href={`/admin/clients/${client.id}`}
                         className="admin-table-action"

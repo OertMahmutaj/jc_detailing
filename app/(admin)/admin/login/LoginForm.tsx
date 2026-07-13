@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
@@ -9,6 +11,7 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (retryAfter === null || retryAfter <= 0) return;
@@ -57,19 +60,46 @@ export function LoginForm() {
 
   return (
     <form className="admin-login-card" onSubmit={onSubmit}>
-      <div>
+      <div className="admin-login-brand">
+        <Image
+          alt="JC Detailing"
+          className="admin-login-logo"
+          height={120}
+          priority
+          src="/logo.png"
+          width={180}
+        />
         <p>JC Detailing</p>
         <h1>Admin Login</h1>
       </div>
 
       <label>
-        E-Mail
-        <input autoComplete="email" name="email" required type="email" />
+        <span>E-Mail</span>
+        <span className="admin-login-input-wrap">
+          <Mail aria-hidden="true" size={17} />
+          <input autoComplete="email" name="email" required type="email" />
+        </span>
       </label>
 
       <label>
-        Passwort
-        <input autoComplete="current-password" name="password" required type="password" />
+        <span>Passwort</span>
+        <span className="admin-login-input-wrap">
+          <LockKeyhole aria-hidden="true" size={17} />
+          <input
+            autoComplete="current-password"
+            name="password"
+            required
+            type={showPassword ? "text" : "password"}
+          />
+          <button
+            aria-label={showPassword ? "Passwort ausblenden" : "Passwort anzeigen"}
+            className="admin-login-password-toggle"
+            onClick={() => setShowPassword((current) => !current)}
+            type="button"
+          >
+            {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+          </button>
+        </span>
       </label>
 
       {error && (
@@ -79,7 +109,11 @@ export function LoginForm() {
         </span>
       )}
 
-      <button disabled={isSubmitting || isLocked} type="submit">
+      <button
+        className="admin-login-submit"
+        disabled={isSubmitting || isLocked}
+        type="submit"
+      >
         {isLocked
           ? `Bitte warten (${retryAfter}s)`
           : isSubmitting

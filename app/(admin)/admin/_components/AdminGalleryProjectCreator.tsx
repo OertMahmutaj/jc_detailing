@@ -72,11 +72,6 @@ export function AdminGalleryProjectCreator({
       </div>
 
       <div className="admin-gallery-create-actions">
-        <p>
-          Eine Buchung ist nur eine optionale Quelle. Das Galerie-Projekt
-          bleibt bestehen, auch wenn die Buchung später gelöscht wird.
-        </p>
-
         <button
           className="admin-submit-button"
           disabled={isPending}

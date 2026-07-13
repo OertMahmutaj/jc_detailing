@@ -9,8 +9,7 @@ export default function AdminThemeToggle() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem("admin-theme");
-      const prefersDark = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const initial = saved || (prefersDark ? "dark" : "light");
+      const initial = saved || "dark";
       setTheme(initial);
     } catch (e) {
       // noop
@@ -25,7 +24,7 @@ export default function AdminThemeToggle() {
         document.documentElement.setAttribute("data-admin-theme", "dark");
         document.body.classList.add("admin-theme-dark");
       } else {
-        document.documentElement.removeAttribute("data-admin-theme");
+        document.documentElement.setAttribute("data-admin-theme", "light");
         document.body.classList.remove("admin-theme-dark");
       }
     } catch (e) {

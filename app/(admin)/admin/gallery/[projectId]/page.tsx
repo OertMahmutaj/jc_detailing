@@ -129,12 +129,14 @@ export default async function AdminGalleryProjectDetailPage({
   return (
     <div className="admin-page">
       <header className="admin-page-header">
-        <Link className="admin-back-link" href="/admin/gallery">
-          ← Zurück zur Galerie
-        </Link>
+        <div className="admin-detail-heading">
+          <Link className="admin-back-link" href="/admin/gallery">
+            ← Zurück zur Galerie
+          </Link>
 
-        <span className="admin-page-kicker">GALERIE-PROJEKT</span>
-        <h1>{project.title}</h1>
+          <span className="admin-page-kicker">GALERIE-PROJEKT</span>
+          <h1>{project.title}</h1>
+        </div>
 
         <p>
           {project.booking

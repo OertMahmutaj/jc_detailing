@@ -180,16 +180,16 @@ export default function InvoicesDashboardClient({
             <tbody>
               {bookings.map((booking) => (
                 <tr key={getRowKey(booking)}>
-                  <td>
+                  <td data-label="Kunde">
                     <strong>{booking.clientName}</strong>
                     <span>{booking.clientEmail}</span>
                   </td>
 
-                  <td>{booking.serviceName}</td>
+                  <td data-label="Service">{booking.serviceName}</td>
 
-                  <td>{formatSwissDate(booking.dateTime)}</td>
+                  <td data-label="Datum">{formatSwissDate(booking.dateTime)}</td>
 
-                  <td>
+                  <td data-label="Status">
                     <span
                       className={`admin-status-pill is-${
                         booking.invoice?.status?.toLowerCase() || "missing"
@@ -205,11 +205,11 @@ export default function InvoicesDashboardClient({
                     )}
                   </td>
 
-                  <td>
+                  <td data-label="Betrag">
                     <strong>{formatCurrency(booking.totalAmount)}</strong>
                   </td>
 
-                  <td>
+                  <td data-label="Aktion">
                     <div className="admin-row-actions">
                       <button
                         className="admin-action-button"

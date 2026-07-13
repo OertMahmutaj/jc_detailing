@@ -67,11 +67,13 @@ export default async function AdminBookingDetailPage({
     return (
         <div className="admin-page">
             <header className="admin-page-header">
-                <Link href="/admin/bookings" className="admin-back-link">
-                    ← Zurück zu Buchungen
-                </Link>
+                <div className="admin-detail-heading">
+                    <Link href="/admin/bookings" className="admin-back-link">
+                        ← Zurück zu Buchungen
+                    </Link>
 
-                <h1>Buchung bearbeiten</h1>
+                    <h1>Buchung bearbeiten</h1>
+                </div>
                 <p>
                     {booking.client.name} · {booking.client.email}
                 </p>

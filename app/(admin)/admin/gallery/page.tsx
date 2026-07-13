@@ -89,12 +89,10 @@ export default async function AdminGalleryPage() {
   return (
     <div className="admin-page">
       <header className="admin-page-header">
-        <span className="admin-page-kicker">MEDIEN & GALERIE</span>
-        <h1>Galerie</h1>
-        <p>
-          Erstelle unabhängige Vorher-Nachher-Projekte oder verknüpfe sie
-          optional mit einer bestehenden Buchung.
-        </p>
+        <div>
+          <span className="admin-page-kicker">MEDIEN & GALERIE</span>
+          <h1>Galerie</h1>
+        </div>
       </header>
 
       <section className="admin-panel">

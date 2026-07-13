@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   ArrowUpRight,
-  BarChart3,
   CalendarDays,
   CalendarOff,
   FileText,
   Images,
+  LayoutDashboard,
   LogOut,
   Users,
+  X,
 } from "lucide-react";
 import AdminThemeToggle from "../_components/AdminThemeToggle.client";
 
@@ -20,7 +21,7 @@ const adminGroups = [
   {
     title: "Allgemein",
     links: [
-      { href: "/admin/dashboard", label: "Dashboard", icon: BarChart3 },
+      { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/admin/bookings", label: "Buchungen", icon: CalendarDays },
       { href: "/admin/calendar", label: "Kalender", icon: CalendarOff },
       { href: "/admin/gallery", label: "Galerie", icon: Images },
@@ -35,47 +36,49 @@ const adminGroups = [
   },
 ];
 
-export default function AdminSidebar() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function AdminSidebar({
+  isOpen = false,
+  onClose,
+}: {
+  isOpen?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
-  const sidebarRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
 
-    function handlePointerDown(event: PointerEvent) {
-      const target = event.target as Node;
-
-      if (sidebarRef.current && !sidebarRef.current.contains(target)) {
-        setIsOpen(false);
-      }
-    }
-
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setIsOpen(false);
+        onClose?.();
       }
     }
 
-    document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   return (
     <aside
-      ref={sidebarRef}
       className={`admin-sidebar ${isOpen ? "is-open" : ""}`}
     >
       <div className="admin-sidebar-header">
+        <button
+          aria-label="Admin Navigation schliessen"
+          className="admin-sidebar-close"
+          onClick={() => onClose?.()}
+          type="button"
+        >
+          <X size={18} />
+        </button>
+
         <Link
           className="admin-brand"
           href="/admin/dashboard"
-          onClick={() => setIsOpen(false)}
+          onClick={() => onClose?.()}
         >
           <div className="admin-brand-logo-wrap">
             <Image
@@ -116,7 +119,7 @@ export default function AdminSidebar() {
                       className={isActive ? "active" : ""}
                       href={item.href}
                       key={item.href}
-                      onClick={() => setIsOpen(false)}
+                      onClick={() => onClose?.()}
                     >
                       <Icon size={17} />
                       {item.label}
@@ -129,13 +132,11 @@ export default function AdminSidebar() {
         </div>
 
         <div className="admin-sidebar-actions">
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <AdminThemeToggle />
-          </div>
+          <AdminThemeToggle />
           <Link
             className="admin-public-link"
             href="/"
-            onClick={() => setIsOpen(false)}
+            onClick={() => onClose?.()}
             rel="noopener noreferrer"
             target="_blank"
           >

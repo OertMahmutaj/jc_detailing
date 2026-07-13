@@ -256,7 +256,7 @@ export default async function AdminInvoicesPage({
   return (
     <div className="admin-page">
       <header className="admin-page-header">
-        <h1>Rechnungen & Buchungen</h1>
+        <h1>Rechnungen</h1>
       </header>
 
       <section className="admin-panel admin-search-panel">

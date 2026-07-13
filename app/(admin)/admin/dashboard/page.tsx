@@ -1,5 +1,18 @@
 import Link from "next/link";
+import {
+  ArrowRight,
+  AlertTriangle,
+  CalendarDays,
+  CalendarPlus,
+  Calendar,
+  FileText,
+  MessageCircle,
+  Users,
+  BarChart3,
+} from "lucide-react";
 import { prisma } from "../_lib/prisma";
+import { AdminBookingCreator } from "../_components/AdminBookingCreator";
+import { createAdminBooking } from "../_actions/bookingActions";
 
 const DEFAULT_VAT_RATE = 8.1;
 
@@ -78,6 +91,17 @@ function invoiceStatusLabel(status?: string | null) {
   };
 
   return labels[status] ?? status;
+}
+
+function bookingStatusClass(status: string) {
+  const classes: Record<string, string> = {
+    PENDING: "is-sent",
+    CONFIRMED: "is-paid",
+    COMPLETED: "is-paid",
+    CANCELLED: "is-cancelled",
+  };
+
+  return classes[status] ?? "is-open";
 }
 
 function toGrossAmount(netAmount: number, vatRate = DEFAULT_VAT_RATE) {
@@ -194,6 +218,7 @@ export default async function AdminDashboardPage() {
       include: {
         client: true,
         service: true,
+        vehicleCategory: true,
       },
       orderBy: {
         dateTime: "asc",
@@ -262,6 +287,24 @@ export default async function AdminDashboardPage() {
     }),
   ]);
 
+  const services = await prisma.service.findMany({
+    orderBy: {
+      name: "asc",
+    },
+  });
+
+  const categories = await prisma.vehicleCategory.findMany({
+    orderBy: {
+      name: "asc",
+    },
+  });
+
+  const addOns = await prisma.addOn.findMany({
+    orderBy: {
+      name: "asc",
+    },
+  });
+
   const monthRevenue = monthBookings.reduce(
     (sum, booking) => sum + bookingNetAmount(booking),
     0
@@ -302,59 +345,94 @@ export default async function AdminDashboardPage() {
       hint: "aktive Termine",
       label: "Heute",
       value: todayBookings.length.toString(),
+      icon: CalendarDays,
+      accent: "#ff7a26",
     },
     {
       hint: "Buchungen",
       label: "Diese Woche",
       value: weekCount.toString(),
+      icon: CalendarPlus,
+      accent: "#0077ff",
     },
     {
       hint: "Buchungen",
       label: "Dieser Monat",
       value: monthBookings.length.toString(),
+      icon: Calendar,
+      accent: "#28c76f",
     },
     {
       hint: "Anfragen",
       label: "Offen",
       value: pendingCount.toString(),
+      icon: MessageCircle,
+      accent: "#ffb400",
     },
     {
       hint: "gespeichert",
       label: "Kunden",
       value: clientCount.toString(),
+      icon: Users,
+      accent: "#9c6cff",
     },
     {
       hint: "inkl. MwSt.",
       label: "Umsatz Monat",
       value: formatGrossCurrency(monthRevenue),
+      icon: BarChart3,
+      accent: "#00bfa5",
     },
   ];
 
   return (
-    <div className="admin-page">
-      <header className="admin-page-header">
-        <h1>Dashboard</h1>
-      </header>
+    <div className="admin-page admin-dashboard-page">
+      <header className="admin-page-header admin-dashboard-header">
+        <div>
+          <h1>Dashboard</h1>
 
-      <section className="admin-dashboard-overview">
-        <div className="admin-dashboard-overview-section">
-          <div className="admin-dashboard-section-title">
+          <div className="admin-dashboard-tabs" aria-label="Dashboard Zeitraum">
             <span>Übersicht</span>
-            <h2>Monat</h2>
-          </div>
-
-          <div className="admin-stat-grid admin-month-stat-grid">
-            {statCards.map((stat) => (
-              <article className="admin-stat-card" key={stat.label}>
-                <span>{stat.label}</span>
-                <strong>{stat.value}</strong>
-                <small>{stat.hint}</small>
-              </article>
-            ))}
+            <button type="button">Monat</button>
           </div>
         </div>
 
-        <div className="admin-dashboard-overview-section">
+        <div className="admin-dashboard-header-actions">
+          <AdminBookingCreator
+            action={createAdminBooking}
+            addOns={addOns}
+            categories={categories}
+            services={services}
+          />
+
+        </div>
+      </header>
+
+      <section className="admin-dashboard-overview">
+        <div className="admin-dashboard-overview-section admin-dashboard-month-section">
+          <div className="admin-stat-grid admin-month-stat-grid">
+            {statCards.map((stat) => {
+              const Icon = stat.icon;
+              return (
+                <article className="admin-stat-card" key={stat.label}>
+                  <div className="admin-stat-card-heading">
+                    <div
+                      className="admin-stat-card-icon"
+                      style={{ backgroundColor: `${stat.accent}18`, color: stat.accent }}
+                    >
+                      <Icon size={18} />
+                    </div>
+                    <span>{stat.label}</span>
+                  </div>
+                  <strong>{stat.value}</strong>
+                  <small>{stat.hint}</small>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="admin-dashboard-overview-section admin-dashboard-planning-section">
           <div className="admin-dashboard-section-title">
             <span>Planung</span>
             <h2>Nächste 6 Tage</h2>
@@ -446,9 +524,10 @@ export default async function AdminDashboardPage() {
                 </article>
               ))
             ) : (
-              <p className="admin-empty">
-                Für heute sind keine aktiven Termine geplant.
-              </p>
+              <div className="admin-dashboard-empty-state">
+                <CalendarDays size={34} />
+                <p>Für heute sind keine aktiven Termine geplant.</p>
+              </div>
             )}
           </div>
         </article>
@@ -466,16 +545,22 @@ export default async function AdminDashboardPage() {
           </div>
 
           <div className="admin-invoice-summary">
-            <div>
+            <div className="admin-invoice-summary-card is-open">
+              <div>
               <span>Offen</span>
               <strong>{formatGrossCurrency(openInvoiceTotal)}</strong>
               <small>{openInvoices.length} Rechnungen</small>
+              </div>
+              <FileText aria-hidden="true" size={24} />
             </div>
 
-            <div className="admin-invoice-summary--overdue">
-              <span>Überfällig</span>
-              <strong>{formatGrossCurrency(overdueInvoiceTotal)}</strong>
-              <small>{overdueInvoices.length} Rechnungen</small>
+            <div className="admin-invoice-summary-card admin-invoice-summary--overdue">
+              <div>
+                <span>Überfällig</span>
+                <strong>{formatGrossCurrency(overdueInvoiceTotal)}</strong>
+                <small>{overdueInvoices.length} Rechnungen</small>
+              </div>
+              <AlertTriangle aria-hidden="true" size={24} />
             </div>
           </div>
 
@@ -523,35 +608,73 @@ export default async function AdminDashboardPage() {
           </Link>
         </div>
 
-        <div className="admin-list">
+        <div className="admin-dashboard-table-wrap">
           {upcomingBookings.length ? (
-            upcomingBookings.map((booking) => (
-              <article className="admin-list-row" key={booking.id}>
-                <div>
-                  <strong>{booking.client.name}</strong>
-                  <span>
-                    {booking.vehicleModel} · {booking.service.name} ·{" "}
-                    {bookingStatusLabel(booking.status)}
-                  </span>
-                </div>
-
-                <div className="admin-list-row-actions">
-                  <time>{formatDate(booking.dateTime)}</time>
-
-                  <Link
-                    className="admin-table-action"
-                    href={`/admin/bookings/${booking.id}`}
-                  >
-                    Öffnen
-                  </Link>
-                </div>
-              </article>
-            ))
+            <table className="admin-dashboard-table">
+              <thead>
+                <tr>
+                  <th>Kunde</th>
+                  <th>Service</th>
+                  <th>Fahrzeug</th>
+                  <th>Datum & Zeit</th>
+                  <th>Status</th>
+                  <th>Aktion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {upcomingBookings.map((booking) => (
+                  <tr key={booking.id}>
+                    <td data-label="Kunde">
+                      <strong>{booking.client.name}</strong>
+                      <span>{booking.client.email}</span>
+                    </td>
+                    <td data-label="Service">
+                      <strong>
+                        {booking.service.name}
+                        <i aria-hidden="true" />
+                      </strong>
+                      <span>{bookingStatusLabel(booking.status)}</span>
+                    </td>
+                    <td data-label="Fahrzeug">
+                      <strong>{booking.vehicleModel}</strong>
+                      <span>{booking.vehicleCategory.name}</span>
+                    </td>
+                    <td data-label="Datum & Zeit">
+                      <strong>{formatDate(booking.dateTime)}</strong>
+                    </td>
+                    <td data-label="Status">
+                      <span
+                        className={`admin-status-pill ${bookingStatusClass(
+                          booking.status
+                        )}`}
+                      >
+                        {bookingStatusLabel(booking.status)}
+                      </span>
+                    </td>
+                    <td data-label="Aktion">
+                      <Link
+                        className="admin-dashboard-open-link"
+                        href={`/admin/bookings/${booking.id}`}
+                      >
+                        Öffnen
+                        <ArrowRight size={14} />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           ) : (
             <p className="admin-empty">Keine kommenden Termine.</p>
           )}
         </div>
       </section>
+
+      <footer className="admin-dashboard-footer">
+        <span>JC Detailing</span>
+        <span>Luzern, Switzerland</span>
+        <span>© 2026 JC Detailing. Alle Rechte vorbehalten.</span>
+      </footer>
     </div>
   );
 }
