@@ -1067,3 +1067,103 @@ body {
     transition: none;
   }
 }
+
+#booking {
+  scroll-margin-top: 120px;
+}
+
+.booking-progress-loader {
+  width: min(100%, 680px);
+  min-height: 180px;
+  margin-inline: auto;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+}
+
+.booking-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.booking-progress-header strong {
+  flex-shrink: 0;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.booking-progress-track {
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.booking-progress-bar {
+  display: block;
+  height: 100%;
+  background: currentColor;
+  transition: width 150ms ease-out;
+}
+
+@media (max-width: 600px) {
+  .booking-progress-loader {
+    min-height: 140px;
+    padding: 24px 18px;
+  }
+
+  .booking-progress-header {
+    gap: 12px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Selected booking add-on */
+.page-shell .booking-option-list button.is-selected {
+  background: rgba(120, 166, 255, 0.14);
+  border-color: #78a6ff;
+  box-shadow:
+    0 0 0 2px rgba(120, 166, 255, 0.22),
+    0 0 18px rgba(120, 166, 255, 0.18);
+  color: var(--public-text);
+}
+
+/* Selected booking time */
+.page-shell .booking-time-grid button.is-selected {
+  background: #78a6ff;
+  border-color: #9bbcff;
+  box-shadow:
+    0 0 0 2px rgba(120, 166, 255, 0.28),
+    0 0 20px rgba(120, 166, 255, 0.3);
+  color: #050a11;
+  /* font-weight: 800; */
+}
+
+.page-shell .booking-option-list button,
+.page-shell .booking-time-grid button {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.page-shell .booking-option-list button:hover:not(:disabled),
+.page-shell .booking-time-grid button:hover:not(:disabled) {
+  border-color: rgba(120, 166, 255, 0.75);
+  transform: translateY(-1px);
+}
+
+.page-shell .booking-option-list button:focus-visible,
+.page-shell .booking-time-grid button:focus-visible {
+  outline: 2px solid #78a6ff;
+  outline-offset: 3px;
+}

@@ -29,7 +29,7 @@ export function Navbar() {
   const lockedScrollY = useRef(0);
   const copy = sharedCopy[activeLocale];
   const homePath = localeHome(activeLocale);
-  const bookingUrl = localizePublicHref("/buchen", activeLocale);
+  const bookingUrl = `${localizePublicHref("/buchen", activeLocale)}#booking`;
   const languageOptions = publicLocales.map((code) => ({
     code,
     label: code.toUpperCase(),

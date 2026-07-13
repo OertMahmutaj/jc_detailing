@@ -5,7 +5,10 @@ import type { ComponentProps } from "react";
 import { localizePublicHref } from "../i18n";
 import { usePublicLocale } from "./usePublicLocale";
 
-type LanguageAwareBookingLinkProps = Omit<ComponentProps<typeof Link>, "href">;
+type LanguageAwareBookingLinkProps = Omit<
+  ComponentProps<typeof Link>,
+  "href"
+>;
 
 export function LanguageAwareBookingLink({
   children,
@@ -14,7 +17,10 @@ export function LanguageAwareBookingLink({
   const locale = usePublicLocale();
 
   return (
-    <Link {...props} href={localizePublicHref("/buchen", locale)}>
+    <Link
+      {...props}
+      href={`${localizePublicHref("/buchen", locale)}#booking`}
+    >
       {children}
     </Link>
   );

@@ -333,6 +333,7 @@ export function BookingForm() {
   const copy = bookingFormCopy[currentLanguage];
   const [step, setStep] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const [submittedBooking, setSubmittedBooking] =
@@ -381,6 +382,28 @@ export function BookingForm() {
   }, [dbData.services, selectedServices, showAllServices]);
 
   useEffect(() => {
+    if (!loadingData) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setLoadingProgress((currentProgress) => {
+        if (currentProgress >= 90) {
+          return currentProgress;
+        }
+
+        const increase = Math.floor(Math.random() * 8) + 2;
+
+        return Math.min(currentProgress + increase, 90);
+      });
+    }, 150);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [loadingData]);
+
+  useEffect(() => {
     async function fetchData() {
       try {
         const res = await fetch("/api/booking-data");
@@ -390,7 +413,11 @@ export function BookingForm() {
       } catch (err) {
         console.error("Buchungsdaten konnten nicht geladen werden:", err);
       } finally {
-        setLoadingData(false);
+        setLoadingProgress(100);
+
+        window.setTimeout(() => {
+          setLoadingData(false);
+        }, 350);
       }
     }
 
@@ -532,9 +559,33 @@ export function BookingForm() {
   }
 
   if (loadingData) {
+    const loadingLabel = {
+      de: "Buchungsformular wird geladen",
+      en: "Loading Booking Form",
+      fr: "Chargement du formulaire de réservation",
+      it: "Caricamento del modulo di prenotazione",
+    }[currentLanguage];
+
     return (
-      <div className="booking-loading">
-        <Loader2 className="spin" size={32} />
+      <div
+        className="booking-loading booking-progress-loader"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="booking-progress-header">
+          <span>{loadingLabel}</span>
+          <strong>{loadingProgress}%</strong>
+        </div>
+
+        <div
+          className="booking-progress-track"
+          aria-hidden="true"
+        >
+          <span
+            className="booking-progress-bar"
+            style={{ width: `${loadingProgress}%` }}
+          />
+        </div>
       </div>
     );
   }

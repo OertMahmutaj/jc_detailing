@@ -54,7 +54,7 @@ export default async function BookingPage({ searchParams }: { searchParams?: Pro
         </HeroIntro>
       </section>
 
-      <section className="booking-section">
+      <section id="booking" className="booking-section">
         <div className="booking-intro">
           <p className="mini-title">{copy.sectionEyebrow}</p>
           <h2>{copy.sectionTitle}</h2>
