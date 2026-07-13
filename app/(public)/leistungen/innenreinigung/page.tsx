@@ -3,6 +3,8 @@
 import type { Metadata } from "next";
 import { ServiceDetail } from "../../components/ServiceDetail";
 import { services } from "@/app/data/site";
+import { normalizeLocale } from "../../i18n";
+import { getLocalizedService } from "../../serviceCopy";
 
 const service = services.innenreinigung;
 
@@ -42,6 +44,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function InnenreinigungPage() {
-  return <ServiceDetail service={service} />;
+export default async function InnenreinigungPage({ searchParams }: { searchParams?: Promise<{ lang?: string }> }) {
+  const locale = normalizeLocale((await searchParams)?.lang);
+  return <ServiceDetail locale={locale} service={getLocalizedService(service, locale)} />;
 }

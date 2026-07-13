@@ -1,8 +1,7 @@
 // app/angebote/de/page.tsx
 
 import type { Metadata } from "next";
-import { GermanOffersGrid } from "../../components/GermanOffersGrid";
-import { HeroIntro, HeroItem, PageEntry } from "../../components/StudioMotion";
+import { OffersPageContent } from "../page";
 
 export const metadata: Metadata = {
   title: "Pakete & Preise",
@@ -32,28 +31,5 @@ export const metadata: Metadata = {
 };
 
 export default function GermanOffersPage() {
-  return (
-    <PageEntry className="page-shell" id="top">
-      <section className="sub-hero">
-        <HeroIntro>
-          <HeroItem>
-            <p className="eyebrow">Angebote</p>
-          </HeroItem>
-
-          <HeroItem>
-            <h1>Pakete & Preise</h1>
-          </HeroItem>
-
-          <HeroItem>
-            <p>
-              Klare Einstiegspreise. Der finale Preis hängt von
-              Fahrzeuggrösse und Zustand ab.
-            </p>
-          </HeroItem>
-        </HeroIntro>
-      </section>
-
-      <GermanOffersGrid />
-    </PageEntry>
-  );
+  return <OffersPageContent locale="de" />;
 }

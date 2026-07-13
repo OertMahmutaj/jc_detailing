@@ -5,11 +5,16 @@ import {
   ArrowRight,
   CalendarCheck,
   Check,
-  ChevronDown,
   Mail,
+  MapPin,
+  ShieldCheck,
+  Sparkles,
+  Star,
 } from "lucide-react";
 import { BeforeAfterSlider } from "./components/BeforeAfterSlider";
 import { GoogleReviewWidget } from "./components/GoogleReviewWidget";
+import { LanguageAwareBookingLink } from "./components/LanguageAwareBookingLink";
+import { LocalizedPublicLink } from "./components/LocalizedPublicLink";
 import {
   HeroIntro,
   HeroItem,
@@ -18,7 +23,9 @@ import {
   LightReveal,
   PageEntry,
 } from "./components/StudioMotion";
-import { germanOffers, serviceItems } from "../data/site";
+import { serviceItems } from "../data/site";
+import { homeCopy } from "./homeCopy";
+import { sharedCopy, type PublicLocale } from "./i18n";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.jcdetailing.ch";
@@ -59,8 +66,6 @@ export const metadata: Metadata = {
   },
 };
 
-const bookingUrl = "/buchen";
-
 const galleryComparisons = [
   { before: "/before_1.webp", after: "/after_1.webp" },
   { before: "/before_2.webp", after: "/after_2.webp" },
@@ -69,41 +74,10 @@ const galleryComparisons = [
 
 const languages = ["DEU", "ENG", "FRA", "ITA", "ALB"];
 
-const faqs = [
-  {
-    question: "Was ist Car Detailing?",
-    answer:
-      "Car Detailing ist eine präzise Fahrzeugaufbereitung, die deutlich weiter geht als eine normale Autowäsche. Innenraum, Lack, Felgen und Details werden gründlich gereinigt, gepflegt und geschützt.",
-  },
-  {
-    question: "Wo befindet sich JC Detailing?",
-    answer:
-      "JC Detailing befindet sich an der Sternmatt 4 in 6242 Wauwil im Kanton Luzern. Die Leistungen richten sich an Kunden aus Wauwil, Luzern und der Zentralschweiz.",
-  },
-  {
-    question: "Bietet JC Detailing mobilen Service an?",
-    answer:
-      "Aktuell finden alle Behandlungen in der Garage statt, damit Licht, Ausstattung und Arbeitsbedingungen für hochwertige Ergebnisse stimmen.",
-  },
-  {
-    question: "Wie lange dauert ein Termin?",
-    answer:
-      "Je nach Zustand und Paket dauert eine Innenreinigung etwa 3 bis 8 Stunden, eine Komplettaufbereitung etwa 6 bis 10 Stunden und Lackkorrektur mit Keramikversiegelung etwa 1 bis 2 Tage.",
-  },
-  {
-    question:
-      "Was ist der Unterschied zwischen einer normalen Autowäsche und Detailing?",
-    answer:
-      "Eine Autowäsche entfernt vor allem oberflächlichen Schmutz. Car Detailing ist deutlich gründlicher: Lack, Innenraum, Materialien und Details werden sorgfältig gereinigt, gepflegt und geschützt.",
-  },
-  {
-    question: "Wie oft sollte man sein Auto aufbereiten lassen?",
-    answer:
-      "Für die meisten Fahrzeuge ist eine gründliche Aufbereitung ein- bis zweimal pro Jahr sinnvoll. Eine regelmässige Erhaltungspflege hilft, den sauberen Zustand länger zu bewahren.",
-  },
-];
-
-export default function Home() {
+export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
+  const copy = homeCopy[locale];
+  const serviceCopy = sharedCopy[locale].serviceNav;
+  const faqs = copy.faq.items;
   const localBusinessJsonLd = {
     "@context": "https://schema.org",
     "@type": "AutoRepair",
@@ -227,7 +201,7 @@ export default function Home() {
         }}
       />
 
-      <PageEntry>
+      <PageEntry className="public-home">
         <section id="top" className="hero">
           <div className="video-background" aria-hidden="true">
             <Image
@@ -266,7 +240,7 @@ export default function Home() {
 
           <HeroIntro className="hero-content">
             <HeroItem>
-              <p className="eyebrow">Kanton Luzern - Sternmatt 4, 6242 Wauwil</p>
+              <p className="eyebrow">{copy.hero.eyebrow}</p>
             </HeroItem>
 
             <HeroItem>
@@ -277,44 +251,81 @@ export default function Home() {
 
             <HeroItem>
               <p>
-                Professionelle Fahrzeugaufbereitung, Lackpflege und
-                Keramikversiegelung in der Zentralschweiz.
+                {copy.hero.description}
               </p>
             </HeroItem>
 
             <HeroItem>
               <div className="hero-buttons">
-                <Link className="ghost-button" href={bookingUrl}>
+                <LanguageAwareBookingLink className="ghost-button">
                   <CalendarCheck size={18} />
-                  Termin buchen
-                </Link>
+                  {copy.hero.booking}
+                </LanguageAwareBookingLink>
 
-                <Link className="ghost-button" href="/leistungen">
-                  Leistungen ansehen
+                <LocalizedPublicLink className="ghost-button" href="/leistungen">
+                  {copy.hero.services}
                   <ArrowRight size={17} />
-                </Link>
+                </LocalizedPublicLink>
               </div>
             </HeroItem>
           </HeroIntro>
 
-          <a className="scroll-tab" href="#services" aria-label="Zu den Leistungen">
-            <ChevronDown size={18} />
-          </a>
+        </section>
+
+        <section className="trust-strip" aria-label={copy.trustLabel}>
+          <LightGroup className="trust-strip-inner">
+            <LightItem className="trust-item">
+              <Star aria-hidden="true" size={24} />
+              <div>
+                <strong>{copy.trust[0].title}</strong>
+                <span>{copy.trust[0].text}</span>
+              </div>
+            </LightItem>
+
+            <LightItem className="trust-item">
+              <Sparkles aria-hidden="true" size={24} />
+              <div>
+                <strong>{copy.trust[1].title}</strong>
+                <span>{copy.trust[1].text}</span>
+              </div>
+            </LightItem>
+
+            <LightItem className="trust-item">
+              <ShieldCheck aria-hidden="true" size={24} />
+              <div>
+                <strong>{copy.trust[2].title}</strong>
+                <span>{copy.trust[2].text}</span>
+              </div>
+            </LightItem>
+
+            <LightItem className="trust-item">
+              <MapPin aria-hidden="true" size={24} />
+              <div>
+                <strong>{copy.trust[3].title}</strong>
+                <span>{copy.trust[3].text}</span>
+              </div>
+            </LightItem>
+          </LightGroup>
         </section>
 
         <section id="services" className="section">
           <LightReveal className="section-heading">
-            <span>01</span>
-            <h2>Leistungen</h2>
+            <div>
+              <span>{copy.services.eyebrow}</span>
+              <h2>{copy.services.title}</h2>
+            </div>
+            <p>
+              {copy.services.intro}
+            </p>
           </LightReveal>
 
           <LightGroup className="service-grid">
             {serviceItems.map((service) => (
               <LightItem key={service.id}>
-                <Link className="service-card" href={service.path}>
+                <LocalizedPublicLink className="service-card" href={service.path}>
                   <div className="service-image">
                     <Image
-                      alt={`${service.title} bei JC Detailing in Wauwil, Luzern`}
+                      alt={`${serviceCopy[service.id][0]} - JC Detailing Wauwil`}
                       fill
                       quality={60}
                       sizes="(max-width: 720px) 100vw, 25vw"
@@ -323,14 +334,14 @@ export default function Home() {
                   </div>
 
                   <div className="service-body">
-                    <h3>{service.title}</h3>
-                    <p>{service.short}</p>
+                    <h3>{serviceCopy[service.id][0]}</h3>
+                    <p>{serviceCopy[service.id][1]}</p>
                     <span>
-                      Mehr Info
+                      {copy.services.more}
                       <ArrowRight size={15} />
                     </span>
                   </div>
-                </Link>
+                </LocalizedPublicLink>
               </LightItem>
             ))}
           </LightGroup>
@@ -338,12 +349,17 @@ export default function Home() {
 
         <section id="packages" className="section">
           <LightReveal className="section-heading">
-            <span>02</span>
-            <h2>Meistgebuchte Angebote</h2>
+            <div>
+              <span>{copy.packages.eyebrow}</span>
+              <h2>{copy.packages.title}</h2>
+            </div>
+            <p>
+              {copy.packages.intro}
+            </p>
           </LightReveal>
 
           <LightGroup className="package-grid">
-            {germanOffers.slice(0, 2).map((offer) => (
+            {copy.packageCards.map((offer) => (
               <LightItem key={offer.title}>
                 <article className="package-card">
                   <div className="package-top">
@@ -356,22 +372,22 @@ export default function Home() {
                   <ul>
                     <li>
                       <Check size={16} />
-                      Sorgfältige Fahrzeugkontrolle vor Beginn
+                      {copy.packages.checks[0]}
                     </li>
                     <li>
                       <Check size={16} />
-                      Hochwertige Produkte und saubere Verarbeitung
+                      {copy.packages.checks[1]}
                     </li>
                     <li>
                       <Check size={16} />
-                      Finale Kontrolle vor der Übergabe
+                      {copy.packages.checks[2]}
                     </li>
                   </ul>
 
-                  <Link href="/angebote/de">
-                    Alle Angebote
+                  <LocalizedPublicLink href="/angebote">
+                    {copy.packages.all}
                     <ArrowRight size={16} />
-                  </Link>
+                  </LocalizedPublicLink>
                 </article>
               </LightItem>
             ))}
@@ -380,20 +396,19 @@ export default function Home() {
 
         <section id="about" className="section">
           <LightReveal className="section-heading">
-            <span>03</span>
-            <h2>Über uns</h2>
+            <div>
+              <span>{copy.about.eyebrow}</span>
+              <h2>{copy.about.title}</h2>
+            </div>
           </LightReveal>
 
           <LightGroup className="about-layout">
             <LightItem className="about-copy">
-              <p className="mini-title">Wer wir sind</p>
-              <h3>Saubere Arbeit, ruhige Hand, echter Anspruch.</h3>
+              <p className="mini-title">{copy.about.mini}</p>
+              <h3>{copy.about.cardTitle}</h3>
 
               <p>
-                JC Detailing steht für professionelle Autoaufbereitung in der
-                Zentralschweiz. Ob Innenreinigung, Aussenreinigung, Politur oder
-                Keramikversiegelung: jedes Fahrzeug wird mit Sorgfalt,
-                hochwertigen Produkten und viel Liebe zum Detail behandelt.
+                {copy.about.body}
               </p>
 
               <div className="language-row">
@@ -411,16 +426,35 @@ export default function Home() {
                 src="/Juljan.avif"
               />
             </LightItem>
+
+            <LightItem className="about-proof">
+              <article>
+                <Star aria-hidden="true" size={25} />
+                <strong>{copy.about.reviews}</strong>
+                <span>{copy.about.reviewsLabel}</span>
+              </article>
+              <article>
+                <Sparkles aria-hidden="true" size={25} />
+                <strong>{copy.about.servicesCount}</strong>
+                <span>{copy.about.servicesLabel}</span>
+              </article>
+              <article>
+                <MapPin aria-hidden="true" size={25} />
+                <strong>{copy.about.location}</strong>
+                <span>{copy.about.locationLabel}</span>
+              </article>
+            </LightItem>
           </LightGroup>
         </section>
 
         <section id="work" className="section">
           <LightReveal className="section-heading">
-            <span>04</span>
-            <h2>Vorher-Nachher Galerie</h2>
+            <div>
+              <span>{copy.gallery.eyebrow}</span>
+              <h2>{copy.gallery.title}</h2>
+            </div>
             <p>
-              Echte Ergebnisse professioneller Autoaufbereitung, Politur,
-              Innenreinigung und Keramikversiegelung in Wauwil.
+              {copy.gallery.intro}
             </p>
           </LightReveal>
 
@@ -437,17 +471,19 @@ export default function Home() {
           </LightGroup>
 
           <LightReveal className="section-action">
-            <Link href="/gallery">
-              Alle Vorher-Nachher Ergebnisse ansehen
+            <LocalizedPublicLink href="/gallery">
+              {copy.gallery.all}
               <ArrowRight size={16} />
-            </Link>
+            </LocalizedPublicLink>
           </LightReveal>
         </section>
 
-        <section className="section">
+        <section className="section" id="faq">
           <LightReveal className="section-heading">
-            <span>05</span>
-            <h2>FAQ</h2>
+            <div>
+              <span>{copy.faq.eyebrow}</span>
+              <h2>{copy.faq.title}</h2>
+            </div>
           </LightReveal>
 
           <LightGroup className="faq-list">
@@ -465,23 +501,22 @@ export default function Home() {
         <section id="contact" className="contact-section">
           <LightReveal className="contact-panel">
             <div>
-              <p className="mini-title">Kontakt</p>
-              <h2>Bereit für ein frisch aufbereitetes Fahrzeug?</h2>
+              <p className="mini-title">{copy.contact.eyebrow}</p>
+              <h2>{copy.contact.title}</h2>
               <p>
-                Termine sind auf Anfrage verfügbar. Schick eine kurze Nachricht
-                mit Fahrzeug, gewünschter Leistung und Wunschdatum.
+                {copy.contact.intro}
               </p>
             </div>
 
             <div className="contact-actions">
-              <Link className="ghost-button" href={bookingUrl}>
+              <LanguageAwareBookingLink className="ghost-button">
                 <CalendarCheck size={18} />
-                Termin buchen
-              </Link>
+                {copy.contact.booking}
+              </LanguageAwareBookingLink>
 
               <a className="ghost-button" href="mailto:info@jcdetailing.ch">
                 <Mail size={18} />
-                Nachricht senden
+                {copy.contact.message}
               </a>
             </div>
           </LightReveal>
@@ -491,4 +526,8 @@ export default function Home() {
       </PageEntry>
     </>
   );
+}
+
+export default function Home() {
+  return <HomePage locale="de" />;
 }

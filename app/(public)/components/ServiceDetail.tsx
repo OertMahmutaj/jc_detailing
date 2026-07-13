@@ -1,9 +1,11 @@
 // app/components/ServiceDetail.tsx
 
 import Image from "next/image";
-import Link from "next/link";
 import { ArrowRight, CalendarCheck, Check } from "lucide-react";
-import type { Service } from "../../data/site";
+import type { PublicLocale } from "../i18n";
+import type { LocalizedService } from "../serviceCopy";
+import { servicePageCopy } from "../serviceCopy";
+import { LocalizedPublicLink } from "./LocalizedPublicLink";
 import {
   HeroIntro,
   HeroItem,
@@ -14,10 +16,13 @@ import {
 } from "./StudioMotion";
 
 type ServiceDetailProps = {
-  service: Service;
+  service: LocalizedService;
+  locale: PublicLocale;
 };
 
-export function ServiceDetail({ service }: ServiceDetailProps) {
+export function ServiceDetail({ service, locale }: ServiceDetailProps) {
+  const copy = servicePageCopy[locale];
+
   return (
     <PageEntry className="page-shell" id="top">
       <section className="detail-hero">
@@ -27,28 +32,26 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
           </HeroItem>
 
           <HeroItem>
-            <h1>{service.title} in Wauwil, Luzern</h1>
+            <h1>{service.title} {copy.locationSuffix}</h1>
           </HeroItem>
 
           <HeroItem>
             <p>
-              {service.short} Bei JC Detailing erhältst du professionelle
-              Fahrzeugaufbereitung in Wauwil für Kunden aus dem Kanton Luzern
-              und der Zentralschweiz.
+              {service.short} {copy.detailIntro}
             </p>
           </HeroItem>
 
           <HeroItem>
-            <Link className="primary-button" href="/buchen">
-              Termin anfragen
+            <LocalizedPublicLink className="primary-button" href="/buchen">
+              {copy.request}
               <CalendarCheck size={17} />
-            </Link>
+            </LocalizedPublicLink>
           </HeroItem>
         </HeroIntro>
 
         <LightReveal className="detail-hero-image">
           <Image
-            alt={`${service.title} bei JC Detailing in Wauwil, Luzern`}
+            alt={`${service.title} ${copy.locationSuffix} - JC Detailing`}
             fill
             priority
             sizes="(max-width: 900px) 100vw, 48vw"
@@ -59,8 +62,8 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
 
       <section className="detail-section">
         <LightReveal className="section-heading compact">
-          <span>Leistung</span>
-          <h2>Was bei der {service.title} enthalten ist</h2>
+          <span>{copy.service}</span>
+          <h2>{copy.included}</h2>
         </LightReveal>
 
         <LightGroup className="included-grid">
@@ -77,15 +80,15 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
 
       <section className="detail-section">
         <LightReveal className="section-heading compact">
-          <span>Ablauf</span>
-          <h2>Professionelle Fahrzeugaufbereitung mit klarer Arbeitsweise</h2>
+          <span>{copy.process}</span>
+          <h2>{copy.processTitle}</h2>
         </LightReveal>
 
         <LightGroup className="process-grid">
           <LightItem>
             <div className="process-card">
               <span>01</span>
-              <h3>Der Ablauf</h3>
+              <h3>{copy.processCard}</h3>
               <p>{service.process}</p>
             </div>
           </LightItem>
@@ -93,7 +96,7 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
           <LightItem>
             <div className="process-card">
               <span>02</span>
-              <h3>Das Ergebnis</h3>
+              <h3>{copy.resultCard}</h3>
               <p>{service.outcome}</p>
             </div>
           </LightItem>
@@ -102,32 +105,28 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
 
       <section className="detail-section">
         <LightReveal className="section-heading compact">
-          <span>Standort</span>
-          <h2>{service.title} in Wauwil und Umgebung Luzern</h2>
+          <span>{copy.location}</span>
+          <h2>{copy.locationTitle}</h2>
         </LightReveal>
 
         <LightReveal className="process-card">
           <p>
-            JC Detailing befindet sich in Wauwil im Kanton Luzern. Die Leistung
-            eignet sich für Fahrzeughalter, die eine saubere, präzise und
-            hochwertige Aufbereitung in der Zentralschweiz suchen.
+            {copy.locationText}
           </p>
         </LightReveal>
       </section>
 
       <LightReveal className="cta-band">
-        <h2>Bereit für {service.title}?</h2>
+        <h2>{copy.ready}</h2>
 
         <p>
-          Schick uns dein Fahrzeugmodell, den aktuellen Zustand und dein
-          Wunschdatum. Wir prüfen die Anfrage und melden uns mit einer passenden
-          Terminbestätigung.
+          {copy.cta}
         </p>
 
-        <Link href="/buchen">
-          Termin anfragen
+        <LocalizedPublicLink href="/buchen">
+          {copy.request}
           <ArrowRight size={16} />
-        </Link>
+        </LocalizedPublicLink>
       </LightReveal>
     </PageEntry>
   );

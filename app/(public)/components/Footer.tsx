@@ -1,6 +1,8 @@
-// app/components/Footer.tsx
+"use client";
 
-import Link from "next/link";
+import { LanguageAwareBookingLink } from "./LanguageAwareBookingLink";
+import { LocalizedPublicLink } from "./LocalizedPublicLink";
+import { usePublicLocale } from "./usePublicLocale";
 import {
   Instagram,
   Mail,
@@ -11,6 +13,7 @@ import {
   Phone,
 } from "lucide-react";
 import { directionsUrl, mapEmbedUrl, serviceItems } from "../../data/site";
+import { sharedCopy } from "../i18n";
 
 const phoneNumber = "+41 77 268 33 88";
 const email = "jcdetailinglucerne@gmail.com";
@@ -20,15 +23,73 @@ const instagramUrl =
 const tiktokUrl = "https://www.tiktok.com/";
 
 export function Footer() {
+  const locale = usePublicLocale();
+  const nav = sharedCopy[locale].nav;
+  const copy = {
+    de: {
+      description: "Professionelle Autoaufbereitung, Innenreinigung, Aussenreinigung, Politur und Keramikversiegelung in Wauwil, Kanton Luzern.",
+      appointment: "Termine nach Vereinbarung",
+      navigation: "Navigation",
+      services: "Leistungen",
+      contact: "Kontakt",
+      legal: "Rechtliches",
+      directions: "Route anzeigen",
+      terms: "AGB",
+      imprint: "Impressum",
+      privacy: "Datenschutz",
+      rights: "Alle Rechte vorbehalten.",
+      locationLine: "Autoaufbereitung in Wauwil · Kanton Luzern · Zentralschweiz",
+    },
+    en: {
+      description: "Professional vehicle detailing, interior and exterior cleaning, polishing and ceramic coating in Wauwil, Canton of Lucerne.",
+      appointment: "Appointments by arrangement",
+      navigation: "Navigation",
+      services: "Services",
+      contact: "Contact",
+      legal: "Legal",
+      directions: "Get directions",
+      terms: "Terms",
+      imprint: "Legal notice",
+      privacy: "Privacy",
+      rights: "All rights reserved.",
+      locationLine: "Vehicle detailing in Wauwil · Canton of Lucerne · Central Switzerland",
+    },
+    fr: {
+      description: "Préparation automobile professionnelle, nettoyage intérieur et extérieur, polissage et protection céramique à Wauwil, canton de Lucerne.",
+      appointment: "Rendez-vous sur demande",
+      navigation: "Navigation",
+      services: "Services",
+      contact: "Contact",
+      legal: "Mentions légales",
+      directions: "Afficher l’itinéraire",
+      terms: "CGV",
+      imprint: "Mentions légales",
+      privacy: "Confidentialité",
+      rights: "Tous droits réservés.",
+      locationLine: "Préparation automobile à Wauwil · Canton de Lucerne · Suisse centrale",
+    },
+    it: {
+      description: "Detailing professionale, pulizia interna ed esterna, lucidatura e rivestimento ceramico a Wauwil, Canton Lucerna.",
+      appointment: "Appuntamenti su richiesta",
+      navigation: "Navigazione",
+      services: "Servizi",
+      contact: "Contatti",
+      legal: "Note legali",
+      directions: "Mostra indicazioni",
+      terms: "Condizioni",
+      imprint: "Impressum",
+      privacy: "Privacy",
+      rights: "Tutti i diritti riservati.",
+      locationLine: "Detailing auto a Wauwil · Canton Lucerna · Svizzera centrale",
+    },
+  }[locale];
+
   return (
     <footer className="footer">
       <div className="footer-top">
         <div>
-          <div className="footer-logo">JC</div>
-
           <p>
-            Professionelle Autoaufbereitung, Innenreinigung, Aussenreinigung,
-            Politur und Keramikversiegelung in Wauwil, Kanton Luzern.
+            {copy.description}
           </p>
 
           <div className="footer-business-info">
@@ -47,31 +108,31 @@ export function Footer() {
               {email}
             </a>
 
-            <span>Termine nach Vereinbarung</span>
+            <span>{copy.appointment}</span>
           </div>
         </div>
 
         <div className="footer-link-groups">
           <div className="footer-links">
-            <strong>Navigation</strong>
-            <Link href="/">Startseite</Link>
-            <Link href="/leistungen">Leistungen</Link>
-            <Link href="/angebote/de">Pakete & Preise</Link>
-            <Link href="/gallery">Galerie</Link>
-            <Link href="/buchen">Termin buchen</Link>
+            <strong>{copy.navigation}</strong>
+            <LocalizedPublicLink href="/">{nav.home}</LocalizedPublicLink>
+            <LocalizedPublicLink href="/leistungen">{nav.services}</LocalizedPublicLink>
+            <LocalizedPublicLink href="/angebote">{nav.offers}</LocalizedPublicLink>
+            <LocalizedPublicLink href="/gallery">{nav.gallery}</LocalizedPublicLink>
+            <LanguageAwareBookingLink>{nav.booking}</LanguageAwareBookingLink>
           </div>
 
           <div className="footer-links">
-            <strong>Leistungen</strong>
+            <strong>{copy.services}</strong>
             {serviceItems.map((service) => (
-              <Link key={service.id} href={service.path}>
-                {service.title}
-              </Link>
+              <LocalizedPublicLink key={service.id} href={service.path}>
+                {sharedCopy[locale].serviceNav[service.id][0]}
+              </LocalizedPublicLink>
             ))}
           </div>
 
           <div className="footer-links">
-            <strong>Kontakt</strong>
+            <strong>{copy.contact}</strong>
 
             <a href={whatsappUrl} rel="noopener noreferrer" target="_blank">
               <MessageCircle size={16} />
@@ -90,15 +151,15 @@ export function Footer() {
 
             <a href={directionsUrl} rel="noopener noreferrer" target="_blank">
               <Navigation size={16} />
-              Route anzeigen
+              {copy.directions}
             </a>
           </div>
 
           <div className="footer-links">
-            <strong>Rechtliches</strong>
-            <Link href="/agb">AGB</Link>
-            <Link href="/impressum">Impressum</Link>
-            <Link href="/datenschutz">Datenschutz</Link>
+            <strong>{copy.legal}</strong>
+            <LocalizedPublicLink href="/agb">{copy.terms}</LocalizedPublicLink>
+            <LocalizedPublicLink href="/impressum">{copy.imprint}</LocalizedPublicLink>
+            <LocalizedPublicLink href="/datenschutz">{copy.privacy}</LocalizedPublicLink>
           </div>
         </div>
 
@@ -106,7 +167,7 @@ export function Footer() {
           <iframe
             loading="lazy"
             src={mapEmbedUrl}
-            title="JC Detailing Standort in Wauwil"
+            title="JC Detailing Wauwil"
           />
 
           <a
@@ -116,7 +177,7 @@ export function Footer() {
             target="_blank"
           >
             <Navigation size={15} />
-            Route anzeigen
+            {copy.directions}
           </a>
 
           <span>
@@ -127,8 +188,8 @@ export function Footer() {
       </div>
 
       <div className="footer-bottom">
-        <p>© 2026 JC Detailing. Alle Rechte vorbehalten.</p>
-        <p>Autoaufbereitung in Wauwil · Kanton Luzern · Zentralschweiz</p>
+        <p>© 2026 JC Detailing. {copy.rights}</p>
+        <p>{copy.locationLine}</p>
       </div>
     </footer>
   );

@@ -3,9 +3,12 @@
 import type { Metadata } from "next";
 import { GeistMono } from "geist/font/mono";
 import "@/app/globals.css";
+import "./public-redesign.css";
+import "./public-pages.css";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
-import { ChevronUp } from "lucide-react";
+import { PublicLocaleEffects } from "./components/PublicLocaleEffects";
+import { Suspense } from "react";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.jcdetailing.ch";
@@ -69,12 +72,14 @@ export default function RootLayout({
   return (
     <html data-scroll-behavior="smooth" lang="de" suppressHydrationWarning>
       <body className={GeistMono.variable}>
-        <Navbar />
+        <Suspense fallback={null}>
+          <Navbar />
+        </Suspense>
         {children}
-        <Footer />
-        <a className="back-to-top" href="#top" aria-label="Zum Seitenanfang">
-          <ChevronUp size={18} />
-        </a>
+        <Suspense fallback={null}>
+          <Footer />
+          <PublicLocaleEffects />
+        </Suspense>
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 
 import { ChevronDown, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { usePublicLocale } from "./usePublicLocale";
 
 type Review = {
   author_name: string;
@@ -20,6 +21,13 @@ const googleReviewsUrl =
   "https://www.google.com/maps/place/JCDetailing/@47.1851689,8.027709,17z/data=!4m8!3m7!1s0x47902198a9df5769:0xb4f52c1f731c38bb!8m2!3d47.1851689!4d8.027709!9m1!1b1!16s%2Fg%2F11z64wxb_v?authuser=0&hl=en&entry=ttu&g_ep=EgoyMDI2MDYyOS4wIKXMDSoASAFQAw%3D%3D";
 
 export function GoogleReviewWidget() {
+  const locale = usePublicLocale();
+  const copy = {
+    de: { reviews: "Bewertungen", openMaps: "Google Bewertungen auf Google Maps öffnen", open: "Google Bewertungen öffnen", close: "Bewertungen schliessen", panel: "Google Bewertungen", stars: "von 5 Sternen", failed: "Google Bewertungen konnten nicht geladen werden.", loading: "Google Bewertungen werden geladen..." },
+    en: { reviews: "Reviews", openMaps: "Open Google reviews on Google Maps", open: "Open Google reviews", close: "Close reviews", panel: "Google Reviews", stars: "out of 5 stars", failed: "Google reviews could not be loaded.", loading: "Loading Google reviews..." },
+    fr: { reviews: "Avis", openMaps: "Ouvrir les avis Google sur Google Maps", open: "Ouvrir les avis Google", close: "Fermer les avis", panel: "Avis Google", stars: "sur 5 étoiles", failed: "Impossible de charger les avis Google.", loading: "Chargement des avis Google..." },
+    it: { reviews: "Recensioni", openMaps: "Apri le recensioni Google su Google Maps", open: "Apri le recensioni Google", close: "Chiudi recensioni", panel: "Recensioni Google", stars: "su 5 stelle", failed: "Impossibile caricare le recensioni Google.", loading: "Caricamento recensioni Google..." },
+  }[locale];
   const [open, setOpen] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [rating, setRating] = useState(5);
@@ -115,7 +123,7 @@ export function GoogleReviewWidget() {
             href={googleReviewsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Google Bewertungen auf Google Maps öffnen"
+            aria-label={copy.openMaps}
           >
             G
           </a>
@@ -124,12 +132,12 @@ export function GoogleReviewWidget() {
             type="button"
             onClick={() => setOpen(true)}
             aria-expanded={open}
-            aria-label="Google Bewertungen öffnen"
+            aria-label={copy.open}
           >
             <span className="google-rating">
               <strong>{rating.toFixed(1)}</strong>
               <span aria-hidden="true">{"*".repeat(5)}</span>
-              <small>{total} Reviews</small>
+              <small>{total} {copy.reviews}</small>
             </span>
             <span className="google-review-arrow" aria-hidden="true">
               <ChevronDown className="svg" size={21} />
@@ -141,8 +149,8 @@ export function GoogleReviewWidget() {
       {open && (
         <div className="google-review-panel">
           <div className="google-review-panel-head">
-            <span>Google Reviews</span>
-            <button type="button" onClick={() => setOpen(false)} aria-label="Bewertungen schliessen">
+            <span>{copy.panel}</span>
+            <button type="button" onClick={() => setOpen(false)} aria-label={copy.close}>
               <X size={17} />
             </button>
           </div>
@@ -163,7 +171,7 @@ export function GoogleReviewWidget() {
                       <strong>{review.author_name}</strong>
                       {review.relative_time_description && <small>{review.relative_time_description}</small>}
                     </div>
-                    <span aria-label={`${review.rating} von 5 Sternen`}>
+                    <span aria-label={`${review.rating} ${copy.stars}`}>
                       {"*".repeat(review.rating)}
                     </span>
                     <p>{review.text}</p>
@@ -173,8 +181,8 @@ export function GoogleReviewWidget() {
             ) : (
               <p className="google-review-empty">
                 {loaded
-                  ? "Google Bewertungen konnten nicht geladen werden."
-                  : "Google Bewertungen werden geladen..."}
+                  ? copy.failed
+                  : copy.loading}
               </p>
             )}
           </div>

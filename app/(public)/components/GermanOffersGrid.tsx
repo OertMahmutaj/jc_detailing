@@ -3,16 +3,17 @@
 import { ArrowRight, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { LightGroup, LightItem } from "./StudioMotion";
-import { germanOffers } from "../../data/site";
+import type { PublicLocale } from "../i18n";
+import { getLocalizedOffers, offersPageCopy, type LocalizedOffer } from "../offerCopy";
 
-type GermanOffer = (typeof germanOffers)[number];
-
-export function GermanOffersGrid() {
-  const [selectedOffer, setSelectedOffer] = useState<GermanOffer | null>(null);
+export function GermanOffersGrid({ locale = "de" }: { locale?: PublicLocale }) {
+  const offers = getLocalizedOffers(locale);
+  const copy = offersPageCopy[locale];
+  const [selectedOffer, setSelectedOffer] = useState<LocalizedOffer | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const topRef = useRef<HTMLDivElement | null>(null);
 
-  function openOffer(offer: GermanOffer) {
+  function openOffer(offer: LocalizedOffer) {
     setSelectedOffer(offer);
   }
 
@@ -36,7 +37,7 @@ export function GermanOffersGrid() {
     <div ref={topRef} className="offers-interactive">
       <div className="offers-interactive-inner">
         <LightGroup className="offer-grid offers-page-grid">
-          {germanOffers.map((offer) => (
+          {offers.map((offer) => (
             <LightItem key={offer.title}>
               <article className="offer-card">
                 <div className="offer-card-content">
@@ -50,7 +51,7 @@ export function GermanOffersGrid() {
                   type="button"
                   onClick={() => openOffer(offer)}
                 >
-                  Mehr erfahren
+                  {copy.more}
                   <ArrowRight size={16} />
                 </button>
               </article>
@@ -60,13 +61,13 @@ export function GermanOffersGrid() {
 
         {selectedOffer && (
           <section className="offer-detail-panel" ref={panelRef}>
-            <button className="offer-close" type="button" onClick={closeOffer} aria-label="Angebot schliessen">
-              <span>Schliessen</span>
+            <button className="offer-close" type="button" onClick={closeOffer} aria-label={copy.closeLabel}>
+              <span>{copy.close}</span>
               <X size={16} />
             </button>
 
             <div>
-              <p className="mini-title">Angebot</p>
+              <p className="mini-title">{copy.offer}</p>
               <h2>{selectedOffer.title}</h2>
               <strong>{selectedOffer.price}</strong>
               <p>{selectedOffer.text}</p>

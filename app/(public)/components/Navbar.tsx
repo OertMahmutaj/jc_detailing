@@ -2,63 +2,67 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarCheck, ChevronDown } from "lucide-react";
-
-const navItems = [
-  { label: "Startseite", href: "/#top" },
-  {
-    label: "Leistungen",
-    href: "/leistungen",
-    children: [
-      {
-        label: "Innenreinigung",
-        href: "/leistungen/innenreinigung",
-        text: "Tiefenpflege für Leder, Stoffe und Innenraumdetails.",
-      },
-      {
-        label: "Aussenreinigung",
-        href: "/leistungen/aussenreinigung",
-        text: "Schonende Handwäsche, Felgenpflege und Schutzfinish.",
-      },
-      {
-        label: "Politur",
-        href: "/leistungen/politur",
-        text: "Mehr Tiefe, Klarheit und Glanz für den Lack.",
-      },
-      {
-        label: "Keramikversiegelung",
-        href: "/leistungen/keramikversiegelung",
-        text: "Langzeit-Schutz mit hydrophobem Premium-Finish.",
-      },
-    ],
-  },
-  { label: "Pakete & Preise", href: "/angebote/de" },
-  { label: "Galerie", href: "/gallery" },
-  { label: "Über uns", href: "/#about" },
-  { label: "Kontakt", href: "/#contact" },
-];
+import { CalendarCheck, ChevronDown, Languages } from "lucide-react";
+import {
+  localeHome,
+  localeNames,
+  localizePublicHref,
+  publicLocales,
+  sharedCopy,
+} from "../i18n";
 
 const menuEase = [0.22, 1, 0.36, 1] as const;
-// const languageOptions = [
-//   { label: "DE", name: "Deutsch", href: "/de" },
-//   { label: "EN", name: "English", href: "/en" },
-//   { label: "FR", name: "Francais", href: "/fr" },
-//   { label: "IT", name: "Italiano", href: "/it" },
-// ];
 
 export function Navbar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileNavActive, setMobileNavActive] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [dropdownCycle, setDropdownCycle] = useState(0);
-  const bookingUrl = "/buchen?lang=de";
-  // const bookingUrl = `/buchen?lang=${activeLanguage.label.toLowerCase()}`;
+  const lockedScrollY = useRef(0);
+  const localeSegment = pathname.split("/").filter(Boolean)[0]?.toLowerCase();
+  const activeLocale = publicLocales.includes(searchParams.get("lang") as (typeof publicLocales)[number])
+    ? (searchParams.get("lang") as (typeof publicLocales)[number])
+    : publicLocales.includes(localeSegment as (typeof publicLocales)[number])
+      ? (localeSegment as (typeof publicLocales)[number])
+      : "de";
+  const copy = sharedCopy[activeLocale];
+  const homePath = localeHome(activeLocale);
+  const bookingUrl = localizePublicHref("/buchen", activeLocale);
+  const languageOptions = publicLocales.map((code) => ({
+    code,
+    label: code.toUpperCase(),
+    name: localeNames[code],
+    href: localeHome(code),
+  }));
+  const navItems = [
+    { label: copy.nav.home, href: `${homePath}#top` },
+    {
+      label: copy.nav.services,
+      href: localizePublicHref("/leistungen", activeLocale),
+      children: [
+        ["innenreinigung", "/leistungen/innenreinigung"],
+        ["aussenreinigung", "/leistungen/aussenreinigung"],
+        ["politur", "/leistungen/politur"],
+        ["keramikversiegelung", "/leistungen/keramikversiegelung"],
+      ].map(([id, href]) => ({
+        label: copy.serviceNav[id as keyof typeof copy.serviceNav][0],
+        href: localizePublicHref(href, activeLocale),
+        text: copy.serviceNav[id as keyof typeof copy.serviceNav][1],
+      })),
+    },
+    { label: copy.nav.offers, href: localizePublicHref("/angebote", activeLocale) },
+    { label: copy.nav.gallery, href: localizePublicHref("/gallery", activeLocale) },
+    { label: copy.nav.about, href: `${homePath}#about` },
+    { label: copy.nav.faq, href: `${homePath}#faq` },
+    { label: copy.nav.contact, href: `${homePath}#contact` },
+  ];
 
   function closeMenu() {
     setMobileOpen(false);
@@ -69,14 +73,15 @@ export function Navbar() {
   function handleNavClick(href: string, event: MouseEvent<HTMLAnchorElement>) {
     closeMenu();
 
-    if (!href.startsWith("/#") || pathname !== "/") {
+    const [targetPath, targetId] = href.split("#");
+
+    if (!targetId || pathname !== targetPath) {
       return;
     }
 
     event.preventDefault();
 
-    const targetId = href.replace("/#", "") || "top";
-    const target = document.getElementById(targetId);
+    const target = document.getElementById(targetId || "top");
 
     if (target) {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -117,17 +122,61 @@ export function Navbar() {
 
   useEffect(() => {
     const menuIsOpen = mobileOpen && mobileNavActive;
+    const scrollY = menuIsOpen ? lockedScrollY.current : window.scrollY;
+    const root = document.documentElement;
+
+    function preventBackgroundScroll(event: TouchEvent | WheelEvent) {
+      const target = event.target;
+
+      if (target instanceof Element && target.closest(".mobile-menu")) {
+        return;
+      }
+
+      event.preventDefault();
+    }
 
     document.body.classList.toggle("menu-open", menuIsOpen);
+    root.classList.toggle("menu-open", menuIsOpen);
     window.dispatchEvent(new CustomEvent("jc-mobile-menu-change", { detail: { open: menuIsOpen } }));
 
-    return () => document.body.classList.remove("menu-open");
+    if (menuIsOpen) {
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+      document.addEventListener("touchmove", preventBackgroundScroll, { passive: false });
+      document.addEventListener("wheel", preventBackgroundScroll, { passive: false });
+    }
+
+    return () => {
+      document.body.classList.remove("menu-open");
+      root.classList.remove("menu-open");
+      document.removeEventListener("touchmove", preventBackgroundScroll);
+      document.removeEventListener("wheel", preventBackgroundScroll);
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+
+      if (menuIsOpen) {
+        const previousBehavior = document.documentElement.style.scrollBehavior;
+        document.documentElement.style.scrollBehavior = "auto";
+        window.scrollTo(0, scrollY);
+        document.documentElement.style.scrollBehavior = previousBehavior;
+      }
+    };
   }, [mobileOpen, mobileNavActive]);
 
   return (
     <>
       <header className="site-header">
-        <Link className="brand" href="/#top" onClick={(event) => handleNavClick("/#top", event)}>
+        <Link
+          className="brand"
+          href={`${homePath}#top`}
+          onClick={(event) => handleNavClick(`${homePath}#top`, event)}
+        >
           {/* <span className="brand-mark">JC</span> */}
           <p>
             <Image
@@ -144,7 +193,7 @@ export function Navbar() {
           </p>
         </Link>
 
-        <nav className="desktop-nav" aria-label="Hauptnavigation">
+        <nav className="desktop-nav" aria-label={copy.nav.mainNavigation}>
           {navItems.map((item) => (
             <div
               className={`nav-item${openDropdown === item.label ? " is-open" : ""}`}
@@ -214,20 +263,20 @@ export function Navbar() {
         <div className="header-actions">
           <Link className="ghost-button" href={bookingUrl} onClick={closeMenu}>
             <CalendarCheck size={15} />
-            Termin buchen
+            {copy.nav.booking}
           </Link>
 
-          {/* <div className="language-selector">
+          <div className="language-selector">
             <motion.button
               className="language-button"
               type="button"
               onClick={() => setLanguageOpen((open) => !open)}
-              aria-label="Sprache wählen"
+              aria-label={copy.nav.chooseLanguage}
               aria-expanded={languageOpen}
               whileTap={{ scale: 0.96 }}
             >
               <Languages size={15} />
-              {activeLanguage.label}
+              {activeLocale.toUpperCase()}
               <motion.span
                 animate={{ rotate: languageOpen ? 180 : 0 }}
                 transition={{ duration: 0.22, ease: menuEase }}
@@ -247,7 +296,7 @@ export function Navbar() {
                 >
                   {languageOptions.map((language) => (
                     <Link
-                      className={language.label === activeLanguage.label ? "is-active" : ""}
+                      className={language.code === activeLocale ? "is-active" : ""}
                       href={language.href}
                       key={language.label}
                       onClick={closeMenu}
@@ -259,17 +308,26 @@ export function Navbar() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div> */}
+          </div>
         </div>
 
         <motion.button
           className="menu-button"
           type="button"
+          onPointerDown={(event) => {
+            if (!mobileOpen) {
+              lockedScrollY.current = window.scrollY;
+              event.preventDefault();
+            }
+          }}
           onClick={() => {
+            if (!mobileOpen && lockedScrollY.current === 0) {
+              lockedScrollY.current = window.scrollY;
+            }
             setMobileNavActive(true);
             setMobileOpen((open) => !open);
           }}
-          aria-label={mobileOpen ? "Menue schliessen" : "Menue öffnen"}
+          aria-label={mobileOpen ? copy.nav.closeMenu : copy.nav.openMenu}
           aria-expanded={mobileOpen}
           whileTap={{ scale: 0.94 }}
         >
@@ -324,7 +382,10 @@ export function Navbar() {
                   }}
                   transition={{ duration: 0.28, ease: menuEase }}
                 >
-                  <Link href={item.href} onClick={(event) => handleNavClick(item.href, event)}>
+                  <Link
+                    href={item.href}
+                    onClick={(event) => handleNavClick(item.href, event)}
+                  >
                     {item.label}
                   </Link>
 
@@ -345,23 +406,23 @@ export function Navbar() {
                 transition={{ duration: 0.28, ease: menuEase }}
               >
                 <Link href={bookingUrl} onClick={closeMenu}>
-                  Termin buchen
+                  {copy.nav.booking}
                 </Link>
-                {/* </motion.div> */}
+              </motion.div>
 
-                {/* <motion.div
+              <motion.div
                 className="mobile-nav-group mobile-language-group"
                 variants={{
                   open: { opacity: 1, y: 0 },
                   closed: { opacity: 0, y: 14 },
                 }}
                 transition={{ duration: 0.28, ease: menuEase }}
-              > */}
-                {/* <span>Sprache</span>
+              >
+                <span>{copy.nav.language}</span>
                 <div>
                   {languageOptions.map((language) => (
                     <Link
-                      className={language.label === activeLanguage.label ? "is-active" : ""}
+                      className={language.code === activeLocale ? "is-active" : ""}
                       href={language.href}
                       key={language.label}
                       onClick={closeMenu}
@@ -369,7 +430,7 @@ export function Navbar() {
                       {language.label}
                     </Link>
                   ))}
-                </div> */}
+                </div>
               </motion.div>
             </motion.div>
           </motion.div>

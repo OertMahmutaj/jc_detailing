@@ -1,12 +1,22 @@
 // app/leistungen/page.tsx
 
-import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { HeroIntro, HeroItem, LightGroup, LightItem, PageEntry } from "../components/StudioMotion";
 import { serviceItems } from "../../data/site";
+import { LocalizedPublicLink } from "../components/LocalizedPublicLink";
+import { normalizeLocale } from "../i18n";
+import { getLocalizedServices, servicePageCopy } from "../serviceCopy";
 
-export default function LeistungenPage() {
+export default async function LeistungenPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ lang?: string }>;
+}) {
+  const locale = normalizeLocale((await searchParams)?.lang);
+  const copy = servicePageCopy[locale];
+  const localizedServices = getLocalizedServices(serviceItems, locale);
+
   return (
     <PageEntry className="page-shell" id="top">
       <section className="sub-hero">
@@ -15,21 +25,21 @@ export default function LeistungenPage() {
             <p className="eyebrow">JC Detailing</p>
           </HeroItem>
           <HeroItem>
-            <h1>Leistungen</h1>
+            <h1>{copy.pageTitle}</h1>
           </HeroItem>
           <HeroItem>
-            <p>Vier klare Kategorien für professionelle Fahrzeugaufbereitung.</p>
+            <p>{copy.pageIntro}</p>
           </HeroItem>
         </HeroIntro>
       </section>
 
       <LightGroup className="service-grid page-grid">
-        {serviceItems.map((service) => (
+        {localizedServices.map((service) => (
           <LightItem key={service.id}>
-            <Link className="service-card" href={service.path}>
+            <LocalizedPublicLink className="service-card" href={service.path}>
               <div className="service-image">
                 <Image
-                  alt={`${service.title} bei JC Detailing in Wauwil, Luzern`}
+                  alt={`${service.title} ${copy.locationSuffix} - JC Detailing`}
                   fill
                   quality={60}
                   sizes="(max-width: 720px) 100vw, 25vw"
@@ -40,11 +50,11 @@ export default function LeistungenPage() {
                 <h2>{service.title}</h2>
                 <p>{service.short}</p>
                 <span>
-                  Mehr erfahren
+                  {copy.more}
                   <ArrowRight size={15} />
                 </span>
               </div>
-            </Link>
+            </LocalizedPublicLink>
           </LightItem>
         ))}
       </LightGroup>

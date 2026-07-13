@@ -14,7 +14,16 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import {
+  bookingAddOnCopy,
+  bookingFormCopy,
+  bookingServiceNames,
+  bookingVehicleCopy,
+  getBookingServiceDetail,
+} from "../bookingCopy";
+import { intlLocales } from "../i18n";
+import { localeHome } from "../i18n";
+import { usePublicLocale } from "./usePublicLocale";
 
 type Service = { id: string; name: string; basePrice: number; durationMinutes: number };
 type Category = { id: string; name: string; priceModifier: number };
@@ -288,8 +297,8 @@ function formatDuration(minutes: number) {
   return `${hours}h${rest.toString().padStart(2, "0")}`;
 }
 
-function formatConfirmationDate(value: Date) {
-  return new Intl.DateTimeFormat("de-CH", {
+function formatConfirmationDate(value: Date, locale: keyof typeof intlLocales) {
+  return new Intl.DateTimeFormat(intlLocales[locale], {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -297,8 +306,8 @@ function formatConfirmationDate(value: Date) {
   }).format(value);
 }
 
-function formatConfirmationTime(value: Date) {
-  return new Intl.DateTimeFormat("de-CH", {
+function formatConfirmationTime(value: Date, locale: keyof typeof intlLocales) {
+  return new Intl.DateTimeFormat(intlLocales[locale], {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Europe/Zurich",
@@ -320,8 +329,8 @@ function generateTimeSlots() {
 const TIME_SLOTS = generateTimeSlots();
 
 export function BookingForm() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const currentLanguage = usePublicLocale();
+  const copy = bookingFormCopy[currentLanguage];
   const [step, setStep] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
   const [status, setStatus] = useState<Status>("idle");
@@ -351,13 +360,10 @@ export function BookingForm() {
     const addOnDuration = selectedAddOns.reduce((sum, addOn) => sum + addOn.additionalDuration, 0);
     return serviceDuration + addOnDuration;
   }, [selectedAddOns, selectedServices]);
-  const currentLanguage = useMemo(() => {
-    const queryLanguage = searchParams.get("lang")?.toLowerCase();
-    const pathLanguage = pathname.split("/").find((part) => ["de", "en", "fr", "it"].includes(part));
-    const language = queryLanguage || pathLanguage || "de";
-
-    return ["de", "en", "fr", "it"].includes(language) ? language : "de";
-  }, [pathname, searchParams]);
+  const displayServiceName = (name: string) => bookingServiceNames[currentLanguage][name] ?? name;
+  const displayAddOn = (name: string) => bookingAddOnCopy[currentLanguage][name] ?? { name, description: "" };
+  const displayVehicle = (name: string) => bookingVehicleCopy[currentLanguage][name];
+  const localizedDetail = (name: string) => getBookingServiceDetail(currentLanguage, name, serviceDetails[name]);
 
   const availableAddOns = useMemo(() => {
     const allowedNames = new Set(selectedServices.flatMap((service) => serviceAddOns[service.name] ?? []));
@@ -447,12 +453,12 @@ export function BookingForm() {
 
   function handleNextStep() {
     if (step === 0 && selectedServices.length === 0) {
-      setMessage("Bitte wähle mindestens eine Leistung aus.");
+      setMessage(copy.chooseServiceError);
       return;
     }
 
     if (step === 3 && (!selectedDate || !selectedTime)) {
-      setMessage("Bitte wähle ein Datum und eine Uhrzeit aus.");
+      setMessage(copy.chooseDateError);
       return;
     }
 
@@ -493,7 +499,7 @@ export function BookingForm() {
       const data = (await response.json()) as { message?: string };
 
       if (!response.ok) {
-        throw new Error(data.message ?? "Die Anfrage konnte nicht gesendet werden.");
+        throw new Error(currentLanguage === "de" ? (data.message ?? copy.requestError) : copy.requestError);
       }
 
       const endDateTime = new Date(
@@ -502,8 +508,8 @@ export function BookingForm() {
 
       setSubmittedBooking({
         addOns: selectedAddOns.length
-          ? selectedAddOns.map((addOn) => addOn.name).join(", ")
-          : "Keine",
+          ? selectedAddOns.map((addOn) => displayAddOn(addOn.name).name).join(", ")
+          : copy.none,
         dateTime: combinedDateTime,
         duration: formatDuration(totalDuration),
         email: String(formPayload.email ?? ""),
@@ -511,8 +517,8 @@ export function BookingForm() {
         estimatedTotal: calculateTotal(),
         name: String(formPayload.name ?? ""),
         phone: String(formPayload.phone ?? ""),
-        services: selectedServices.map((service) => service.name).join(", "),
-        vehicleCategory: selectedCategory?.name ?? "Fahrzeuggrösse",
+        services: selectedServices.map((service) => displayServiceName(service.name)).join(", "),
+        vehicleCategory: selectedCategory ? (displayVehicle(selectedCategory.name)?.title ?? selectedCategory.name) : copy.summary.category,
         vehicleModel: String(formPayload.vehicle ?? ""),
       });
 
@@ -521,7 +527,7 @@ export function BookingForm() {
       setStep(0);
     } catch (error) {
       setStatus("error");
-      setMessage(error instanceof Error ? error.message : "Die Anfrage konnte nicht gesendet werden.");
+      setMessage(error instanceof Error ? error.message : copy.requestError);
     }
   }
 
@@ -540,81 +546,75 @@ export function BookingForm() {
         </div>
 
         <span className="booking-confirmation-eyebrow">
-          Terminanfrage erhalten
+          {copy.confirmationEyebrow}
         </span>
 
-        <h2>Danke für deine Anfrage, {submittedBooking.name}.</h2>
+        <h2>{copy.confirmationTitle}, {submittedBooking.name}.</h2>
 
-        <p>
-          Deine Terminanfrage wurde erfolgreich gesendet. Du erhältst eine
-          Eingangsbestätigung per E-Mail. Der Termin ist noch nicht bestätigt.
-          Sobald JC Detailing den Termin geprüft hat, erhältst du eine separate
-          Terminbestätigung.
-        </p>
+        <p>{copy.confirmationText}</p>
 
         <div className="booking-confirmation-notice">
-          Bitte prüfe auch deinen Spam-Ordner, falls du die E-Mail nicht direkt
-          findest.
+          {copy.confirmationNotice}
         </div>
 
         <div className="booking-confirmation-grid">
           <div>
-            <span>Datum</span>
-            <strong>{formatConfirmationDate(submittedBooking.dateTime)}</strong>
+            <span>{copy.summary.date}</span>
+            <strong>{formatConfirmationDate(submittedBooking.dateTime, currentLanguage)}</strong>
           </div>
 
           <div>
-            <span>Uhrzeit</span>
+            <span>{copy.summary.time}</span>
             <strong>
-              {formatConfirmationTime(submittedBooking.dateTime)}–
-              {formatConfirmationTime(submittedBooking.endTime)} Uhr
+              {formatConfirmationTime(submittedBooking.dateTime, currentLanguage)}–
+              {formatConfirmationTime(submittedBooking.endTime, currentLanguage)}
             </strong>
           </div>
 
           <div>
-            <span>Leistung</span>
+            <span>{copy.summary.services}</span>
             <strong>{submittedBooking.services}</strong>
           </div>
 
           <div>
-            <span>Fahrzeug</span>
+            <span>{copy.summary.vehicle}</span>
             <strong>{submittedBooking.vehicleModel}</strong>
           </div>
 
           <div>
-            <span>Fahrzeuggrösse</span>
+            <span>{copy.summary.category}</span>
             <strong>{submittedBooking.vehicleCategory}</strong>
           </div>
 
           <div>
-            <span>Zusatzleistungen</span>
+            <span>{copy.summary.extras}</span>
             <strong>{submittedBooking.addOns}</strong>
           </div>
 
           <div>
-            <span>Dauer</span>
-            <strong>ca. {submittedBooking.duration}</strong>
+            <span>{copy.summary.duration}</span>
+            <strong>{submittedBooking.duration}</strong>
           </div>
 
           <div>
-            <span>Geschätzter Preis</span>
+            <span>{copy.summary.price}</span>
             <strong>CHF {submittedBooking.estimatedTotal.toFixed(2)}</strong>
           </div>
 
           <div>
-            <span>E-Mail</span>
+            <span>{copy.summary.email}</span>
             <strong>{submittedBooking.email}</strong>
           </div>
 
           <div>
-            <span>Telefon</span>
+            <span>{copy.summary.phone}</span>
             <strong>{submittedBooking.phone}</strong>
           </div>
         </div>
 
         <div className="booking-confirmation-footer">
-          <a href="/">Zur Startseite</a>
-          <a href="https://wa.me/41772683388">WhatsApp öffnen</a>
+          <a href={localeHome(currentLanguage)}>{copy.home}</a>
+          <a href="https://wa.me/41772683388">{copy.whatsapp}</a>
         </div>
       </section>
     );
@@ -633,50 +633,48 @@ export function BookingForm() {
         />
 
         <div className="booking-steps-header">
-          <span className={step === 0 ? "is-active" : ""}>1. Service</span>
-          <span className={step === 1 ? "is-active" : ""}>2. Grösse</span>
-          <span className={step === 2 ? "is-active" : ""}>3. Extras</span>
-          <span className={step === 3 ? "is-active" : ""}>4. Termin</span>
-          <span className={step === 4 ? "is-active" : ""}>5. Details</span>
+          {copy.steps.map((label, index) => (
+            <span className={step === index ? "is-active" : ""} key={label}>{index + 1}. {label}</span>
+          ))}
         </div>
 
         {step === 0 && (
           <div className="booking-field booking-field-wide">
-            <label>Leistungen auswählen</label>
-            <p className="booking-helper">Du kannst eine oder mehrere Leistungen auswählen.</p>
+            <label>{copy.selectServices}</label>
+            <p className="booking-helper">{copy.selectServicesHelp}</p>
 
             <div className="booking-service-grid">
               {visibleServices.map((service) => {
                 const selected = selectedServices.some((item) => item.id === service.id);
-                const detail = serviceDetails[service.name];
+                const detail = localizedDetail(service.name);
                 const addOnCount = service.name === "Komplett Innenreinigung" || service.name === "Komplette Premium Paket" ? 1 : service.name === "Pflegeerhaltung Innenreinigung" ? 4 : 0;
 
                 return (
                   <article className={`booking-service-card${selected ? " is-selected" : ""}`} key={service.id}>
                     <div>
                       <div className="booking-service-card-top">
-                        <h3>{service.name}</h3>
+                        <h3>{displayServiceName(service.name)}</h3>
                         <span>{formatDuration(service.durationMinutes)}</span>
                       </div>
 
-                      {addOnCount > 0 && <p>{addOnCount} Zusatzleistung{addOnCount > 1 ? "en" : ""}</p>}
+                      {addOnCount > 0 && <p>{addOnCount} {addOnCount > 1 ? copy.addOns : copy.addOn}</p>}
 
                       <button type="button" className="booking-detail-link" onClick={() => setDetailService(service)}>
-                        Details ansehen
+                        {copy.viewDetails}
                       </button>
                     </div>
 
                     <div className="booking-service-card-bottom">
                       <span>
-                        Ab
+                        {copy.from}
                         <strong>CHF {service.basePrice.toFixed(2)}</strong>
                       </span>
                       <button type="button" onClick={() => toggleService(service)}>
-                        {selected ? "Entfernen" : "Hinzufügen"}
+                        {selected ? copy.remove : copy.add}
                       </button>
                     </div>
 
-                    {!detail && <small>Details werden nachgetragen.</small>}
+                    {!detail && <small>{copy.detailsPending}</small>}
                   </article>
                 );
               })}
@@ -688,7 +686,7 @@ export function BookingForm() {
                 type="button"
                 onClick={() => setShowAllServices((current) => !current)}
               >
-                {showAllServices ? "Weniger Services" : "Mehr Services"}
+                {showAllServices ? copy.fewerServices : copy.moreServices}
               </button>
             )}
           </div>
@@ -696,7 +694,7 @@ export function BookingForm() {
 
         {step === 1 && (
           <div className="booking-field booking-field-wide">
-            <label>Fahrzeuggrösse auswählen</label>
+            <label>{copy.selectVehicle}</label>
             <div className="booking-vehicle-list">
               {dbData.categories.map((category) => (
                 <button
@@ -710,11 +708,11 @@ export function BookingForm() {
                     style={{ backgroundImage: `url(${vehicleDetails[category.name]?.image ?? "/IMG_4623.webp"})` }}
                   />
                   <span className="booking-vehicle-copy">
-                    <strong>{vehicleDetails[category.name]?.title ?? category.name}</strong>
-                    <small>{vehicleDetails[category.name]?.description ?? "Fahrzeugkategorie"}</small>
+                    <strong>{displayVehicle(category.name)?.title ?? category.name}</strong>
+                    <small>{displayVehicle(category.name)?.description ?? copy.vehicleCategory}</small>
                   </span>
                   <span className="booking-vehicle-price">
-                    {category.priceModifier > 0 ? `+ CHF ${category.priceModifier.toFixed(2)}` : "inkl."}
+                    {category.priceModifier > 0 ? `+ CHF ${category.priceModifier.toFixed(2)}` : copy.included}
                   </span>
                   <span className="booking-radio" aria-hidden="true" />
                 </button>
@@ -725,10 +723,10 @@ export function BookingForm() {
 
         {step === 2 && (
           <div className="booking-field booking-field-wide">
-            <label>Zusatzleistungen hinzufügen (optional)</label>
+            <label>{copy.extras}</label>
             {availableAddOns.length > 0 ? (
               <>
-                <p className="booking-helper">Wähle nur die Zusatzleistungen, die du wirklich brauchst.</p>
+                <p className="booking-helper">{copy.extrasHelp}</p>
                 <div className="booking-option-list">
                   {availableAddOns.map((addOn) => {
                     const selected = selectedAddOns.some((item) => item.id === addOn.id);
@@ -741,8 +739,8 @@ export function BookingForm() {
                         onClick={() => handleAddOnToggle(addOn)}
                       >
                         <span>
-                          <strong>{addOn.name}</strong>
-                          <small>{addOnDescriptions[addOn.name]}</small>
+                          <strong>{displayAddOn(addOn.name).name}</strong>
+                          <small>{displayAddOn(addOn.name).description}</small>
                           <small>+ {formatDuration(addOn.additionalDuration)}</small>
                         </span>
                         <strong>+ CHF {addOn.price.toFixed(2)}</strong>
@@ -753,7 +751,7 @@ export function BookingForm() {
               </>
             ) : (
               <p className="booking-empty-options">
-                Für die ausgewählten Leistungen sind keine Zusatzleistungen verfügbar. Du kannst direkt weitergehen.
+                {copy.noExtras}
               </p>
             )}
           </div>
@@ -761,7 +759,7 @@ export function BookingForm() {
 
         {step === 3 && (
           <div className="booking-field booking-field-wide">
-            <label>Datum und Uhrzeit auswählen</label>
+            <label>{copy.selectDate}</label>
             <div className="booking-calendar">
               <div className="booking-calendar-head">
                 <button
@@ -774,7 +772,7 @@ export function BookingForm() {
                 >
                   &larr;
                 </button>
-                <span>{currentMonthDate.toLocaleString("de-CH", { month: "long", year: "numeric" })}</span>
+                <span>{currentMonthDate.toLocaleString(intlLocales[currentLanguage], { month: "long", year: "numeric" })}</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -788,13 +786,7 @@ export function BookingForm() {
               </div>
 
               <div className="booking-weekdays">
-                <span>Mo</span>
-                <span>Di</span>
-                <span>Mi</span>
-                <span>Do</span>
-                <span>Fr</span>
-                <span>Sa</span>
-                <span>So</span>
+                {copy.weekdays.map((day) => <span key={day}>{day}</span>)}
               </div>
 
               <div className="booking-days">
@@ -841,12 +833,12 @@ export function BookingForm() {
             {selectedDate && (
               <div className="booking-time-block">
                 <p>
-                  Verfügbare Uhrzeiten am {new Date(selectedDate).toLocaleDateString("de-CH")} für ca.{" "}
+                  {copy.availableAt} {new Date(`${selectedDate}T12:00:00`).toLocaleDateString(intlLocales[currentLanguage])} {copy.forAbout}{" "}
                   {formatDuration(totalDuration)}:
                 </p>
                 {loadingSlots ? (
                   <div className="booking-loading-inline">
-                    <Loader2 className="spin" size={16} /> Zeiten werden geprüft...
+                    <Loader2 className="spin" size={16} /> {copy.checkingTimes}
                   </div>
                 ) : (
                   <div className="booking-time-grid">
@@ -876,33 +868,33 @@ export function BookingForm() {
         {step === 4 && (
           <>
             <div className="booking-field">
-              <label htmlFor="name">Name</label>
+              <label htmlFor="name">{copy.fields.name}</label>
               <input id="name" name="name" type="text" autoComplete="name" maxLength={100} required />
             </div>
 
             <div className="booking-field">
-              <label htmlFor="email">E-Mail</label>
+              <label htmlFor="email">{copy.fields.email}</label>
               <input id="email" name="email" type="email" autoComplete="email" maxLength={160} required />
             </div>
 
             <div className="booking-field">
-              <label htmlFor="phone">Telefon</label>
+              <label htmlFor="phone">{copy.fields.phone}</label>
               <input id="phone" name="phone" type="tel" autoComplete="tel" maxLength={40} required />
             </div>
 
             <div className="booking-field">
-              <label htmlFor="vehicle">Fahrzeugmodell</label>
-              <input id="vehicle" name="vehicle" type="text" placeholder="z.B. BMW X5, Audi A4" maxLength={120} required />
+              <label htmlFor="vehicle">{copy.fields.vehicle}</label>
+              <input id="vehicle" name="vehicle" type="text" placeholder={copy.vehiclePlaceholder} maxLength={120} required />
             </div>
 
             <div className="booking-field booking-field-wide">
-              <label htmlFor="message">Nachricht (optional)</label>
+              <label htmlFor="message">{copy.fields.message}</label>
               <textarea
                 id="message"
                 name="message"
                 rows={4}
                 maxLength={1200}
-                placeholder="Erzähl uns kurz, was gemacht werden soll oder worauf wir achten sollen."
+                placeholder={copy.messagePlaceholder}
               />
             </div>
           </>
@@ -910,31 +902,31 @@ export function BookingForm() {
 
         <div className="booking-submit-row">
           <div className="price-summary">
-            <span>Geschätzter Gesamtpreis</span>
+            <span>{copy.estimatedTotal}</span>
             <strong>CHF {calculateTotal().toFixed(2)}</strong>
-            <small>Dauer: ca. {formatDuration(totalDuration)}</small>
+            <small>{copy.duration}: {formatDuration(totalDuration)}</small>
           </div>
 
           <div className="booking-actions">
             {step > 0 && (
               <button className="booking-submit is-secondary" type="button" onClick={() => { setMessage(""); setStep(step - 1); }}>
-                <ChevronLeft size={16} /> Zurück
+                <ChevronLeft size={16} /> {copy.back}
               </button>
             )}
 
             {step < 4 ? (
               <button className="booking-submit" type="button" onClick={handleNextStep}>
-                Weiter <ChevronRight size={16} />
+                {copy.next} <ChevronRight size={16} />
               </button>
             ) : (
               <button className="booking-submit" type="submit" disabled={status === "loading"}>
                 {status === "loading" ? (
                   <>
-                    <CalendarCheck size={18} /> Wird gesendet
+                    <CalendarCheck size={18} /> {copy.sending}
                   </>
                 ) : (
                   <>
-                    <Send size={18} /> Anfrage senden
+                    <Send size={18} /> {copy.send}
                   </>
                 )}
               </button>
@@ -950,26 +942,26 @@ export function BookingForm() {
       </form>
 
       {detailService && (
-        <div className="service-detail-overlay" role="dialog" aria-modal="true" aria-label={`${detailService.name} Details`}>
+        <div className="service-detail-overlay" role="dialog" aria-modal="true" aria-label={`${displayServiceName(detailService.name)} ${copy.viewDetails}`}>
           <div className="service-detail-modal">
-            <button className="service-detail-close" type="button" onClick={() => setDetailService(null)} aria-label="Details schliessen">
+            <button className="service-detail-close" type="button" onClick={() => setDetailService(null)} aria-label={copy.closeDetails}>
               <X size={20} />
             </button>
 
             <div className="service-detail-tags">
               <span>
-                <Sparkles size={14} /> {serviceDetails[detailService.name]?.tag ?? "Leistung"}
+                <Sparkles size={14} /> {localizedDetail(detailService.name)?.tag ?? copy.service}
               </span>
               <span>
                 <Clock3 size={14} /> {formatDuration(detailService.durationMinutes)}
               </span>
             </div>
 
-            <h2>{serviceDetails[detailService.name]?.title ?? detailService.name}</h2>
-            <h3>Enthaltene Leistungen</h3>
+            <h2>{localizedDetail(detailService.name)?.title ?? displayServiceName(detailService.name)}</h2>
+            <h3>{copy.includedServices}</h3>
 
             <div className="service-detail-sections">
-              {(serviceDetails[detailService.name]?.sections ?? []).map((section) => (
+              {(localizedDetail(detailService.name)?.sections ?? []).map((section) => (
                 <section key={section.title}>
                   <div className="service-detail-section-title">
                     <Check size={17} />
@@ -985,18 +977,18 @@ export function BookingForm() {
             </div>
 
             <div className="service-detail-mode">
-              <h3>Verfügbare Buchungsart</h3>
+              <h3>{copy.bookingType}</h3>
               <div>
                 <Info size={17} />
                 <span>
-                  <strong>Im Studio</strong>
-                  Termin am Standort von JC Detailing in Wauwil.
+                  <strong>{copy.studio}</strong>
+                  {copy.studioText}
                 </span>
               </div>
             </div>
 
             <div className="service-detail-footer">
-              <strong>{serviceDetails[detailService.name]?.priceRange ?? `Ab CHF ${detailService.basePrice.toFixed(2)}`}</strong>
+              <strong>{localizedDetail(detailService.name)?.priceRange ?? `${copy.from} CHF ${detailService.basePrice.toFixed(2)}`}</strong>
               <button
                 className="service-detail-select"
                 type="button"
@@ -1007,7 +999,7 @@ export function BookingForm() {
                   setDetailService(null);
                 }}
               >
-                Auswählen
+                {copy.select}
               </button>
             </div>
           </div>
