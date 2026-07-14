@@ -427,25 +427,83 @@ export function BookingForm() {
   useEffect(() => {
     if (!selectedDate || totalDuration <= 0) {
       setBlockedSlots([]);
+      setSelectedTime("");
       return;
     }
+
+    const controller = new AbortController();
 
     async function checkAvailability() {
       setLoadingSlots(true);
 
       try {
-        const res = await fetch(`/api/availability?date=${selectedDate}&durationMinutes=${totalDuration}`);
-        const data = await res.json();
-        setBlockedSlots(data.blockedSlots || []);
-      } catch (err) {
-        console.error("Verfügbare Zeiten konnten nicht geladen werden:", err);
+        const params = new URLSearchParams({
+          date: selectedDate,
+          durationMinutes: String(totalDuration),
+        });
+
+        const res = await fetch(`/api/availability?${params.toString()}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          throw new Error(`Availability request failed: ${res.status}`);
+        }
+
+        const data = (await res.json()) as {
+          blockedSlots?: string[];
+        };
+
+        setBlockedSlots(
+          Array.isArray(data.blockedSlots) ? data.blockedSlots : [],
+        );
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        console.error(
+          "Verfügbare Zeiten konnten nicht geladen werden:",
+          error,
+        );
+
+        setBlockedSlots([]);
       } finally {
-        setLoadingSlots(false);
+        if (!controller.signal.aborted) {
+          setLoadingSlots(false);
+        }
       }
     }
 
     checkAvailability();
+
+    return () => {
+      controller.abort();
+    };
   }, [selectedDate, totalDuration]);
+
+  useEffect(() => {
+    if (selectedTime && blockedSlots.includes(selectedTime)) {
+      setSelectedTime("");
+    }
+  }, [blockedSlots, selectedTime]);
+
+  useEffect(() => {
+    setSelectedAddOns((current) =>
+      current.filter((addOn) =>
+        availableAddOns.some(
+          (availableAddOn) => availableAddOn.id === addOn.id,
+        ),
+      ),
+    );
+  }, [availableAddOns]);
+
+  useEffect(() => {
+    if (selectedTime && blockedSlots.includes(selectedTime)) {
+      setSelectedTime("");
+    }
+  }, [blockedSlots, selectedTime]);
 
   useEffect(() => {
     setSelectedAddOns((current) =>
