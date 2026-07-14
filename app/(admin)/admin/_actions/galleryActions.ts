@@ -123,28 +123,29 @@ export async function createGalleryComparison(formData: FormData) {
       };
     }
 
-    const latestComparison = await prisma.galleryComparison.findFirst({
-      where: {
-        projectId,
-      },
-      orderBy: {
-        sortOrder: "desc",
-      },
-      select: {
-        sortOrder: true,
-      },
-    });
+    const comparison = await prisma.$transaction(async (transaction) => {
+      await transaction.galleryComparison.updateMany({
+        where: {
+          projectId,
+        },
+        data: {
+          sortOrder: {
+            increment: 1,
+          },
+        },
+      });
 
-    const comparison = await prisma.galleryComparison.create({
-      data: {
-        projectId,
-        label,
-        sortOrder: (latestComparison?.sortOrder ?? -1) + 1,
-      },
-      select: {
-        id: true,
-        label: true,
-      },
+      return transaction.galleryComparison.create({
+        data: {
+          projectId,
+          label,
+          sortOrder: 0,
+        },
+        select: {
+          id: true,
+          label: true,
+        },
+      });
     });
 
     revalidatePath("/admin/gallery");
@@ -339,12 +340,12 @@ export async function deleteGalleryProject(formData: FormData) {
     }
 
     const storagePaths = [
-  ...new Set(
-    project.mediaAssets.flatMap((asset) =>
-      getAllGalleryStoragePaths(asset.storagePath),
-    ),
-  ),
-];
+      ...new Set(
+        project.mediaAssets.flatMap((asset) =>
+          getAllGalleryStoragePaths(asset.storagePath),
+        ),
+      ),
+    ];
 
     /*
       Database deletion happens first.
