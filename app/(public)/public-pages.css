@@ -1167,3 +1167,120 @@ body {
   outline: 2px solid #78a6ff;
   outline-offset: 3px;
 }
+
+html,
+body {
+  min-height: 100%;
+}
+
+.public-site-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.public-site-content {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+.public-page-loading {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-height: calc(100dvh - 180px);
+  width: 100%;
+}
+
+.public-page-loading-spinner {
+  animation: public-page-loading-spin 700ms linear infinite;
+  border: 2px solid rgba(0, 0, 0, 0.16);
+  border-radius: 50%;
+  border-top-color: currentColor;
+  height: 26px;
+  width: 26px;
+}
+
+@keyframes public-page-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.public-gallery-pagination {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin: 48px auto 0;
+  width: 100%;
+}
+
+.public-gallery-pagination-link,
+.public-gallery-pagination-status {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 42px;
+}
+
+.public-gallery-pagination-link {
+  border: 1px solid currentColor;
+  gap: 8px;
+  padding: 0 18px;
+  text-decoration: none;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.public-gallery-pagination-link:hover {
+  transform: translateY(-2px);
+}
+
+.public-gallery-pagination-link.is-disabled {
+  cursor: default;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.public-gallery-pagination-status {
+  min-width: 120px;
+  padding: 0 10px;
+}
+
+.public-gallery-cta .primary-button {
+  width: fit-content;
+}
+
+@media (max-width: 560px) {
+  .public-gallery-pagination {
+    gap: 8px;
+    margin-top: 32px;
+  }
+
+  .public-gallery-pagination-status {
+    order: -1;
+    width: 100%;
+  }
+
+  .public-gallery-pagination-link {
+    flex: 1;
+    padding: 0 12px;
+  }
+
+  .public-gallery-cta .primary-button {
+    justify-content: center;
+    width: 100%;
+  }
+}

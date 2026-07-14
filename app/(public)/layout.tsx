@@ -1,8 +1,7 @@
 // app/(public)/layout.tsx
 
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import { GeistMono } from "geist/font/mono";
+import { Suspense, type ReactNode } from "react";
 
 import "@/app/globals.css";
 import "./public-redesign.css";
@@ -64,29 +63,26 @@ export const metadata: Metadata = {
 
 export default function PublicLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: ReactNode;
+}) {
   return (
-    <html
-      data-scroll-behavior="smooth"
-      lang="de"
-      suppressHydrationWarning
-    >
-      <body className={GeistMono.variable}>
-        <Suspense fallback={null}>
-          <Navbar />
-        </Suspense>
+    <div className="public-site-shell">
+      <Suspense fallback={null}>
+        <Navbar />
+      </Suspense>
 
-        <Suspense fallback={null}>
-          {children}
-        </Suspense>
+      <div className="public-site-content">
+        {children}
+      </div>
 
-        <Suspense fallback={null}>
-          <Footer />
-          <PublicLocaleEffects />
-        </Suspense>
-      </body>
-    </html>
+      <Suspense fallback={null}>
+        <Footer />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <PublicLocaleEffects />
+      </Suspense>
+    </div>
   );
 }
