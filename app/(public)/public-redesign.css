@@ -797,6 +797,7 @@ body::selection {
 }
 
 .public-home .faq-list {
+  align-items: start;
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -805,24 +806,65 @@ body::selection {
 }
 
 .public-home .faq-list details {
+  align-self: start;
   background: var(--public-surface);
   border: 1px solid var(--public-line);
   border-radius: var(--public-radius);
   color: var(--public-text);
-  min-height: 70px;
-  padding: 21px 22px 21px 27px;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  width: 100%;
 }
 
 .public-home .faq-list summary {
+  align-items: center;
+  box-sizing: border-box;
   color: var(--public-text);
+  cursor: pointer;
+  display: flex;
   font-size: 15px;
+  height: 88px;
   line-height: 1.5;
+  list-style: none;
   margin: 0;
+  padding: 18px 22px 18px 48px;
+  position: relative;
+}
+
+/* Remove the browser triangle */
+.public-home .faq-list summary::-webkit-details-marker {
+  display: none;
+}
+
+.public-home .faq-list summary::marker {
+  content: "";
+}
+
+/* Add one controlled triangle inside the card */
+.public-home .faq-list summary::before {
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid currentColor;
+  border-top: 5px solid transparent;
+  content: "";
+  left: 21px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: transform 180ms ease;
+}
+
+.public-home .faq-list details[open] summary::before {
+  transform: translateY(-50%) rotate(90deg);
 }
 
 .public-home .faq-list details p {
   color: var(--public-muted);
   font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0 22px 22px 48px;
 }
 
 .public-home .contact-section {
@@ -1233,6 +1275,11 @@ body::selection {
     height: 100svh;
     min-height: 690px;
   }
+
+  .public-home .faq-list summary {
+  height: auto;
+  min-height: 82px;
+}
 
   .public-home .hero-overlay {
     background:
