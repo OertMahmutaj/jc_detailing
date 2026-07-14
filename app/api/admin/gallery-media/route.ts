@@ -6,6 +6,7 @@ import {
   supabaseAdmin,
 } from "@/app/(admin)/admin/_lib/supabaseAdmin";
 import { requireAdminSession } from "@/app/lib/requireAdmin";
+import { getAllGalleryStoragePaths } from "@/app/lib/galleryStoragePaths";
 
 const slots = ["BEFORE", "AFTER"] as const;
 
@@ -112,7 +113,7 @@ export async function DELETE(request: NextRequest) {
 
     const { error: removeError } = await supabaseAdmin.storage
       .from(bookingPhotosBucket)
-      .remove([asset.storagePath]);
+      .remove(getAllGalleryStoragePaths(asset.storagePath));
 
     if (removeError) {
       console.error("Gallery media storage deletion failed:", removeError);

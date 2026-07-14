@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 import { getBrowserSupabaseClient } from "../_lib/supabaseBrowser";
 import { saveGalleryAssetCrop } from "../_actions/galleryActions";
 import { useAdminNotification } from "./AdminNotificationProvider";
+import { createGalleryImageVariants } from "../_lib/createGalleryImageVariants";
 
 type GallerySlot = "BEFORE" | "AFTER";
 
@@ -45,7 +46,7 @@ type CropState = {
 };
 
 const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
-const maxPhotoSizeInBytes = 10 * 1024 * 1024;
+const maxPhotoSizeInBytes = 20 * 1024 * 1024;
 
 function getSlotLabel(slot: GallerySlot) {
   return slot === "BEFORE" ? "Vorher" : "Nachher";
@@ -169,108 +170,193 @@ export function AdminGalleryMediaSlot({
   }
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  const file = event.target.files?.[0];
 
-    event.target.value = "";
+  event.target.value = "";
 
-    if (!file) return;
+  if (!file) return;
 
-    if (!allowedMimeTypes.includes(file.type)) {
-      showNotification("Nur JPEG-, PNG- und WebP-Bilder sind erlaubt.", "error");
-      return;
-    }
-
-    if (file.size <= 0 || file.size > maxPhotoSizeInBytes) {
-      showNotification("Ein Bild darf maximal 10 MB gross sein.", "error");
-      return;
-    }
-
-    try {
-      setIsUploading(true);
-
-      const uploadUrlResponse = await fetch(
-        "/api/admin/gallery-media/upload-url",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            projectId,
-            comparisonId,
-            slot,
-            contentType: file.type,
-            fileSize: file.size,
-          }),
-        },
-      );
-
-      if (!uploadUrlResponse.ok) {
-        throw new Error(await getResponseError(uploadUrlResponse));
-      }
-
-      const uploadData = (await uploadUrlResponse.json()) as {
-        bucket: string;
-        storagePath: string;
-        token: string;
-      };
-
-      const supabase = getBrowserSupabaseClient();
-
-      const { error: uploadError } = await supabase.storage
-        .from(uploadData.bucket)
-        .uploadToSignedUrl(uploadData.storagePath, uploadData.token, file);
-
-      if (uploadError) {
-        throw new Error(
-          "Das Bild konnte nicht in den Speicher hochgeladen werden.",
-        );
-      }
-
-      const completionResponse = await fetch(
-        "/api/admin/gallery-media/complete",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            projectId,
-            comparisonId,
-            slot,
-            storagePath: uploadData.storagePath,
-            originalFileName: file.name,
-            mimeType: file.type,
-            fileSize: file.size,
-          }),
-        },
-      );
-
-      if (!completionResponse.ok) {
-        throw new Error(await getResponseError(completionResponse));
-      }
-
-      showNotification(
-        asset
-          ? `${slotLabel}-Bild wurde ersetzt.`
-          : `${slotLabel}-Bild wurde hochgeladen.`,
-        "success",
-      );
-
-      router.refresh();
-    } catch (error) {
-      console.error("Gallery media upload failed:", error);
-
-      showNotification(
-        error instanceof Error
-          ? error.message
-          : "Das Bild konnte nicht hochgeladen werden.",
-        "error",
-      );
-    } finally {
-      setIsUploading(false);
-    }
+  if (!allowedMimeTypes.includes(file.type)) {
+    showNotification(
+      "Nur JPEG-, PNG- und WebP-Bilder sind erlaubt.",
+      "error",
+    );
+    return;
   }
+
+  if (file.size <= 0 || file.size > maxPhotoSizeInBytes) {
+    showNotification(
+      "Ein Bild darf maximal 20 MB gross sein.",
+      "error",
+    );
+    return;
+  }
+
+  let pendingStoragePaths: string[] = [];
+
+  try {
+    setIsUploading(true);
+
+    const variants = await createGalleryImageVariants(file);
+
+    const uploadUrlResponse = await fetch(
+      "/api/admin/gallery-media/upload-url",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectId,
+          comparisonId,
+          slot,
+          contentType: file.type,
+          fileSize: file.size,
+        }),
+      },
+    );
+
+    if (!uploadUrlResponse.ok) {
+      throw new Error(await getResponseError(uploadUrlResponse));
+    }
+
+    type SignedUpload = {
+      storagePath: string;
+      token: string;
+    };
+
+    const uploadData = (await uploadUrlResponse.json()) as {
+      bucket: string;
+      uploads: {
+        original: SignedUpload;
+        display: SignedUpload;
+        thumbnail: SignedUpload;
+      };
+    };
+
+    pendingStoragePaths = [
+      uploadData.uploads.original.storagePath,
+      uploadData.uploads.display.storagePath,
+      uploadData.uploads.thumbnail.storagePath,
+    ];
+
+    const supabase = getBrowserSupabaseClient();
+    const bucket = supabase.storage.from(uploadData.bucket);
+
+    const uploadResults = await Promise.all([
+      bucket.uploadToSignedUrl(
+        uploadData.uploads.original.storagePath,
+        uploadData.uploads.original.token,
+        file,
+        {
+          contentType: file.type,
+        },
+      ),
+
+      bucket.uploadToSignedUrl(
+        uploadData.uploads.display.storagePath,
+        uploadData.uploads.display.token,
+        variants.display,
+        {
+          contentType: "image/webp",
+        },
+      ),
+
+      bucket.uploadToSignedUrl(
+        uploadData.uploads.thumbnail.storagePath,
+        uploadData.uploads.thumbnail.token,
+        variants.thumbnail,
+        {
+          contentType: "image/webp",
+        },
+      ),
+    ]);
+
+    const failedUpload = uploadResults.find((result) => result.error);
+
+    if (failedUpload?.error) {
+      console.error("Gallery variant upload failed:", failedUpload.error);
+
+      throw new Error(
+        "Das Bild konnte nicht vollständig hochgeladen werden.",
+      );
+    }
+
+    const completionResponse = await fetch(
+      "/api/admin/gallery-media/complete",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectId,
+          comparisonId,
+          slot,
+
+          originalStoragePath:
+            uploadData.uploads.original.storagePath,
+
+          displayStoragePath:
+            uploadData.uploads.display.storagePath,
+
+          thumbnailStoragePath:
+            uploadData.uploads.thumbnail.storagePath,
+
+          originalFileName: file.name,
+          mimeType: file.type,
+          fileSize: file.size,
+        }),
+      },
+    );
+
+    if (!completionResponse.ok) {
+      throw new Error(await getResponseError(completionResponse));
+    }
+
+    pendingStoragePaths = [];
+
+    showNotification(
+      asset
+        ? `${slotLabel}-Bild wurde ersetzt und optimiert.`
+        : `${slotLabel}-Bild wurde hochgeladen und optimiert.`,
+      "success",
+    );
+
+    router.refresh();
+  } catch (error) {
+    console.error("Gallery media upload failed:", error);
+
+    if (pendingStoragePaths.length) {
+      await fetch("/api/admin/gallery-media/upload-url", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectId,
+          comparisonId,
+          slot,
+          storagePaths: pendingStoragePaths,
+        }),
+      }).catch((cleanupError) => {
+        console.error(
+          "Temporary gallery upload cleanup failed:",
+          cleanupError,
+        );
+      });
+    }
+
+    showNotification(
+      error instanceof Error
+        ? error.message
+        : "Das Bild konnte nicht hochgeladen werden.",
+      "error",
+    );
+  } finally {
+    setIsUploading(false);
+  }
+}
 
   async function deleteAsset() {
     try {
@@ -460,7 +546,7 @@ export function AdminGalleryMediaSlot({
 
           <strong>Noch kein {slotLabel.toLowerCase()}-Bild</strong>
 
-          <p>JPEG, PNG oder WebP · maximal 10 MB</p>
+          <p>JPEG, PNG oder WebP · maximal 20 MB</p>
 
           <button
             className="admin-gallery-media-button"

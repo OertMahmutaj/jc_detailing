@@ -37,6 +37,7 @@ export function BeforeAfterSlider({
         alt={`${copy.afterAlt} - JC Detailing Wauwil ${index}`}
         className="before-after-image"
         fill
+        quality={85}
         sizes="(max-width: 768px) 100vw, 50vw"
         src={after}
       />
@@ -46,6 +47,7 @@ export function BeforeAfterSlider({
           alt={`${copy.beforeAlt} - JC Detailing Wauwil ${index}`}
           className="before-after-image"
           fill
+          quality={85}
           sizes="(max-width: 768px) 100vw, 50vw"
           src={before}
         />

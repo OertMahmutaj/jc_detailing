@@ -3,7 +3,7 @@ const nextConfig = {
   serverExternalPackages: ["pdfmake"],
 
   images: {
-    qualities: [60, 70, 75],
+    qualities: [60, 70, 75, 85],
   },
 };
 

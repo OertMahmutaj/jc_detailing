@@ -10,6 +10,7 @@ import {
   type GalleryComparison,
 } from "./GalleryGrid";
 import { localizePublicHref, normalizeLocale } from "../i18n";
+import { getGalleryVariantPaths } from "@/app/lib/galleryStoragePaths";
 
 export const dynamic = "force-dynamic";
 
@@ -92,13 +93,22 @@ export default async function GalleryPage({ searchParams }: { searchParams?: Pro
           return null;
         }
 
+        const beforeStoragePath = getGalleryVariantPaths(
+          comparison.beforeAsset.storagePath,
+        ).display;
+
+        const afterStoragePath = getGalleryVariantPaths(
+          comparison.afterAsset.storagePath,
+        ).display;
+
         const [beforeResult, afterResult] = await Promise.all([
           supabaseAdmin.storage
             .from(bookingPhotosBucket)
-            .createSignedUrl(comparison.beforeAsset.storagePath, 60 * 60),
+            .createSignedUrl(beforeStoragePath, 60 * 60),
+
           supabaseAdmin.storage
             .from(bookingPhotosBucket)
-            .createSignedUrl(comparison.afterAsset.storagePath, 60 * 60),
+            .createSignedUrl(afterStoragePath, 60 * 60),
         ]);
 
         if (

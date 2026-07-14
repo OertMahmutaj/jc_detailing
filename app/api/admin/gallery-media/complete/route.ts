@@ -6,6 +6,7 @@ import {
   supabaseAdmin,
 } from "@/app/(admin)/admin/_lib/supabaseAdmin";
 import { requireAdminSession } from "@/app/lib/requireAdmin";
+import { getAllGalleryStoragePaths } from "@/app/lib/galleryStoragePaths";
 
 const allowedMimeTypes = [
   "image/jpeg",
@@ -13,44 +14,70 @@ const allowedMimeTypes = [
   "image/webp",
 ] as const;
 
+const maxPhotoSizeInBytes = 20 * 1024 * 1024;
 const slots = ["BEFORE", "AFTER"] as const;
 
 type GallerySlot = (typeof slots)[number];
+type Variant = "original" | "display" | "thumbnail";
 
 function isGallerySlot(value: string): value is GallerySlot {
   return slots.includes(value as GallerySlot);
 }
 
 function isAllowedMimeType(
-  value: string
+  value: string,
 ): value is (typeof allowedMimeTypes)[number] {
   return allowedMimeTypes.includes(
-    value as (typeof allowedMimeTypes)[number]
+    value as (typeof allowedMimeTypes)[number],
   );
 }
 
-function hasValidStoragePath(
+function hasValidVariantPath(
   projectId: string,
   comparisonId: string,
   slot: GallerySlot,
-  storagePath: string
+  variant: Variant,
+  storagePath: string,
 ) {
-  const prefix = `gallery/${projectId}/${comparisonId}/${slot.toLowerCase()}/`;
+  const prefix = [
+    "gallery",
+    projectId,
+    comparisonId,
+    slot.toLowerCase(),
+    variant,
+    "",
+  ].join("/");
 
-  return (
-    storagePath.startsWith(prefix) &&
-    /\.(jpg|jpeg|png|webp)$/i.test(storagePath)
-  );
+  const validExtension =
+    variant === "original"
+      ? /\.(jpg|jpeg|png|webp)$/i.test(storagePath)
+      : /\.webp$/i.test(storagePath);
+
+  return storagePath.startsWith(prefix) && validExtension;
+}
+
+async function removeStoragePaths(storagePaths: string[]) {
+  if (!storagePaths.length) return;
+
+  const { error } = await supabaseAdmin.storage
+    .from(bookingPhotosBucket)
+    .remove([...new Set(storagePaths)]);
+
+  if (error) {
+    console.error("Gallery storage cleanup failed:", error);
+  }
 }
 
 export async function POST(request: NextRequest) {
+  let cleanupNewUploads: string[] = [];
+
   try {
     const session = await requireAdminSession(request);
 
     if (!session) {
       return NextResponse.json(
         { error: "Nicht autorisiert." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -64,11 +91,22 @@ export async function POST(request: NextRequest) {
         ? body.comparisonId.trim()
         : "";
 
-    const slot = typeof body.slot === "string" ? body.slot.trim() : "";
+    const slotValue =
+      typeof body.slot === "string" ? body.slot.trim() : "";
 
-    const storagePath =
-      typeof body.storagePath === "string"
-        ? body.storagePath.trim()
+    const originalStoragePath =
+      typeof body.originalStoragePath === "string"
+        ? body.originalStoragePath.trim()
+        : "";
+
+    const displayStoragePath =
+      typeof body.displayStoragePath === "string"
+        ? body.displayStoragePath.trim()
+        : "";
+
+    const thumbnailStoragePath =
+      typeof body.thumbnailStoragePath === "string"
+        ? body.thumbnailStoragePath.trim()
         : "";
 
     const originalFileName =
@@ -82,38 +120,73 @@ export async function POST(request: NextRequest) {
         : "";
 
     const fileSize =
-      typeof body.fileSize === "number" ? body.fileSize : Number.NaN;
+      typeof body.fileSize === "number"
+        ? body.fileSize
+        : Number.NaN;
 
-    if (!projectId || !comparisonId || !isGallerySlot(slot)) {
+    if (
+      !projectId ||
+      !comparisonId ||
+      !isGallerySlot(slotValue)
+    ) {
       return NextResponse.json(
         { error: "Projekt, Vergleich oder Bildseite ist ungültig." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (
-      !storagePath ||
-      !hasValidStoragePath(projectId, comparisonId, slot, storagePath)
+      !hasValidVariantPath(
+        projectId,
+        comparisonId,
+        slotValue,
+        "original",
+        originalStoragePath,
+      ) ||
+      !hasValidVariantPath(
+        projectId,
+        comparisonId,
+        slotValue,
+        "display",
+        displayStoragePath,
+      ) ||
+      !hasValidVariantPath(
+        projectId,
+        comparisonId,
+        slotValue,
+        "thumbnail",
+        thumbnailStoragePath,
+      )
     ) {
       return NextResponse.json(
-        { error: "Der Speicherpfad ist ungültig." },
-        { status: 400 }
+        { error: "Einer der Speicherpfade ist ungültig." },
+        { status: 400 },
       );
     }
 
     if (!isAllowedMimeType(mimeType)) {
       return NextResponse.json(
         { error: "Der Bildtyp ist ungültig." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    if (!Number.isFinite(fileSize) || fileSize <= 0) {
+    if (
+      !Number.isFinite(fileSize) ||
+      fileSize <= 0 ||
+      fileSize > maxPhotoSizeInBytes
+    ) {
       return NextResponse.json(
         { error: "Die Dateigrösse ist ungültig." },
-        { status: 400 }
+        { status: 400 },
       );
     }
+
+    cleanupNewUploads = [
+      originalStoragePath,
+      displayStoragePath,
+      thumbnailStoragePath,
+    ];
 
     const comparison = await prisma.galleryComparison.findFirst({
       where: {
@@ -122,12 +195,14 @@ export async function POST(request: NextRequest) {
       },
       select: {
         id: true,
+
         beforeAsset: {
           select: {
             id: true,
             storagePath: true,
           },
         },
+
         afterAsset: {
           select: {
             id: true,
@@ -138,35 +213,57 @@ export async function POST(request: NextRequest) {
     });
 
     if (!comparison) {
+      await removeStoragePaths(cleanupNewUploads);
+
       return NextResponse.json(
         { error: "Der Vergleich wurde nicht gefunden." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    const { error: storageCheckError } = await supabaseAdmin.storage
-      .from(bookingPhotosBucket)
-      .createSignedUrl(storagePath, 60);
+    const storageChecks = await Promise.all(
+      cleanupNewUploads.map((storagePath) =>
+        supabaseAdmin.storage
+          .from(bookingPhotosBucket)
+          .createSignedUrl(storagePath, 60),
+      ),
+    );
+
+    const storageCheckError = storageChecks.find(
+      (result) => result.error,
+    )?.error;
 
     if (storageCheckError) {
+      await removeStoragePaths(cleanupNewUploads);
+
       return NextResponse.json(
-        { error: "Das hochgeladene Bild wurde nicht gefunden." },
-        { status: 400 }
+        { error: "Nicht alle hochgeladenen Bildversionen wurden gefunden." },
+        { status: 400 },
       );
     }
 
     const oldAsset =
-      slot === "BEFORE" ? comparison.beforeAsset : comparison.afterAsset;
+      slotValue === "BEFORE"
+        ? comparison.beforeAsset
+        : comparison.afterAsset;
 
     const asset = await prisma.$transaction(async (transaction) => {
       const createdAsset = await transaction.galleryMediaAsset.create({
         data: {
           projectId,
-          storagePath,
+
+          /*
+            The database stores the untouched original path.
+
+            Display and thumbnail paths are derived from it.
+          */
+          storagePath: originalStoragePath,
+
           originalFileName,
           mimeType,
           fileSize: Math.round(fileSize),
         },
+
         select: {
           id: true,
           storagePath: true,
@@ -177,8 +274,9 @@ export async function POST(request: NextRequest) {
         where: {
           id: comparison.id,
         },
+
         data:
-          slot === "BEFORE"
+          slotValue === "BEFORE"
             ? {
                 beforeAssetId: createdAsset.id,
                 isPublished: false,
@@ -202,19 +300,18 @@ export async function POST(request: NextRequest) {
       return createdAsset;
     });
 
-    if (oldAsset) {
-      const { error: removeError } = await supabaseAdmin.storage
-        .from(bookingPhotosBucket)
-        .remove([oldAsset.storagePath]);
+    cleanupNewUploads = [];
 
-      if (removeError) {
-        console.error("Old gallery image cleanup failed:", removeError);
-      }
+    if (oldAsset) {
+      await removeStoragePaths(
+        getAllGalleryStoragePaths(oldAsset.storagePath),
+      );
     }
 
     revalidatePath("/admin/gallery");
     revalidatePath(`/admin/gallery/${projectId}`);
     revalidatePath("/gallery");
+    revalidatePath("/");
 
     return NextResponse.json({
       asset,
@@ -223,9 +320,13 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Gallery media completion failed:", error);
 
+    if (cleanupNewUploads.length) {
+      await removeStoragePaths(cleanupNewUploads);
+    }
+
     return NextResponse.json(
       { error: "Das Bild konnte nicht gespeichert werden." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

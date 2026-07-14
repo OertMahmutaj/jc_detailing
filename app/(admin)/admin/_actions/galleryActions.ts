@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "../_lib/prisma";
 import { bookingPhotosBucket, supabaseAdmin } from "../_lib/supabaseAdmin";
 import { BookingPhotoCategory } from "@prisma/client";
+import { getAllGalleryStoragePaths } from "@/app/lib/galleryStoragePaths";
 
 function cleanText(value: FormDataEntryValue | null, maxLength: number) {
   return String(value ?? "")
@@ -337,7 +338,13 @@ export async function deleteGalleryProject(formData: FormData) {
       };
     }
 
-    const storagePaths = project.mediaAssets.map((asset) => asset.storagePath);
+    const storagePaths = [
+  ...new Set(
+    project.mediaAssets.flatMap((asset) =>
+      getAllGalleryStoragePaths(asset.storagePath),
+    ),
+  ),
+];
 
     /*
       Database deletion happens first.
