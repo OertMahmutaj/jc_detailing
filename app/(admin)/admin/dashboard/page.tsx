@@ -140,6 +140,8 @@ export default async function AdminDashboardPage() {
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
+  const dashboardQueryStartedAt = performance.now();
+
   const [
     todayBookings,
     weekCount,
@@ -150,6 +152,9 @@ export default async function AdminDashboardPage() {
     openInvoices,
     overdueInvoices,
     nextSevenDaysBookings,
+    services,
+    categories,
+    addOns,
   ] = await Promise.all([
     prisma.booking.findMany({
       where: {
@@ -285,25 +290,49 @@ export default async function AdminDashboardPage() {
         dateTime: "asc",
       },
     }),
+
+    prisma.service.findMany({
+      orderBy: {
+        name: "asc",
+      },
+    }),
+
+    prisma.vehicleCategory.findMany({
+      orderBy: {
+        name: "asc",
+      },
+    }),
+
+    prisma.addOn.findMany({
+      orderBy: {
+        name: "asc",
+      },
+    }),
   ]);
 
-  const services = await prisma.service.findMany({
-    orderBy: {
-      name: "asc",
-    },
-  });
+  console.log(
+    `[admin-dashboard] queries: ${Math.round(
+      performance.now() - dashboardQueryStartedAt,
+    )}ms`,
+  );
 
-  const categories = await prisma.vehicleCategory.findMany({
-    orderBy: {
-      name: "asc",
-    },
-  });
+  // const services = await prisma.service.findMany({
+  //   orderBy: {
+  //     name: "asc",
+  //   },
+  // });
 
-  const addOns = await prisma.addOn.findMany({
-    orderBy: {
-      name: "asc",
-    },
-  });
+  // const categories = await prisma.vehicleCategory.findMany({
+  //   orderBy: {
+  //     name: "asc",
+  //   },
+  // });
+
+  // const addOns = await prisma.addOn.findMany({
+  //   orderBy: {
+  //     name: "asc",
+  //   },
+  // });
 
   const monthRevenue = monthBookings.reduce(
     (sum, booking) => sum + bookingNetAmount(booking),
@@ -547,9 +576,9 @@ export default async function AdminDashboardPage() {
           <div className="admin-invoice-summary">
             <div className="admin-invoice-summary-card is-open">
               <div>
-              <span>Offen</span>
-              <strong>{formatGrossCurrency(openInvoiceTotal)}</strong>
-              <small>{openInvoices.length} Rechnungen</small>
+                <span>Offen</span>
+                <strong>{formatGrossCurrency(openInvoiceTotal)}</strong>
+                <small>{openInvoices.length} Rechnungen</small>
               </div>
               <FileText aria-hidden="true" size={24} />
             </div>

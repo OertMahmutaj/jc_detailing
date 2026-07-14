@@ -11,8 +11,12 @@ const pool =
   globalForPrisma.adminPool ??
   new pg.Pool({
     connectionString: process.env.DATABASE_URL,
-    idleTimeoutMillis: 10_000,
-    max: 1,
+
+    // Allow dashboard queries to run concurrently.
+    max: Number(process.env.DATABASE_POOL_MAX ?? 5),
+
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 5_000,
   });
 
 export const prisma =
