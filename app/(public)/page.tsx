@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { BeforeAfterSlider } from "./components/BeforeAfterSlider";
 import { GoogleReviewWidget } from "./components/GoogleReviewWidget";
+import { HeroBackgroundVideo } from "./components/HeroBackgroundVideo";
 import { LanguageAwareBookingLink } from "./components/LanguageAwareBookingLink";
 import { LocalizedPublicLink } from "./components/LocalizedPublicLink";
 import {
@@ -215,25 +216,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
               src="/hero_poster.webp"
             />
 
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-              poster="/hero_poster.webp"
-            >
-              <source
-                src="/hero_vid_mobile_hq.mp4"
-                type="video/mp4"
-                media="(max-width: 767px)"
-              />
-              <source
-                src="/hero_vid_desktop_hq.mp4"
-                type="video/mp4"
-                media="(min-width: 768px)"
-              />
-            </video>
+            <HeroBackgroundVideo />
           </div>
 
           <div className="hero-overlay" aria-hidden="true" />
