@@ -8,6 +8,7 @@ import { useAdminNotification } from "./AdminNotificationProvider";
 
 type AdminClientEditorProps = {
   client: {
+    address?: string | null;
     id: string;
     name: string;
     email: string;
@@ -109,6 +110,17 @@ export function AdminClientEditor({ client }: AdminClientEditorProps) {
                 type="tel"
                 name="phone"
                 defaultValue={client.phone}
+                required
+              />
+            </label>
+
+            <label className="admin-form-wide">
+              <span>Adresse</span>
+              <input
+                type="text"
+                name="address"
+                defaultValue={client.address || ""}
+                placeholder="Strasse, PLZ Ort"
                 required
               />
             </label>

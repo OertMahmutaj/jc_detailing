@@ -142,6 +142,7 @@ export default async function AdminClientDetailPage({
           addOns={addOns}
           categories={vehicleCategories}
           client={{
+            address: client.address,
             id: client.id,
             name: client.name,
             email: client.email,
@@ -185,6 +186,7 @@ export default async function AdminClientDetailPage({
 
         <AdminClientEditor
           client={{
+            address: client.address,
             id: client.id,
             name: client.name,
             email: client.email,

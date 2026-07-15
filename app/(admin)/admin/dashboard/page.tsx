@@ -14,7 +14,7 @@ import { prisma } from "../_lib/prisma";
 import { AdminBookingCreator } from "../_components/AdminBookingCreator";
 import { createAdminBooking } from "../_actions/bookingActions";
 
-const DEFAULT_VAT_RATE = 8.1;
+const DEFAULT_VAT_RATE = 0;
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());

@@ -40,7 +40,7 @@ export function Navbar() {
     { label: copy.nav.home, href: `${homePath}#top` },
     {
       label: copy.nav.services,
-      href: localizePublicHref("/leistungen", activeLocale),
+      href: localizePublicHref("/leistungen#services-grid", activeLocale),
       children: [
         ["innenreinigung", "/leistungen/innenreinigung"],
         ["aussenreinigung", "/leistungen/aussenreinigung"],
@@ -52,8 +52,8 @@ export function Navbar() {
         text: copy.serviceNav[id as keyof typeof copy.serviceNav][1],
       })),
     },
-    { label: copy.nav.offers, href: localizePublicHref("/angebote", activeLocale) },
-    { label: copy.nav.gallery, href: localizePublicHref("/gallery", activeLocale) },
+    { label: copy.nav.offers, href: localizePublicHref("/angebote#offers-grid", activeLocale) },
+    { label: copy.nav.gallery, href: localizePublicHref("/gallery#gallery-grid", activeLocale) },
     { label: copy.nav.about, href: `${homePath}#about` },
     { label: copy.nav.faq, href: `${homePath}#faq` },
     { label: copy.nav.contact, href: `${homePath}#contact` },
@@ -68,9 +68,10 @@ export function Navbar() {
   function handleNavClick(href: string, event: MouseEvent<HTMLAnchorElement>) {
     closeMenu();
 
-    const [targetPath, targetId] = href.split("#");
+    const targetUrl = new URL(href, window.location.href);
+    const targetId = targetUrl.hash.slice(1);
 
-    if (!targetId || pathname !== targetPath) {
+    if (!targetId || pathname !== targetUrl.pathname) {
       return;
     }
 
@@ -80,7 +81,7 @@ export function Navbar() {
 
     if (target) {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
-      window.history.replaceState(null, "", href);
+      window.history.replaceState(null, "", `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`);
     }
   }
 
@@ -256,7 +257,7 @@ export function Navbar() {
         </nav>
 
         <div className="header-actions">
-          <Link className="ghost-button" href={bookingUrl} onClick={closeMenu}>
+          <Link className="ghost-button" href={bookingUrl} onClick={(event) => handleNavClick(bookingUrl, event)}>
             <CalendarCheck size={15} />
             {copy.nav.booking}
           </Link>
@@ -400,7 +401,7 @@ export function Navbar() {
                 }}
                 transition={{ duration: 0.28, ease: menuEase }}
               >
-                <Link href={bookingUrl} onClick={closeMenu}>
+                <Link href={bookingUrl} onClick={(event) => handleNavClick(bookingUrl, event)}>
                   {copy.nav.booking}
                 </Link>
               </motion.div>

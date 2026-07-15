@@ -34,6 +34,252 @@
   color-scheme: dark;
 }
 
+/* Marketing / promo codes */
+.admin-promo-panel {
+  overflow: visible;
+}
+
+.admin-promo-toolbar {
+  align-items: center;
+  border-bottom: 1px solid var(--admin-line);
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.admin-promo-search {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid var(--admin-line-strong);
+  border-radius: var(--admin-radius-sm);
+  color: var(--admin-muted);
+  display: flex;
+  gap: 10px;
+  max-width: 540px;
+  min-height: 42px;
+  padding: 0 13px;
+  width: 100%;
+}
+
+.admin-promo-search input {
+  background: transparent;
+  border: 0;
+  color: var(--admin-text);
+  min-width: 0;
+  outline: 0;
+  width: 100%;
+}
+
+.admin-promo-list {
+  display: grid;
+}
+
+.admin-promo-row {
+  align-items: center;
+  border-bottom: 1px solid var(--admin-line);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  min-height: 88px;
+  padding: 16px;
+}
+
+.admin-promo-row:last-child {
+  border-bottom: 0;
+}
+
+.admin-promo-icon {
+  align-items: center;
+  background: var(--admin-orange-soft);
+  border: 1px solid rgba(255, 100, 31, 0.28);
+  border-radius: var(--admin-radius-sm);
+  color: var(--admin-orange);
+  display: flex;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.admin-promo-main {
+  min-width: 0;
+}
+
+.admin-promo-title-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.admin-promo-title-row strong {
+  color: var(--admin-text);
+  font-size: 15px;
+}
+
+.admin-promo-title-row span,
+.admin-promo-status {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--admin-line);
+  border-radius: 999px;
+  color: var(--admin-muted);
+  font-size: 10px;
+  padding: 4px 8px;
+}
+
+.admin-promo-main p {
+  color: var(--admin-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 11px;
+  gap: 8px 16px;
+  margin: 8px 0 0;
+}
+
+.admin-promo-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.admin-promo-status.is-active {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.26);
+  color: #61d98a;
+}
+
+.admin-promo-switch {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--admin-line-strong);
+  border-radius: 999px;
+  cursor: pointer;
+  height: 24px;
+  padding: 2px;
+  transition: background 160ms ease;
+  width: 42px;
+}
+
+.admin-promo-switch span {
+  background: var(--admin-muted);
+  border-radius: 50%;
+  display: block;
+  height: 18px;
+  transition: transform 160ms ease;
+  width: 18px;
+}
+
+.admin-promo-switch.is-active {
+  background: var(--admin-orange);
+  border-color: var(--admin-orange);
+}
+
+.admin-promo-switch.is-active span {
+  background: #fff;
+  transform: translateX(18px);
+}
+
+.admin-promo-switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.admin-icon-button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--admin-line-strong);
+  border-radius: var(--admin-radius-sm);
+  color: var(--admin-text-soft);
+  cursor: pointer;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  padding: 0;
+  width: 36px;
+}
+
+.admin-icon-button.is-danger {
+  color: #ff6262;
+}
+
+.admin-promo-message {
+  color: #ff9a71;
+  font-size: 12px;
+  margin: 0;
+  padding: 12px 16px;
+}
+
+.admin-promo-form-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 22px;
+}
+
+.admin-promo-form-grid label {
+  color: var(--admin-muted);
+  display: grid;
+  font-size: 11px;
+  font-weight: 650;
+  gap: 7px;
+}
+
+.admin-promo-form-grid label.is-wide {
+  grid-column: 1 / -1;
+}
+
+.admin-promo-form-grid input {
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid var(--admin-line-strong);
+  border-radius: var(--admin-radius-sm);
+  color: var(--admin-text);
+  min-height: 42px;
+  padding: 0 12px;
+  width: 100%;
+}
+
+.admin-promo-modal-actions {
+  border-top: 1px solid var(--admin-line);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 16px 22px 22px;
+}
+
+@media (max-width: 720px) {
+  .admin-promo-toolbar,
+  .admin-promo-actions,
+  .admin-promo-modal-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-promo-toolbar .admin-primary-button,
+  .admin-promo-modal-actions button {
+    width: 100%;
+  }
+
+  .admin-promo-row {
+    align-items: start;
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .admin-promo-actions {
+    align-items: center;
+    flex-direction: row;
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .admin-promo-form-grid {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+
+  .admin-promo-form-grid label.is-wide {
+    grid-column: auto;
+  }
+}
+
 html[data-admin-theme="light"] .admin-shell,
 html[data-admin-theme="light"] .admin-login-page {
   --admin-bg: #f8f8f7;
@@ -1788,6 +2034,19 @@ html[data-admin-theme="light"] .admin-dashboard-planning-section {
   padding: 18px 0;
 }
 
+.admin-pdf-meta {
+  border-bottom: 1px solid #d7dde5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 12px 0;
+}
+
+.admin-pdf-meta span {
+  color: #667085;
+  font-size: 10px;
+}
+
 .admin-pdf-sheet table {
   border-collapse: collapse;
   margin-top: 10px;
@@ -1811,6 +2070,16 @@ html[data-admin-theme="light"] .admin-dashboard-planning-section {
 .admin-pdf-sheet td:last-child {
   padding-right: 0;
   text-align: right;
+}
+
+.admin-invoice-discount-row,
+.admin-pdf-discount-row,
+.admin-pdf-discount-row * {
+  color: var(--admin-orange);
+}
+
+.admin-pdf-discount-row {
+  font-weight: 700;
 }
 
 .admin-pdf-sheet > footer {

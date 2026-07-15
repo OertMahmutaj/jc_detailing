@@ -10,24 +10,45 @@ import { useAdminNotification } from "../../_components/AdminNotificationProvide
 type InvoiceBooking = {
   basePrice: number;
   bookingId?: string | null;
+  businessAddress?: string | null;
+  clientAddress?: string | null;
   clientEmail: string;
   clientName: string;
   dateTime?: Date | string | null;
+  draftItems: Array<{
+    description: string;
+    pricePerUnit: number;
+    quantity: number;
+    unit: string;
+  }>;
   invoice?: {
+    businessAddress?: string | null;
+    clientAddress?: string | null;
     dueDate: Date | string;
     id: string;
     invoiceNumber: string;
+    issuedAt?: Date | string | null;
     items?: any[];
     paidAt?: Date | string | null;
     pdfUrl?: string | null;
     reminderSentAt?: Date | string | null;
     sentAt?: Date | string | null;
     language?: string | null;
+    promoCode?: string | null;
+    promoDiscountAmount?: number;
+    promoDiscountPercent?: number | null;
+    recipientName?: string | null;
+    serviceDate?: Date | string | null;
     status: "SENT" | "PAID";
     totalAmount: number;
+    vatRate?: number;
   } | null;
   modifierPrice: number;
+  promoCode?: string | null;
+  promoDiscountAmount: number;
+  promoDiscountPercent?: number | null;
   serviceName: string;
+  suggestedInvoiceNumber: string;
   totalAmount: number;
 };
 
@@ -320,15 +341,36 @@ export default function InvoicesDashboardClient({
               initialData={{
                 basePrice: selectedBooking.basePrice,
                 bookingId: selectedBooking.bookingId || null,
+                businessAddress:
+                  selectedBooking.invoice?.businessAddress ||
+                  selectedBooking.businessAddress,
+                clientAddress:
+                  selectedBooking.invoice?.clientAddress ||
+                  selectedBooking.clientAddress,
                 invoiceId: selectedBooking.invoice?.id || null,
                 clientEmail: selectedBooking.clientEmail,
+                clientName:
+                  selectedBooking.invoice?.recipientName ||
+                  selectedBooking.clientName,
                 invoiceNumber:
                   selectedBooking.invoice?.invoiceNumber ||
-                  `RE-${Math.floor(1000 + Math.random() * 9000)}`,
-                items: selectedBooking.invoice?.items,
+                  selectedBooking.suggestedInvoiceNumber,
+                issuedAt: selectedBooking.invoice?.issuedAt,
+                items:
+                  selectedBooking.invoice?.items || selectedBooking.draftItems,
                 language: selectedBooking.invoice?.language || "de",
                 modifierPrice: selectedBooking.modifierPrice,
+                promoCode:
+                  selectedBooking.invoice?.promoCode ||
+                  selectedBooking.promoCode,
+                promoDiscountPercent:
+                  selectedBooking.invoice?.promoDiscountPercent ??
+                  selectedBooking.promoDiscountPercent,
+                serviceDate:
+                  selectedBooking.invoice?.serviceDate ||
+                  selectedBooking.dateTime,
                 serviceName: selectedBooking.serviceName,
+                vatRate: selectedBooking.invoice?.vatRate ?? 0,
               }}
             />
           </div>

@@ -5,7 +5,7 @@ import { ArrowRight, CalendarCheck, Check } from "lucide-react";
 import type { PublicLocale } from "../i18n";
 import type { LocalizedService } from "../serviceCopy";
 import { servicePageCopy } from "../serviceCopy";
-import { LocalizedPublicLink } from "./LocalizedPublicLink";
+import { LanguageAwareBookingLink } from "./LanguageAwareBookingLink";
 import {
   HeroIntro,
   HeroItem,
@@ -32,7 +32,17 @@ export function ServiceDetail({ service, locale }: ServiceDetailProps) {
           </HeroItem>
 
           <HeroItem>
-            <h1>{service.title} {copy.locationSuffix}</h1>
+            <h1>
+              {locale === "de" && service.id === "keramikversiegelung" ? (
+                <>
+                  Keramik
+                  <br />
+                  Versiegelung {copy.locationSuffix}
+                </>
+              ) : (
+                <>{service.title} {copy.locationSuffix}</>
+              )}
+            </h1>
           </HeroItem>
 
           <HeroItem>
@@ -42,10 +52,10 @@ export function ServiceDetail({ service, locale }: ServiceDetailProps) {
           </HeroItem>
 
           <HeroItem>
-            <LocalizedPublicLink className="primary-button" href="/buchen">
+            <LanguageAwareBookingLink className="primary-button">
               {copy.request}
               <CalendarCheck size={17} />
-            </LocalizedPublicLink>
+            </LanguageAwareBookingLink>
           </HeroItem>
         </HeroIntro>
 
@@ -123,10 +133,10 @@ export function ServiceDetail({ service, locale }: ServiceDetailProps) {
           {copy.cta}
         </p>
 
-        <LocalizedPublicLink href="/buchen">
+        <LanguageAwareBookingLink>
           {copy.request}
           <ArrowRight size={16} />
-        </LocalizedPublicLink>
+        </LanguageAwareBookingLink>
       </LightReveal>
     </PageEntry>
   );

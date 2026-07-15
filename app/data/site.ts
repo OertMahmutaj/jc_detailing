@@ -139,11 +139,11 @@ export const germanOffers = [
     price: "ab 30 CHF",
     text: "Zusatzleistungen wie Tierhaarentfernung, Kofferraum Deep Clean und Sitzreinigung.",
     details: [
-      "Tierhaarentfernung ab CHF 50 für hartnäckige Tierhaare.",
-      "Kofferraum Deep Clean ab CHF 40 für eine gründliche Reinigung des Kofferraums.",
-      "Sitze Tiefenreinigung ab CHF 80 für hygienische Polsterreinigung.",
-      "Dachhimmel Reinigung ab CHF 50 für empfindliche Dachhimmel-Oberflächen.",
-      "Fussmatten intensiv ab CHF 30 für tiefengereinigte Fussmatten.",
+      "Tierhaarentfernung ab CHF 50",
+      "Kofferraum Deep Clean ab CHF 40",
+      "Sitze Tiefenreinigung ab CHF 80",
+      "Dachhimmel Reinigung ab CHF 50",
+      "Fussmatten intensiv ab CHF 30",
     ],
   },
   {

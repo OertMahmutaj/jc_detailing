@@ -54,14 +54,24 @@ function pageHref({
 }
 
 function bookingAmount(booking: {
+  addOns: { price: number }[];
   invoice: { totalAmount: number } | null;
+  promoDiscountAmount: number;
   service: { basePrice: number };
+  services: { basePrice: number }[];
   vehicleCategory: { priceModifier: number };
 }) {
-  return (
-    booking.invoice?.totalAmount ??
-    booking.service.basePrice + booking.vehicleCategory.priceModifier
-  );
+  if (booking.invoice) return booking.invoice.totalAmount;
+
+  const services = booking.services.length
+    ? booking.services
+    : [booking.service];
+  const subtotal =
+    services.reduce((sum, service) => sum + service.basePrice, 0) +
+    booking.vehicleCategory.priceModifier +
+    booking.addOns.reduce((sum, addOn) => sum + addOn.price, 0);
+
+  return Math.max(0, subtotal - booking.promoDiscountAmount);
 }
 
 export default async function AdminInvoicesPage({
@@ -181,8 +191,11 @@ export default async function AdminInvoicesPage({
   const [allBookings, allInvoices] = await Promise.all([
     prisma.booking.findMany({
       include: {
+        addOns: true,
         client: true,
+        promoCode: true,
         service: true,
+        services: true,
         vehicleCategory: true,
         invoice: {
           include: {
@@ -234,14 +247,57 @@ export default async function AdminInvoicesPage({
     .reduce((sum, invoice) => sum + invoice.totalAmount, 0);
 
   const formattedBookings = bookings.map((booking) => ({
-    basePrice: booking.service.basePrice,
+    basePrice: (booking.services.length ? booking.services : [booking.service])
+      .reduce((sum, service) => sum + service.basePrice, 0),
     bookingId: booking.id,
+    businessAddress:
+      booking.invoice?.businessAddress || "Sternmatt 4, 6242 Wauwil",
+    clientAddress:
+      booking.invoice?.clientAddress || booking.client.address || "",
     clientEmail: booking.invoice?.emailOverride || booking.client.email,
     clientName: booking.client.name,
     dateTime: booking.dateTime,
+    draftItems: [
+      ...(booking.services.length ? booking.services : [booking.service]).map(
+        (service) => ({
+          description: service.name,
+          pricePerUnit: service.basePrice,
+          quantity: 1,
+          unit: "Stk.",
+        }),
+      ),
+      ...(booking.vehicleCategory.priceModifier > 0
+        ? [
+            {
+              description: `Fahrzeuggrösse: ${booking.vehicleCategory.name}`,
+              pricePerUnit: booking.vehicleCategory.priceModifier,
+              quantity: 1,
+              unit: "Stk.",
+            },
+          ]
+        : []),
+      ...booking.addOns.map((addOn) => ({
+        description: addOn.name,
+        pricePerUnit: addOn.price,
+        quantity: 1,
+        unit: "Stk.",
+      })),
+    ],
     invoice: booking.invoice,
     modifierPrice: booking.vehicleCategory.priceModifier,
-    serviceName: booking.service.name,
+    promoCode: booking.promoCode?.code || null,
+    promoDiscountAmount: booking.promoDiscountAmount,
+    promoDiscountPercent: booking.promoDiscountPercent,
+    serviceName: (booking.services.length
+      ? booking.services
+      : [booking.service]
+    )
+      .map((service) => service.name)
+      .join(", "),
+    suggestedInvoiceNumber: `RE-${booking.id
+      .replace(/-/g, "")
+      .slice(0, 10)
+      .toUpperCase()}`,
     totalAmount: bookingAmount(booking),
   }));
 

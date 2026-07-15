@@ -12,6 +12,7 @@ type Option = {
 };
 
 type ExistingClient = {
+  address?: string | null;
   id: string;
   name: string;
   email: string;
@@ -154,6 +155,17 @@ export function AdminBookingCreator({
                     Telefon
                     <input readOnly type="tel" value={client.phone} />
                   </label>
+
+                  <label className="admin-form-wide">
+                    Adresse
+                    <input
+                      name="address"
+                      placeholder="Strasse, PLZ Ort"
+                      required
+                      type="text"
+                      defaultValue={client.address || ""}
+                    />
+                  </label>
                 </>
               ) : (
                 <>
@@ -170,6 +182,16 @@ export function AdminBookingCreator({
                   <label>
                     Telefon
                     <input name="phone" required type="tel" />
+                  </label>
+
+                  <label className="admin-form-wide">
+                    Adresse
+                    <input
+                      name="address"
+                      placeholder="Strasse, PLZ Ort"
+                      required
+                      type="text"
+                    />
                   </label>
                 </>
               )}

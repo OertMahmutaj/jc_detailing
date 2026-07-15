@@ -42,8 +42,41 @@ model Client {
   name      String
   email     String    @unique
   phone     String
+  address   String?
   bookings  Booking[]
+  promoCodeUsages PromoCodeUsage[]
   createdAt DateTime  @default(now())
+}
+
+model PromoCode {
+  id               String           @id @default(uuid())
+  code             String           @unique
+  discountPercent  Float
+  maxUses           Int
+  maxUsesPerClient  Int
+  expiresAt         DateTime
+  isActive          Boolean          @default(true)
+  bookings          Booking[]
+  usages            PromoCodeUsage[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([isActive, expiresAt])
+}
+
+model PromoCodeUsage {
+  id                String    @id @default(uuid())
+  promoCodeId       String
+  promoCode         PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  bookingId         String    @unique
+  booking           Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  clientId          String
+  client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  discountPercent   Float
+  discountAmount    Float
+  createdAt         DateTime  @default(now())
+
+  @@index([promoCodeId, clientId])
 }
 
 model Service {
@@ -96,8 +129,16 @@ model Booking {
   addOns            AddOn[]         @relation("BookingToAddOns")
   invoice           Invoice?
 
+  promoCodeId            String?
+  promoCode              PromoCode?      @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
+  promoDiscountPercent   Float?
+  promoDiscountAmount    Float           @default(0)
+  promoCodeUsage         PromoCodeUsage?
+
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+
+  @@index([promoCodeId])
 }
 
 model Invoice {
@@ -106,7 +147,7 @@ model Invoice {
   issuedAt      DateTime      @default(now())
   dueDate       DateTime
   totalAmount   Float         
-  vatRate       Float         @default(8.1) // Default Swiss VAT percentage
+  vatRate       Float         @default(0)
   status        InvoiceStatus @default(SENT)
   language      String        @default("de")
   pdfUrl        String?       
@@ -117,6 +158,12 @@ model Invoice {
   // Custom Overrides (so admin can change target info without corrupting base data)
   emailOverride String?       
   recipientName String?
+  clientAddress String?
+  businessAddress String      @default("Sternmatt 4, 6242 Wauwil")
+  serviceDate   DateTime?
+  promoCode     String?
+  promoDiscountPercent Float?
+  promoDiscountAmount  Float  @default(0)
   companyUid    String?       @default("CHE-122.222.222") // The UID shown in your invoice mock
 
   bookingId     String?       @unique

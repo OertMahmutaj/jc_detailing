@@ -310,9 +310,11 @@ export default async function GalleryPage({
     const queryString =
       queryParams.toString();
 
-    return queryString
+    const pageHref = queryString
       ? `${pathname}?${queryString}`
       : pathname;
+
+    return `${pageHref}#gallery-grid`;
   }
 
   return (
@@ -338,7 +340,7 @@ export default async function GalleryPage({
         </div>
       </section>
 
-      <section className="public-gallery-content">
+      <section className="public-gallery-content" id="gallery-grid">
         <GalleryGrid
           comparisons={comparisons}
           locale={locale}

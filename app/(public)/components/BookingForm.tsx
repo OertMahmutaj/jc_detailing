@@ -39,13 +39,17 @@ type ServiceDetail = {
 
 type SubmittedBookingSummary = {
   addOns: string;
+  address: string;
   dateTime: Date;
+  discountAmount: number;
+  discountPercent: number;
   duration: string;
   email: string;
   endTime: Date;
   estimatedTotal: number;
   name: string;
   phone: string;
+  promoCode: string;
   services: string;
   vehicleCategory: string;
   vehicleModel: string;
@@ -564,7 +568,9 @@ export function BookingForm() {
       name: formPayload.name,
       email: formPayload.email,
       phone: formPayload.phone,
+      address: formPayload.address,
       vehicleModel: formPayload.vehicle,
+      promoCode: formPayload.promoCode,
       notes: formPayload.message,
       website: formPayload.website,
       dateTime: combinedDateTime.toISOString(),
@@ -581,7 +587,15 @@ export function BookingForm() {
         body: JSON.stringify(fullPayload),
       });
 
-      const data = (await response.json()) as { message?: string };
+      const data = (await response.json()) as {
+        message?: string;
+        pricing?: {
+          discountAmount: number;
+          discountPercent: number;
+          promoCode: string | null;
+          total: number;
+        };
+      };
 
       if (!response.ok) {
         throw new Error(currentLanguage === "de" ? (data.message ?? copy.requestError) : copy.requestError);
@@ -595,13 +609,17 @@ export function BookingForm() {
         addOns: selectedAddOns.length
           ? selectedAddOns.map((addOn) => displayAddOn(addOn.name).name).join(", ")
           : copy.none,
+        address: String(formPayload.address ?? ""),
         dateTime: combinedDateTime,
+        discountAmount: data.pricing?.discountAmount ?? 0,
+        discountPercent: data.pricing?.discountPercent ?? 0,
         duration: formatDuration(totalDuration),
         email: String(formPayload.email ?? ""),
         endTime: endDateTime,
-        estimatedTotal: calculateTotal(),
+        estimatedTotal: data.pricing?.total ?? calculateTotal(),
         name: String(formPayload.name ?? ""),
         phone: String(formPayload.phone ?? ""),
+        promoCode: data.pricing?.promoCode ?? "",
         services: selectedServices.map((service) => displayServiceName(service.name)).join(", "),
         vehicleCategory: selectedCategory ? (displayVehicle(selectedCategory.name)?.title ?? selectedCategory.name) : copy.summary.category,
         vehicleModel: String(formPayload.vehicle ?? ""),
@@ -710,6 +728,15 @@ export function BookingForm() {
             <strong>CHF {submittedBooking.estimatedTotal.toFixed(2)}</strong>
           </div>
 
+          {submittedBooking.promoCode && (
+            <div>
+              <span>{copy.summary.discount}</span>
+              <strong>
+                {submittedBooking.promoCode} ({submittedBooking.discountPercent}% / -CHF {submittedBooking.discountAmount.toFixed(2)})
+              </strong>
+            </div>
+          )}
+
           <div>
             <span>{copy.summary.email}</span>
             <strong>{submittedBooking.email}</strong>
@@ -718,6 +745,11 @@ export function BookingForm() {
           <div>
             <span>{copy.summary.phone}</span>
             <strong>{submittedBooking.phone}</strong>
+          </div>
+
+          <div>
+            <span>{copy.summary.address}</span>
+            <strong>{submittedBooking.address}</strong>
           </div>
         </div>
 
@@ -992,8 +1024,18 @@ export function BookingForm() {
             </div>
 
             <div className="booking-field">
+              <label htmlFor="address">{copy.fields.address}</label>
+              <input id="address" name="address" type="text" autoComplete="street-address" maxLength={300} required />
+            </div>
+
+            <div className="booking-field">
               <label htmlFor="vehicle">{copy.fields.vehicle}</label>
               <input id="vehicle" name="vehicle" type="text" placeholder={copy.vehiclePlaceholder} maxLength={120} required />
+            </div>
+
+            <div className="booking-field">
+              <label htmlFor="promoCode">{copy.fields.promoCode}</label>
+              <input id="promoCode" name="promoCode" type="text" autoCapitalize="characters" maxLength={40} />
             </div>
 
             <div className="booking-field booking-field-wide">

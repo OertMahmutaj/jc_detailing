@@ -88,6 +88,7 @@ body {
 .page-shell .offer-read-more,
 .page-shell .offer-card > a,
 .page-shell .offer-close,
+.page-shell .offer-booking-link,
 .public-gallery-cta a {
   align-items: center;
   background: transparent;
@@ -112,6 +113,7 @@ body {
 .page-shell .offer-read-more:hover,
 .page-shell .offer-card > a:hover,
 .page-shell .offer-close:hover,
+.page-shell .offer-booking-link:hover,
 .public-gallery-cta a:hover {
   background: var(--public-orange);
   border-color: var(--public-orange);
@@ -137,6 +139,7 @@ body {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   padding-bottom: 24px;
   padding-top: 72px;
+  scroll-margin-top: 120px;
 }
 
 .page-shell .service-grid > * {
@@ -288,6 +291,7 @@ body {
 
 .page-shell .offers-interactive .offers-page-grid {
   padding-bottom: 36px;
+  scroll-margin-top: 120px;
 }
 
 .page-shell .offer-read-more {
@@ -326,6 +330,20 @@ body {
 
 .page-shell .offer-detail-panel li {
   border-bottom-color: var(--public-line);
+}
+
+.page-shell .offer-detail-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  grid-column: 1 / -1;
+  order: 3;
+}
+
+.page-shell .offer-detail-actions .offer-close {
+  grid-column: auto;
+  justify-self: auto;
+  order: 0;
 }
 
 /* Individual service pages */
@@ -703,6 +721,7 @@ body {
 .public-gallery-content {
   max-width: 1432px;
   padding: 42px 28px 0;
+  scroll-margin-top: 120px;
 }
 
 .public-gallery-toolbar {
@@ -876,6 +895,10 @@ body {
 
   .page-shell .offer-close span {
     display: none;
+  }
+
+  .page-shell .offer-detail-actions {
+    padding-top: 30px;
   }
 
   .page-shell .detail-hero {

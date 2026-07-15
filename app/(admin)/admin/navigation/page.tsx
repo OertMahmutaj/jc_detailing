@@ -12,6 +12,7 @@ import {
   Images,
   LayoutDashboard,
   LogOut,
+  TicketPercent,
   Users,
   X,
 } from "lucide-react";
@@ -32,6 +33,16 @@ const adminGroups = [
     title: "Verwaltung",
     links: [
       { href: "/admin/invoices", label: "Rechnungen", icon: FileText },
+    ],
+  },
+  {
+    title: "Marketing",
+    links: [
+      {
+        href: "/admin/marketing/promo-codes",
+        label: "Promo Codes",
+        icon: TicketPercent,
+      },
     ],
   },
 ];

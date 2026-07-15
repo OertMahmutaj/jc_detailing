@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/(admin)/admin/_lib/prisma";
+import { cookies } from "next/headers";
 import path from "path";
 import QRCode from "qrcode";
 import pdfmake from "pdfmake";
 import { createClient } from "@supabase/supabase-js";
+import {
+  ADMIN_SESSION_COOKIE,
+  verifyAdminSession,
+} from "@/app/lib/adminSession";
 
 export const runtime = "nodejs";
 
@@ -36,14 +41,26 @@ type InvoiceItemInput = {
 };
 
 type InvoiceSendRequest = {
-  bookingId: string;
+  bookingId?: string | null;
+  businessAddress: string;
+  clientAddress: string;
+  invoiceId?: string | null;
   invoiceNumber: string;
+  recipientName: string;
+  serviceDate: string;
   targetEmail: string;
   vatRate: number;
   items: InvoiceItemInput[];
-  totalAmount: number;
   language?: InvoiceLanguage;
 };
+
+function roundCurrency(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function cleanText(value: unknown, maxLength: number) {
+  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
 
 async function archiveInvoicePdf(pdfBuffer: Buffer, invoiceNumber: string) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -85,9 +102,15 @@ function invoicePdfLabels(language: InvoiceLanguage) {
       quantity: "Menge",
       unitPrice: "Einzelpreis",
       amount: "Betrag",
-      total: "Gesamtsumme (inkl. MwSt)",
+      subtotal: "Zwischensumme",
+      discount: "Promo-Code",
+      vat: "MwSt.",
+      total: "Gesamtsumme",
       invoiceNumber: "Rechnungsnummer",
-      date: "Datum",
+      invoiceDate: "Rechnungsdatum",
+      serviceDate: "Leistungsdatum",
+      issuer: "Leistungserbringer",
+      recipient: "Kunde",
       paymentPart: "Zahlteil",
       payableTo: "Konto / Zahlbar an",
       payableBy: "Zahlbar durch",
@@ -98,9 +121,15 @@ function invoicePdfLabels(language: InvoiceLanguage) {
       quantity: "Quantity",
       unitPrice: "Unit price",
       amount: "Amount",
-      total: "Total (incl. VAT)",
+      subtotal: "Subtotal",
+      discount: "Promo code",
+      vat: "VAT",
+      total: "Total",
       invoiceNumber: "Invoice number",
-      date: "Date",
+      invoiceDate: "Invoice date",
+      serviceDate: "Service date",
+      issuer: "Service provider",
+      recipient: "Client",
       paymentPart: "Payment part",
       payableTo: "Account / Payable to",
       payableBy: "Payable by",
@@ -111,9 +140,15 @@ function invoicePdfLabels(language: InvoiceLanguage) {
       quantity: "Quantité",
       unitPrice: "Prix unitaire",
       amount: "Montant",
-      total: "Total (TVA incl.)",
+      subtotal: "Sous-total",
+      discount: "Code promo",
+      vat: "TVA",
+      total: "Total",
       invoiceNumber: "Numéro de facture",
-      date: "Date",
+      invoiceDate: "Date de facture",
+      serviceDate: "Date de prestation",
+      issuer: "Prestataire",
+      recipient: "Client",
       paymentPart: "Section paiement",
       payableTo: "Compte / Payable à",
       payableBy: "Payable par",
@@ -124,9 +159,15 @@ function invoicePdfLabels(language: InvoiceLanguage) {
       quantity: "Quantità",
       unitPrice: "Prezzo unitario",
       amount: "Importo",
-      total: "Totale (IVA incl.)",
+      subtotal: "Subtotale",
+      discount: "Codice promo",
+      vat: "IVA",
+      total: "Totale",
       invoiceNumber: "Numero fattura",
-      date: "Data",
+      invoiceDate: "Data fattura",
+      serviceDate: "Data del servizio",
+      issuer: "Fornitore del servizio",
+      recipient: "Cliente",
       paymentPart: "Sezione pagamento",
       payableTo: "Conto / Pagabile a",
       payableBy: "Pagabile da",
@@ -392,76 +433,168 @@ async function sendInvoiceEmail({
 }
 
 function validateInvoiceRequest(body: Partial<InvoiceSendRequest>) {
-  if (!body.bookingId) {
-    throw new Error("bookingId is required.");
+  if (!body.bookingId && !body.invoiceId) {
+    throw new Error("Eine Buchung oder bestehende Rechnung ist erforderlich.");
   }
 
-  if (!body.invoiceNumber) {
-    throw new Error("invoiceNumber is required.");
+  if (!cleanText(body.invoiceNumber, 80)) {
+    throw new Error("Die Rechnungsnummer fehlt.");
   }
 
-  if (!body.targetEmail) {
-    throw new Error("targetEmail is required.");
-  }
-
-  if (!Array.isArray(body.items) || body.items.length === 0) {
-    throw new Error("At least one invoice item is required.");
+  if (!cleanText(body.targetEmail, 160)) {
+    throw new Error("Die Empfänger-E-Mail fehlt.");
   }
 
   if (
-    typeof body.totalAmount !== "number" ||
-    !Number.isFinite(body.totalAmount)
+    !cleanText(body.recipientName, 160) ||
+    !cleanText(body.clientAddress, 400) ||
+    !cleanText(body.businessAddress, 400)
   ) {
-    throw new Error("totalAmount is invalid.");
+    throw new Error("Empfänger- und Adressdaten sind unvollständig.");
   }
 
-  if (typeof body.vatRate !== "number" || !Number.isFinite(body.vatRate)) {
-    throw new Error("vatRate is invalid.");
+  if (!body.serviceDate || Number.isNaN(new Date(body.serviceDate).getTime())) {
+    throw new Error("Das Leistungsdatum ist ungültig.");
+  }
+
+  if (!Array.isArray(body.items) || body.items.length === 0) {
+    throw new Error("Mindestens eine Rechnungsposition ist erforderlich.");
+  }
+
+  const invalidItem = body.items.some(
+    (item) =>
+      !cleanText(item.description, 300) ||
+      !Number.isFinite(Number(item.quantity)) ||
+      Number(item.quantity) <= 0 ||
+      !Number.isFinite(Number(item.pricePerUnit)) ||
+      Number(item.pricePerUnit) < 0,
+  );
+
+  if (invalidItem) {
+    throw new Error("Eine Rechnungsposition ist ungültig.");
+  }
+
+  if (
+    typeof body.vatRate !== "number" ||
+    !Number.isFinite(body.vatRate) ||
+    body.vatRate < 0 ||
+    body.vatRate > 100
+  ) {
+    throw new Error("Der Mehrwertsteuersatz ist ungültig.");
   }
 }
 
 export async function POST(req: Request) {
   try {
+    const cookieStore = await cookies();
+    const isAuthorized = verifyAdminSession(
+      cookieStore.get(ADMIN_SESSION_COOKIE)?.value,
+    );
+
+    if (!isAuthorized) {
+      return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
+    }
+
     const body = (await req.json()) as Partial<InvoiceSendRequest>;
 
     validateInvoiceRequest(body);
 
     const {
       bookingId,
-      invoiceNumber,
-      targetEmail,
+      invoiceId,
       vatRate,
-      items,
-      totalAmount,
       language: rawLanguage,
     } = body as InvoiceSendRequest;
+
+    const invoiceNumber = cleanText(body.invoiceNumber, 80);
+    const targetEmail = cleanText(body.targetEmail, 160).toLowerCase();
+    const recipientName = cleanText(body.recipientName, 160);
+    const clientAddress = cleanText(body.clientAddress, 400);
+    const businessAddress = cleanText(body.businessAddress, 400);
+    const serviceDate = new Date(`${body.serviceDate}T12:00:00.000Z`);
+    const items = (body.items ?? []).map((item) => ({
+      description: cleanText(item.description, 300),
+      pricePerUnit: roundCurrency(Number(item.pricePerUnit)),
+      quantity: Number(item.quantity),
+      unit: cleanText(item.unit, 30) || "Stk.",
+    }));
 
     const language = cleanLanguage(rawLanguage);
     const t = invoicePdfLabels(language);
     const payment = getPaymentDetails();
 
-    const invoice = await prisma.invoice.upsert({
-      where: {
-        bookingId,
-      },
-      update: {
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        emailOverride: targetEmail,
-        invoiceNumber,
-        language,
-        totalAmount,
-        vatRate,
-      },
-      create: {
-        bookingId,
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        emailOverride: targetEmail,
-        invoiceNumber,
-        language,
-        totalAmount,
-        vatRate,
-      },
-    });
+    const [booking, existingInvoice] = await Promise.all([
+      bookingId
+        ? prisma.booking.findUnique({
+            where: { id: bookingId },
+            include: { client: true, promoCode: true },
+          })
+        : Promise.resolve(null),
+      invoiceId
+        ? prisma.invoice.findUnique({ where: { id: invoiceId } })
+        : bookingId
+          ? prisma.invoice.findUnique({ where: { bookingId } })
+          : Promise.resolve(null),
+    ]);
+
+    if (bookingId && !booking) {
+      throw new Error("Die zugehörige Buchung wurde nicht gefunden.");
+    }
+
+    if (invoiceId && !existingInvoice) {
+      throw new Error("Die Rechnung wurde nicht gefunden.");
+    }
+
+    const promoCode = booking?.promoCode?.code || existingInvoice?.promoCode || null;
+    const promoDiscountPercent =
+      booking?.promoDiscountPercent ??
+      existingInvoice?.promoDiscountPercent ??
+      0;
+    const subtotalAmount = roundCurrency(
+      items.reduce(
+        (sum, item) => sum + item.quantity * item.pricePerUnit,
+        0,
+      ),
+    );
+    const promoDiscountAmount = promoCode
+      ? roundCurrency(subtotalAmount * (promoDiscountPercent / 100))
+      : 0;
+    const netAmount = roundCurrency(
+      Math.max(0, subtotalAmount - promoDiscountAmount),
+    );
+    const vatAmount = roundCurrency(netAmount * (vatRate / 100));
+    const totalAmount = roundCurrency(netAmount + vatAmount);
+    const dueDate =
+      existingInvoice?.dueDate ??
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    const invoiceData = {
+      businessAddress,
+      clientAddress,
+      dueDate,
+      emailOverride: targetEmail,
+      invoiceNumber,
+      language,
+      promoCode,
+      promoDiscountAmount,
+      promoDiscountPercent: promoCode ? promoDiscountPercent : null,
+      recipientName,
+      serviceDate,
+      totalAmount,
+      vatRate,
+    };
+
+    const invoice = existingInvoice
+      ? await prisma.invoice.update({
+          where: { id: existingInvoice.id },
+          data: invoiceData,
+        })
+      : await prisma.invoice.create({
+          data: {
+            ...invoiceData,
+            bookingId: bookingId || null,
+          },
+        });
 
     await prisma.invoiceItem.deleteMany({
       where: {
@@ -545,7 +678,7 @@ export async function POST(req: Request) {
                   fontSize: 16,
                 },
                 {
-                  text: "Sternmatt 4, 6242 Wauwil",
+                  text: businessAddress,
                   font: "CustomRegular",
                   fontSize: 10,
                   color: "#666",
@@ -567,7 +700,14 @@ export async function POST(req: Request) {
                   alignment: "right",
                 },
                 {
-                  text: `${t.date}: ${new Date().toLocaleDateString(t.locale)}`,
+                  text: `${t.invoiceDate}: ${invoice.issuedAt.toLocaleDateString(t.locale)}`,
+                  font: "CustomRegular",
+                  fontSize: 10,
+                  alignment: "right",
+                  margin: [0, 4, 0, 0],
+                },
+                {
+                  text: `${t.serviceDate}: ${serviceDate.toLocaleDateString(t.locale)}`,
                   font: "CustomRegular",
                   fontSize: 10,
                   alignment: "right",
@@ -578,19 +718,101 @@ export async function POST(req: Request) {
           ],
         },
         {
+          columns: [
+            {
+              stack: [
+                {
+                  text: t.issuer,
+                  font: "CustomBold",
+                  fontSize: 9,
+                  color: "#666",
+                },
+                {
+                  text: `JC Detailing\n${businessAddress}\n+41 77 268 33 88\njcdetailinglucerne@gmail.com`,
+                  font: "CustomRegular",
+                  fontSize: 10,
+                  margin: [0, 5, 0, 0],
+                },
+              ],
+            },
+            {
+              stack: [
+                {
+                  text: t.recipient,
+                  font: "CustomBold",
+                  fontSize: 9,
+                  color: "#666",
+                },
+                {
+                  text: `${recipientName}\n${clientAddress}\n${targetEmail}`,
+                  font: "CustomRegular",
+                  fontSize: 10,
+                  margin: [0, 5, 0, 0],
+                },
+              ],
+            },
+          ],
+          columnGap: 28,
+          margin: [0, 28, 0, 0],
+        },
+        {
           table: {
             headerRows: 1,
             widths: ["*", "auto", "auto", "auto"],
             body: tableBody,
           },
           layout: "lightHorizontalLines",
-          margin: [0, 40, 0, 20],
+          margin: [0, 28, 0, 20],
         },
         {
-          text: `${t.total}: CHF ${totalAmount.toFixed(2)}`,
-          font: "CustomBold",
-          fontSize: 12,
-          alignment: "right",
+          table: {
+            widths: ["*", "auto"],
+            body: [
+              [
+                { text: t.subtotal, font: "CustomRegular" },
+                {
+                  text: `CHF ${subtotalAmount.toFixed(2)}`,
+                  font: "CustomRegular",
+                  alignment: "right",
+                },
+              ],
+              ...(promoCode && promoDiscountAmount > 0
+                ? [
+                    [
+                      {
+                        text: `${t.discount} ${promoCode} (${promoDiscountPercent}%)`,
+                        font: "CustomRegular",
+                        color: "#d9551c",
+                      },
+                      {
+                        text: `- CHF ${promoDiscountAmount.toFixed(2)}`,
+                        font: "CustomRegular",
+                        color: "#d9551c",
+                        alignment: "right",
+                      },
+                    ],
+                  ]
+                : []),
+              [
+                { text: `${t.vat} ${vatRate}%`, font: "CustomRegular" },
+                {
+                  text: `CHF ${vatAmount.toFixed(2)}`,
+                  font: "CustomRegular",
+                  alignment: "right",
+                },
+              ],
+              [
+                { text: t.total, font: "CustomBold", fontSize: 12 },
+                {
+                  text: `CHF ${totalAmount.toFixed(2)}`,
+                  font: "CustomBold",
+                  fontSize: 12,
+                  alignment: "right",
+                },
+              ],
+            ],
+          },
+          layout: "noBorders",
           margin: [0, 0, 0, 60],
         },
         {
@@ -631,7 +853,7 @@ export async function POST(req: Request) {
                   margin: [0, 4, 0, 8],
                 },
                 {
-                  text: `${t.payableBy}:\n${targetEmail}`,
+                  text: `${t.payableBy}:\n${recipientName}\n${clientAddress}\n${targetEmail}`,
                   font: "CustomRegular",
                   fontSize: 8,
                   margin: [0, 0, 0, 8],

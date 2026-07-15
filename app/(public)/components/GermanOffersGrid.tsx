@@ -1,14 +1,16 @@
 "use client";
 
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, CalendarCheck, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { LightGroup, LightItem } from "./StudioMotion";
-import type { PublicLocale } from "../i18n";
+import { sharedCopy, type PublicLocale } from "../i18n";
 import { getLocalizedOffers, offersPageCopy, type LocalizedOffer } from "../offerCopy";
+import { LanguageAwareBookingLink } from "./LanguageAwareBookingLink";
 
 export function GermanOffersGrid({ locale = "de" }: { locale?: PublicLocale }) {
   const offers = getLocalizedOffers(locale);
   const copy = offersPageCopy[locale];
+  const bookingLabel = sharedCopy[locale].nav.booking;
   const [selectedOffer, setSelectedOffer] = useState<LocalizedOffer | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const topRef = useRef<HTMLDivElement | null>(null);
@@ -36,7 +38,7 @@ export function GermanOffersGrid({ locale = "de" }: { locale?: PublicLocale }) {
   return (
     <div ref={topRef} className="offers-interactive">
       <div className="offers-interactive-inner">
-        <LightGroup className="offer-grid offers-page-grid">
+        <LightGroup className="offer-grid offers-page-grid" id="offers-grid">
           {offers.map((offer) => (
             <LightItem key={offer.title}>
               <article className="offer-card">
@@ -61,11 +63,6 @@ export function GermanOffersGrid({ locale = "de" }: { locale?: PublicLocale }) {
 
         {selectedOffer && (
           <section className="offer-detail-panel" ref={panelRef}>
-            <button className="offer-close" type="button" onClick={closeOffer} aria-label={copy.closeLabel}>
-              <span>{copy.close}</span>
-              <X size={16} />
-            </button>
-
             <div>
               <p className="mini-title">{copy.offer}</p>
               <h2>{selectedOffer.title}</h2>
@@ -78,6 +75,18 @@ export function GermanOffersGrid({ locale = "de" }: { locale?: PublicLocale }) {
                 <li key={detail}>{detail}</li>
               ))}
             </ul>
+
+            <div className="offer-detail-actions">
+              <button className="offer-close" type="button" onClick={closeOffer} aria-label={copy.closeLabel}>
+                <span>{copy.close}</span>
+                <X size={16} />
+              </button>
+
+              <LanguageAwareBookingLink className="offer-booking-link">
+                {bookingLabel}
+                <CalendarCheck size={16} />
+              </LanguageAwareBookingLink>
+            </div>
           </section>
         )}
       </div>

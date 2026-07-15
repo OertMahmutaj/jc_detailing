@@ -15,13 +15,21 @@ interface InvoiceEditorProps {
   initialData: {
     basePrice: number;
     bookingId?: string | null;
-    invoiceId?: string | null;
+    businessAddress?: string | null;
+    clientAddress?: string | null;
     clientEmail: string;
+    clientName?: string | null;
+    invoiceId?: string | null;
     invoiceNumber: string;
-    items?: any[];
+    issuedAt?: Date | string | null;
+    items?: Partial<Item>[];
     language?: string | null;
     modifierPrice: number;
+    promoCode?: string | null;
+    promoDiscountPercent?: number | null;
+    serviceDate?: Date | string | null;
     serviceName: string;
+    vatRate?: number | null;
   };
   onSaved?: () => void;
 }
@@ -40,23 +48,52 @@ function formatCurrency(value: number) {
   return `CHF ${grouped}.${cents}`;
 }
 
+function roundCurrency(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function toDateInputValue(value?: Date | string | null) {
+  const date = value ? new Date(value) : new Date();
+  return Number.isNaN(date.getTime())
+    ? new Date().toISOString().slice(0, 10)
+    : date.toISOString().slice(0, 10);
+}
+
+function formatSwissDate(value?: Date | string | null) {
+  const date = value ? new Date(value) : new Date();
+
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return new Intl.DateTimeFormat("de-CH", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
 export default function InvoiceEditor({
   initialData,
   onSaved,
 }: InvoiceEditorProps) {
   const { showNotification } = useAdminNotification();
 
-  const [invoiceNumber, setInvoiceNumber] = useState(
-    initialData.invoiceNumber,
-  );
+  const [invoiceNumber, setInvoiceNumber] = useState(initialData.invoiceNumber);
   const [language, setLanguage] = useState(initialData.language || "de");
   const [targetEmail, setTargetEmail] = useState(initialData.clientEmail);
-  const [vatRate, setVatRate] = useState(8.1);
+  const [recipientName, setRecipientName] = useState(initialData.clientName || "");
+  const [clientAddress, setClientAddress] = useState(initialData.clientAddress || "");
+  const [businessAddress, setBusinessAddress] = useState(
+    initialData.businessAddress || "Sternmatt 4, 6242 Wauwil",
+  );
+  const [serviceDate, setServiceDate] = useState(
+    toDateInputValue(initialData.serviceDate),
+  );
+  const [vatRate, setVatRate] = useState(initialData.vatRate ?? 0);
   const [isSending, setIsSending] = useState(false);
 
   const [items, setItems] = useState<Item[]>(
     initialData.items && initialData.items.length > 0
-      ? initialData.items.map((item: any) => ({
+      ? initialData.items.map((item) => ({
           description: item.description || "",
           pricePerUnit: Number(item.pricePerUnit) || 0,
           quantity: Number(item.quantity) || 1,
@@ -72,12 +109,21 @@ export default function InvoiceEditor({
         ],
   );
 
-  const netAmount = items.reduce(
-    (sum, item) => sum + item.quantity * item.pricePerUnit,
-    0,
+  const subtotalAmount = roundCurrency(
+    items.reduce(
+      (sum, item) => sum + item.quantity * item.pricePerUnit,
+      0,
+    ),
   );
-  const vatAmount = netAmount * (vatRate / 100);
-  const totalAmount = netAmount + vatAmount;
+  const promoDiscountPercent = initialData.promoDiscountPercent ?? 0;
+  const promoDiscountAmount = initialData.promoCode
+    ? roundCurrency(subtotalAmount * (promoDiscountPercent / 100))
+    : 0;
+  const netAmount = roundCurrency(
+    Math.max(0, subtotalAmount - promoDiscountAmount),
+  );
+  const vatAmount = roundCurrency(netAmount * (vatRate / 100));
+  const totalAmount = roundCurrency(netAmount + vatAmount);
 
   function addItem() {
     setItems([
@@ -114,8 +160,19 @@ export default function InvoiceEditor({
       return;
     }
 
-    if (!targetEmail.trim()) {
-      showNotification("Bitte gib eine Empfänger-E-Mail ein.", "error");
+    if (!targetEmail.trim() || !recipientName.trim() || !clientAddress.trim()) {
+      showNotification(
+        "Bitte ergänze Empfänger, E-Mail und Kundenadresse.",
+        "error",
+      );
+      return;
+    }
+
+    if (!businessAddress.trim() || !serviceDate) {
+      showNotification(
+        "Bitte ergänze Geschäftsadresse und Leistungsdatum.",
+        "error",
+      );
       return;
     }
 
@@ -130,12 +187,15 @@ export default function InvoiceEditor({
       const response = await fetch("/api/admin/invoices/send", {
         body: JSON.stringify({
           bookingId: initialData.bookingId || null,
+          businessAddress,
+          clientAddress,
           invoiceId: initialData.invoiceId || null,
           invoiceNumber,
           items,
           language,
+          recipientName,
+          serviceDate,
           targetEmail,
-          totalAmount,
           vatRate,
         }),
         headers: {
@@ -160,7 +220,6 @@ export default function InvoiceEditor({
       onSaved?.();
     } catch (error) {
       console.error("Invoice sending failed:", error);
-
       showNotification("Rechnung konnte nicht gesendet werden.", "error");
     } finally {
       setIsSending(false);
@@ -194,8 +253,48 @@ export default function InvoiceEditor({
             </label>
 
             <label>
+              Kunde
+              <input
+                value={recipientName}
+                onChange={(event) => setRecipientName(event.target.value)}
+              />
+            </label>
+
+            <label>
+              Kundenadresse
+              <input
+                value={clientAddress}
+                onChange={(event) => setClientAddress(event.target.value)}
+              />
+            </label>
+
+            <label>
+              Rechnungsdatum
+              <input readOnly value={toDateInputValue(initialData.issuedAt)} />
+            </label>
+
+            <label>
+              Leistungsdatum
+              <input
+                type="date"
+                value={serviceDate}
+                onChange={(event) => setServiceDate(event.target.value)}
+              />
+            </label>
+
+            <label>
+              Geschäftsadresse
+              <input
+                value={businessAddress}
+                onChange={(event) => setBusinessAddress(event.target.value)}
+              />
+            </label>
+
+            <label>
               Mehrwertsteuer
               <input
+                min="0"
+                max="100"
                 step="0.1"
                 type="number"
                 value={vatRate}
@@ -217,6 +316,16 @@ export default function InvoiceEditor({
                 <option value="it">Italiano</option>
               </select>
             </label>
+
+            {initialData.promoCode && (
+              <label>
+                Promo-Code
+                <input
+                  readOnly
+                  value={`${initialData.promoCode} (${promoDiscountPercent}%)`}
+                />
+              </label>
+            )}
           </div>
 
           <div className="admin-invoice-items">
@@ -268,6 +377,7 @@ export default function InvoiceEditor({
                   />
 
                   <button
+                    aria-label="Position entfernen"
                     className="admin-icon-danger"
                     disabled={items.length === 1}
                     onClick={() => removeItem(index)}
@@ -289,6 +399,15 @@ export default function InvoiceEditor({
           </div>
 
           <div className="admin-total-box">
+            <div>
+              Zwischensumme: <strong>{formatCurrency(subtotalAmount)}</strong>
+            </div>
+            {initialData.promoCode && (
+              <div className="admin-invoice-discount-row">
+                Promo-Code {initialData.promoCode} ({promoDiscountPercent}%):
+                <strong>-{formatCurrency(promoDiscountAmount)}</strong>
+              </div>
+            )}
             <div>
               Netto: <strong>{formatCurrency(netAmount)}</strong>
             </div>
@@ -320,7 +439,7 @@ export default function InvoiceEditor({
             <header>
               <div>
                 <strong>JC Detailing</strong>
-                <span>Wauwil, Luzern</span>
+                <span>{businessAddress}</span>
               </div>
               <div>
                 <span>Rechnung</span>
@@ -328,9 +447,16 @@ export default function InvoiceEditor({
               </div>
             </header>
 
+            <div className="admin-pdf-meta">
+              <span>Rechnungsdatum: {formatSwissDate(initialData.issuedAt)}</span>
+              <span>Leistungsdatum: {formatSwissDate(serviceDate)}</span>
+            </div>
+
             <section>
               <span>Empfänger</span>
-              <strong>{targetEmail}</strong>
+              <strong>{recipientName || "Kunde"}</strong>
+              <span>{clientAddress || "Kundenadresse"}</span>
+              <span>{targetEmail}</span>
             </section>
 
             <table>
@@ -351,11 +477,23 @@ export default function InvoiceEditor({
 
             <footer>
               <div>
+                <span>Zwischensumme</span>
+                <strong>{formatCurrency(subtotalAmount)}</strong>
+              </div>
+              {initialData.promoCode && (
+                <div className="admin-pdf-discount-row">
+                  <span>
+                    Promo-Code {initialData.promoCode} ({promoDiscountPercent}%)
+                  </span>
+                  <strong>-{formatCurrency(promoDiscountAmount)}</strong>
+                </div>
+              )}
+              <div>
                 <span>Netto</span>
                 <strong>{formatCurrency(netAmount)}</strong>
               </div>
               <div>
-                <span>MwSt.</span>
+                <span>MwSt. {vatRate}%</span>
                 <strong>{formatCurrency(vatAmount)}</strong>
               </div>
               <div>

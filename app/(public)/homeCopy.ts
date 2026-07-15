@@ -12,7 +12,7 @@ type HomeCopy = {
     title: string;
     mini: string;
     cardTitle: string;
-    body: string;
+    body: string[];
     reviews: string;
     reviewsLabel: string;
     servicesCount: string;
@@ -58,16 +58,33 @@ export const homeCopy: Record<PublicLocale, HomeCopy> = {
       ],
     },
     packageCards: [
-      { title: "Komplett Innenreinigung", price: "ab 209 CHF", text: "Gründliche Reinigung und Pflege des gesamten Innenraums." },
-      { title: "Komplett Aussenreinigung", price: "ab 109 CHF", text: "Schonende Handwäsche, Felgenreinigung und gepflegtes Finish." },
-      { title: "Komplett Aufbereitung", price: "auf Anfrage", text: "Innen und aussen kombiniert für ein frisches Gesamtbild." },
+      {
+        title: "Innenreinigung",
+        price: "ab 209 CHF",
+        text: "Tiefenreinigung für Sitze, Teppiche, Kunststoff-, Leder- und Alcantaraflächen inklusive hygienischer Dampfbehandlung.",
+      },
+      {
+        title: "Politur",
+        price: "ab 399 CHF",
+        text: "Professionelle Lackkorrektur reduziert Kratzer und Swirls und sorgt für sichtbar mehr Glanz und Farbtiefe.",
+      },
+      {
+        title: "Keramikversiegelung",
+        price: "ab 1090 CHF",
+        text: "Mehrschichtiger Langzeitschutz mit hydrophobem Effekt, UV-Schutz und dauerhaftem Showroom-Finish.",
+      },
     ],
     about: {
       eyebrow: "Über uns",
       title: "Saubere Arbeit. Echter Anspruch.",
       mini: "Wer wir sind",
-      cardTitle: "Saubere Arbeit, ruhige Hand, echter Anspruch.",
-      body: "JC Detailing steht für professionelle Autoaufbereitung in der Zentralschweiz. Ob Innenreinigung, Aussenreinigung, Politur oder Keramikversiegelung: jedes Fahrzeug wird mit Sorgfalt, hochwertigen Produkten und viel Liebe zum Detail behandelt.",
+      cardTitle: "Profi in Kanton Luzern.",
+      body: [
+        "Ich bin der Gründer von JC Detailing und habe meine Leidenschaft für Fahrzeuge zum Beruf gemacht.",
+        "Mit viel Liebe zum Detail, professionellen Produkten und moderner Technik wird jedes Fahrzeug individuell behandelt und aufbereitet. Ich arbeite präzise, gründlich und mit dem Anspruch, ein perfektes Ergebnis zu liefern.",
+        "Ich spreche Deutsch, Englisch, Französisch, Italienisch und Albanisch und freue mich, Kunden aus der gesamten Region persönlich betreuen zu dürfen.",
+        "Juljan Cela",
+      ],
       reviews: "5 Sterne",
       reviewsLabel: "Google Reviews",
       servicesCount: "4",
@@ -129,16 +146,33 @@ export const homeCopy: Record<PublicLocale, HomeCopy> = {
       checks: ["Careful vehicle inspection before work begins", "Premium products and precise workmanship", "Final quality check before handover"],
     },
     packageCards: [
-      { title: "Complete interior detail", price: "from CHF 209", text: "Thorough cleaning and care for the entire interior." },
-      { title: "Complete exterior detail", price: "from CHF 109", text: "Careful hand wash, wheel cleaning and a refined finish." },
-      { title: "Complete vehicle detail", price: "on request", text: "Interior and exterior combined for a complete refresh." },
+      {
+        title: "Interior cleaning",
+        price: "from CHF 209",
+        text: "Deep cleaning for seats, carpets, plastics, leather and Alcantara, including hygienic steam treatment.",
+      },
+      {
+        title: "Polishing",
+        price: "from CHF 399",
+        text: "Professional paint correction reduces scratches and swirls for visibly greater gloss and colour depth.",
+      },
+      {
+        title: "Ceramic coating",
+        price: "from CHF 1090",
+        text: "Multi-layer long-term protection with a hydrophobic effect, UV protection and a lasting showroom finish.",
+      },
     ],
     about: {
       eyebrow: "About us",
       title: "Clean work. Genuine standards.",
       mini: "Who we are",
-      cardTitle: "Clean work, a steady hand and genuine standards.",
-      body: "JC Detailing stands for professional vehicle detailing in Central Switzerland. Whether interior cleaning, exterior cleaning, polishing or ceramic coating, every vehicle is treated with care, premium products and close attention to detail.",
+      cardTitle: "Professional in the Canton of Lucerne.",
+      body: [
+        "I am the founder of JC Detailing and have turned my passion for vehicles into my profession.",
+        "With great attention to detail, professional products and modern techniques, every vehicle is treated and detailed individually. I work precisely, thoroughly and with the aim of delivering a perfect result.",
+        "I speak German, English, French, Italian and Albanian, and I am pleased to personally assist customers from across the region.",
+        "Juljan Cela",
+      ],
       reviews: "5 stars",
       reviewsLabel: "Google reviews",
       servicesCount: "4",
@@ -200,16 +234,33 @@ export const homeCopy: Record<PublicLocale, HomeCopy> = {
       checks: ["Contrôle soigneux du véhicule avant le début", "Produits premium et travail précis", "Contrôle final avant la remise du véhicule"],
     },
     packageCards: [
-      { title: "Nettoyage intérieur complet", price: "dès CHF 209", text: "Nettoyage et entretien approfondis de tout l’habitacle." },
-      { title: "Nettoyage extérieur complet", price: "dès CHF 109", text: "Lavage à la main, nettoyage des jantes et finition soignée." },
-      { title: "Préparation complète", price: "sur demande", text: "Intérieur et extérieur réunis pour un résultat complet." },
+      {
+        title: "Nettoyage intérieur",
+        price: "dès CHF 209",
+        text: "Nettoyage en profondeur des sièges, tapis, plastiques, cuirs et surfaces en Alcantara, avec traitement hygiénique à la vapeur.",
+      },
+      {
+        title: "Polissage",
+        price: "dès CHF 399",
+        text: "La correction professionnelle de la peinture réduit les rayures et les micro-rayures pour plus de brillance et de profondeur.",
+      },
+      {
+        title: "Protection céramique",
+        price: "dès CHF 1090",
+        text: "Protection longue durée multicouche avec effet hydrophobe, protection UV et finition showroom durable.",
+      },
     ],
     about: {
       eyebrow: "À propos",
       title: "Travail soigné. Exigence réelle.",
       mini: "Qui sommes-nous",
-      cardTitle: "Un travail propre, une main sûre et une vraie exigence.",
-      body: "JC Detailing propose une préparation automobile professionnelle en Suisse centrale. Nettoyage intérieur ou extérieur, polissage ou protection céramique: chaque véhicule est traité avec soin, des produits premium et une grande attention aux détails.",
+      cardTitle: "Professionnel dans le canton de Lucerne.",
+      body: [
+        "Je suis le fondateur de JC Detailing et j’ai fait de ma passion pour l’automobile mon métier.",
+        "Avec un grand souci du détail, des produits professionnels et des techniques modernes, chaque véhicule est traité et préparé individuellement. Je travaille avec précision et minutie, avec l’ambition d’obtenir un résultat parfait.",
+        "Je parle allemand, anglais, français, italien et albanais, et je suis heureux d’accompagner personnellement les clients de toute la région.",
+        "Juljan Cela",
+      ],
       reviews: "5 étoiles",
       reviewsLabel: "Avis Google",
       servicesCount: "4",
@@ -271,16 +322,33 @@ export const homeCopy: Record<PublicLocale, HomeCopy> = {
       checks: ["Controllo accurato del veicolo prima dell’inizio", "Prodotti premium e lavorazione precisa", "Controllo finale prima della consegna"],
     },
     packageCards: [
-      { title: "Pulizia interna completa", price: "da CHF 209", text: "Pulizia e cura approfondite di tutto l’abitacolo." },
-      { title: "Pulizia esterna completa", price: "da CHF 109", text: "Lavaggio a mano, pulizia dei cerchi e finitura curata." },
-      { title: "Detailing completo", price: "su richiesta", text: "Interni ed esterni combinati per un risultato completo." },
+      {
+        title: "Pulizia interna",
+        price: "da CHF 209",
+        text: "Pulizia profonda di sedili, tappeti, plastiche, pelle e Alcantara, incluso il trattamento igienizzante a vapore.",
+      },
+      {
+        title: "Lucidatura",
+        price: "da CHF 399",
+        text: "Correzione professionale della vernice che riduce graffi e swirl, aumentando visibilmente brillantezza e profondità.",
+      },
+      {
+        title: "Rivestimento ceramico",
+        price: "da CHF 1090",
+        text: "Protezione multistrato a lunga durata con effetto idrofobico, protezione UV e finitura showroom duratura.",
+      },
     ],
     about: {
       eyebrow: "Chi siamo",
       title: "Lavoro pulito. Standard autentici.",
       mini: "Chi siamo",
-      cardTitle: "Lavoro pulito, mano ferma e standard autentici.",
-      body: "JC Detailing offre detailing professionale nella Svizzera centrale. Pulizia interna o esterna, lucidatura o rivestimento ceramico: ogni veicolo viene trattato con cura, prodotti premium e grande attenzione ai dettagli.",
+      cardTitle: "Professionista nel Canton Lucerna.",
+      body: [
+        "Sono il fondatore di JC Detailing e ho trasformato la mia passione per le auto nella mia professione.",
+        "Con grande attenzione ai dettagli, prodotti professionali e tecniche moderne, ogni veicolo viene trattato e preparato individualmente. Lavoro con precisione e cura, con l’obiettivo di ottenere un risultato perfetto.",
+        "Parlo tedesco, inglese, francese, italiano e albanese e sono lieto di seguire personalmente i clienti di tutta la regione.",
+        "Juljan Cela",
+      ],
       reviews: "5 stelle",
       reviewsLabel: "Recensioni Google",
       servicesCount: "4",

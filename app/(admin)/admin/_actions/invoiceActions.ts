@@ -47,24 +47,42 @@ function mailText(language: InvoiceLanguage, invoice: string, amount: number) {
 export async function createStandaloneInvoice(formData: FormData) {
   const recipientName = String(formData.get("recipientName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const clientAddress = String(formData.get("clientAddress") ?? "").trim();
+  const businessAddress = String(
+    formData.get("businessAddress") ?? "Sternmatt 4, 6242 Wauwil",
+  ).trim();
   const description = String(formData.get("description") ?? "").trim();
   const amount = Number(formData.get("amount") ?? 0);
+  const serviceDateValue = String(formData.get("serviceDate") ?? "");
+  const serviceDate = new Date(`${serviceDateValue}T12:00:00.000Z`);
   const language = cleanLanguage(formData.get("language"));
 
-  if (!recipientName || !email || !description || !Number.isFinite(amount) || amount <= 0) return;
+  if (
+    !recipientName ||
+    !email ||
+    !clientAddress ||
+    !businessAddress ||
+    !description ||
+    !Number.isFinite(amount) ||
+    amount <= 0 ||
+    Number.isNaN(serviceDate.getTime())
+  ) return;
 
   const number = invoiceNumber();
   const invoice = await prisma.invoice.create({
     data: {
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      businessAddress,
+      clientAddress,
       emailOverride: email,
       invoiceNumber: number,
       language,
       recipientName,
+      serviceDate,
       sentAt: new Date(),
       status: "SENT",
       totalAmount: amount,
-      vatRate: 8.1,
+      vatRate: 0,
     },
   });
 

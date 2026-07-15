@@ -619,6 +619,7 @@ export async function createAdminBooking(formData: FormData): Promise<{
       .trim()
       .toLowerCase();
     const phone = String(formData.get("phone") ?? "").trim();
+    const address = String(formData.get("address") ?? "").trim();
     const vehicleModel = String(formData.get("vehicleModel") ?? "").trim();
     const serviceId = String(formData.get("serviceId") ?? "");
     const vehicleCategoryId = String(formData.get("vehicleCategoryId") ?? "");
@@ -628,10 +629,9 @@ export async function createAdminBooking(formData: FormData): Promise<{
     const language = cleanLanguage(formData.get("language"));
     const addOnIds = formData.getAll("addOnIds").map(String).filter(Boolean);
 
-    const isExistingClientBooking = Boolean(clientId);
-
     if (
-      (!isExistingClientBooking && (!name || !email || !phone)) ||
+      !address ||
+      (!clientId && (!name || !email || !phone)) ||
       !vehicleModel ||
       !serviceId ||
       !vehicleCategoryId ||
@@ -741,6 +741,7 @@ export async function createAdminBooking(formData: FormData): Promise<{
     }
 
     const bookingClient = selectedClient ?? {
+      address,
       name,
       email,
       phone,
@@ -763,6 +764,7 @@ export async function createAdminBooking(formData: FormData): Promise<{
           : {
               connectOrCreate: {
                 create: {
+                  address,
                   email,
                   name,
                   phone,
@@ -797,6 +799,11 @@ export async function createAdminBooking(formData: FormData): Promise<{
       },
     });
 
+    await prisma.client.update({
+      where: { id: booking.clientId },
+      data: { address },
+    });
+
     const totalAmount =
       service.basePrice +
       category.priceModifier +
@@ -814,7 +821,7 @@ export async function createAdminBooking(formData: FormData): Promise<{
     //     sentAt: new Date(),
     //     status: "SENT",
     //     totalAmount,
-    //     vatRate: 8.1,
+    //     vatRate: 0,
     //   },
     // });
 

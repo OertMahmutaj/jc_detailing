@@ -262,7 +262,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
                   {copy.hero.booking}
                 </LanguageAwareBookingLink>
 
-                <LocalizedPublicLink className="ghost-button" href="/leistungen">
+                <LocalizedPublicLink className="ghost-button" href="/leistungen#services-grid">
                   {copy.hero.services}
                   <ArrowRight size={17} />
                 </LocalizedPublicLink>
@@ -328,7 +328,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
                       alt={`${serviceCopy[service.id][0]} - JC Detailing Wauwil`}
                       fill
                       quality={60}
-                      sizes="(max-width: 720px) 100vw, 25vw"
+                      sizes="(max-width: 760px) 100vw, (max-width: 1180px) 50vw, 25vw"
                       src={service.image}
                     />
                   </div>
@@ -384,7 +384,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
                     </li>
                   </ul>
 
-                  <LocalizedPublicLink href="/angebote">
+                  <LocalizedPublicLink href="/angebote#offers-grid">
                     {copy.packages.all}
                     <ArrowRight size={16} />
                   </LocalizedPublicLink>
@@ -407,9 +407,13 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
               <p className="mini-title">{copy.about.mini}</p>
               <h3>{copy.about.cardTitle}</h3>
 
-              <p>
-                {copy.about.body}
-              </p>
+              <div className="about-body">
+                {copy.about.body.map((paragraph, index) => (
+                  <p className={index === copy.about.body.length - 1 ? "about-signature" : undefined} key={paragraph}>
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
 
               <div className="language-row">
                 {languages.map((language) => (
@@ -471,7 +475,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
           </LightGroup>
 
           <LightReveal className="section-action">
-            <LocalizedPublicLink href="/gallery">
+            <LocalizedPublicLink href="/gallery#gallery-grid">
               {copy.gallery.all}
               <ArrowRight size={16} />
             </LocalizedPublicLink>

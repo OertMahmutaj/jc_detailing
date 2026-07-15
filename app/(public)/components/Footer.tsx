@@ -93,10 +93,12 @@ export function Footer() {
           </p>
 
           <div className="footer-business-info">
-            <span>
+            <a href={directionsUrl}
+              rel="noopener noreferrer"
+              target="_blank">
               <MapPin size={16} />
               Sternmatt 4, 6242 Wauwil
-            </span>
+            </a>
 
             <a href={`tel:${phoneNumber.replace(/\s/g, "")}`}>
               <Phone size={16} />
@@ -116,9 +118,9 @@ export function Footer() {
           <div className="footer-links">
             <strong>{copy.navigation}</strong>
             <LocalizedPublicLink href="/">{nav.home}</LocalizedPublicLink>
-            <LocalizedPublicLink href="/leistungen">{nav.services}</LocalizedPublicLink>
-            <LocalizedPublicLink href="/angebote">{nav.offers}</LocalizedPublicLink>
-            <LocalizedPublicLink href="/gallery">{nav.gallery}</LocalizedPublicLink>
+            <LocalizedPublicLink href="/leistungen#services-grid">{nav.services}</LocalizedPublicLink>
+            <LocalizedPublicLink href="/angebote#offers-grid">{nav.offers}</LocalizedPublicLink>
+            <LocalizedPublicLink href="/gallery#gallery-grid">{nav.gallery}</LocalizedPublicLink>
             <LanguageAwareBookingLink>{nav.booking}</LanguageAwareBookingLink>
           </div>
 

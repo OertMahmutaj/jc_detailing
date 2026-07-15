@@ -55,6 +55,7 @@ export async function updateClient(formData: FormData): Promise<ActionResult> {
     const name = getRequiredString(formData, "name");
     const email = getRequiredString(formData, "email").toLowerCase();
     const phone = getRequiredString(formData, "phone");
+    const address = getRequiredString(formData, "address");
 
     if (!email.includes("@")) {
       return failure("Bitte gib eine gültige E-Mail-Adresse ein.");
@@ -84,6 +85,10 @@ export async function updateClient(formData: FormData): Promise<ActionResult> {
       changes.push(`Telefon von ${currentClient.phone} zu ${phone} geändert`);
     }
 
+    if (currentClient.address !== address) {
+      changes.push("Adresse geändert");
+    }
+
     if (!changes.length) {
       return success("Keine Änderungen an den Kundendaten vorgenommen.");
     }
@@ -96,6 +101,7 @@ export async function updateClient(formData: FormData): Promise<ActionResult> {
         name,
         email,
         phone,
+        address,
       },
     });
 

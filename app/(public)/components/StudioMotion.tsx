@@ -80,10 +80,11 @@ export function LightReveal({ children, className, delay = 0, style }: MotionPro
   );
 }
 
-export function LightGroup({ children, className }: MotionProps) {
+export function LightGroup({ children, className, id }: MotionProps) {
   return (
     <motion.div
       className={className}
+      id={id}
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, amount: 0.18 }}

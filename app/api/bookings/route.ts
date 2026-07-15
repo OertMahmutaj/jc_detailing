@@ -1,4 +1,5 @@
 import { prisma } from "../../(admin)/admin/_lib/prisma";
+import { Prisma } from "@prisma/client";
 
 const ownerEmail = process.env.BOOKING_OWNER_EMAIL ?? "oert64@gmail.com";
 const fromEmail =
@@ -22,6 +23,7 @@ type BookingPayload = {
   name?: unknown;
   email?: unknown;
   phone?: unknown;
+  address?: unknown;
   vehicleModel?: unknown;
   notes?: unknown;
   dateTime?: unknown;
@@ -30,6 +32,7 @@ type BookingPayload = {
   vehicleCategoryId?: unknown;
   addOnIds?: unknown;
   language?: unknown;
+  promoCode?: unknown;
   website?: unknown;
 };
 
@@ -57,6 +60,16 @@ function cleanLanguage(value: unknown): InvoiceLanguage {
     ? language
     : "de";
 }
+
+function normalizePromoCode(value: unknown) {
+  return cleanText(value, 40).replace(/\s+/g, "").toUpperCase();
+}
+
+function roundCurrency(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+class PromoCodeValidationError extends Error {}
 
 function getClientIp(request: Request) {
   const forwardedFor = request.headers
@@ -663,10 +676,12 @@ export async function POST(request: Request) {
     const name = cleanText(body.name, 100);
     const email = cleanText(body.email, 160).toLowerCase();
     const phone = cleanText(body.phone, 40);
+    const address = cleanText(body.address, 300);
     const vehicleModel = cleanText(body.vehicleModel, 120);
     const notes = cleanText(body.notes, 1200);
     const vehicleCategoryId = cleanText(body.vehicleCategoryId, 80);
     const language = cleanLanguage(body.language);
+    const requestedPromoCode = normalizePromoCode(body.promoCode);
     const addOnIds = cleanIdArray(body.addOnIds);
     const serviceIds = cleanIdArray(body.serviceIds).length
       ? cleanIdArray(body.serviceIds)
@@ -676,9 +691,9 @@ export async function POST(request: Request) {
     const startBookingDate =
       typeof body.dateTime === "string" ? new Date(body.dateTime) : null;
 
-    if (!name || !emailPattern.test(email) || !phone || !vehicleModel) {
+    if (!name || !emailPattern.test(email) || !phone || !address || !vehicleModel) {
       return Response.json(
-        { message: "Bitte prüfe Name, E-Mail, Telefon und Fahrzeugmodell." },
+        { message: "Bitte prüfe Name, E-Mail, Telefon, Adresse und Fahrzeugmodell." },
         { status: 400 },
       );
     }
@@ -821,55 +836,112 @@ export async function POST(request: Request) {
       .join("\n\n");
 
     let createdBookingId = "";
-    const estimatedTotal =
+    const estimatedSubtotal = roundCurrency(
       servicesByRequestOrder.reduce(
         (sum, service) => sum + service.basePrice,
         0,
       ) +
       dbCategory.priceModifier +
-      dbAddOns.reduce((sum, addOn) => sum + addOn.price, 0);
+      dbAddOns.reduce((sum, addOn) => sum + addOn.price, 0),
+    );
+    let appliedPromoCode = "";
+    let promoDiscountPercent = 0;
+    let promoDiscountAmount = 0;
     // const newInvoiceNumber = invoiceNumber();
 
     try {
-      const createdBooking = await prisma.booking.create({
-        data: {
-          dateTime: startBookingDate,
-          endTime: endBookingDate,
-          language,
-          vehicleModel,
-          notes: internalNotes,
-          imageUrls: [],
-          status: "PENDING",
-          client: {
-            connectOrCreate: {
-              where: { email },
-              create: { name, email, phone },
-            },
-          },
-          service: { connect: { id: servicesByRequestOrder[0].id } },
-          vehicleCategory: { connect: { id: vehicleCategoryId } },
-          addOns: {
-            connect: uniqueAddOnIds.map((id) => ({ id })),
-          },
-        },
-      });
-      createdBookingId = createdBooking.id;
+      const createdBooking = await prisma.$transaction(async (tx) => {
+        const client = await tx.client.upsert({
+          where: { email },
+          update: { address, name, phone },
+          create: { address, name, email, phone },
+        });
 
-      try {
+        let promoCodeId: string | null = null;
+
+        if (requestedPromoCode) {
+          const promo = await tx.promoCode.findUnique({
+            where: { code: requestedPromoCode },
+          });
+          const now = new Date();
+
+          if (!promo || !promo.isActive || (promo.expiresAt && promo.expiresAt <= now)) {
+            throw new PromoCodeValidationError("Dieser Promo-Code ist ungültig oder abgelaufen.");
+          }
+
+          const [totalUses, clientUses] = await Promise.all([
+            tx.promoCodeUsage.count({ where: { promoCodeId: promo.id } }),
+            tx.promoCodeUsage.count({
+              where: { clientId: client.id, promoCodeId: promo.id },
+            }),
+          ]);
+
+          if (totalUses >= promo.maxUses) {
+            throw new PromoCodeValidationError("Dieser Promo-Code wurde bereits vollständig eingelöst.");
+          }
+
+          if (clientUses >= promo.maxUsesPerClient) {
+            throw new PromoCodeValidationError("Du hast diesen Promo-Code bereits maximal oft verwendet.");
+          }
+
+          promoCodeId = promo.id;
+          appliedPromoCode = promo.code;
+          promoDiscountPercent = promo.discountPercent;
+          promoDiscountAmount = roundCurrency(
+            estimatedSubtotal * (promo.discountPercent / 100),
+          );
+        }
+
+        const booking = await tx.booking.create({
+          data: {
+            dateTime: startBookingDate,
+            endTime: endBookingDate,
+            language,
+            vehicleModel,
+            notes: internalNotes,
+            imageUrls: [],
+            status: "PENDING",
+            clientId: client.id,
+            serviceId: servicesByRequestOrder[0].id,
+            vehicleCategoryId,
+            addOns: {
+              connect: uniqueAddOnIds.map((id) => ({ id })),
+            },
+            promoCodeId,
+            promoDiscountPercent: promoCodeId ? promoDiscountPercent : null,
+            promoDiscountAmount,
+          },
+        });
+
         for (const service of servicesByRequestOrder) {
-          await prisma.$executeRaw`
+          await tx.$executeRaw`
             INSERT INTO "_BookingToServices" ("A", "B")
-            VALUES (${createdBooking.id}, ${service.id})
+            VALUES (${booking.id}, ${service.id})
             ON CONFLICT DO NOTHING
           `;
         }
-      } catch (joinError) {
-        console.warn(
-          "Booking service join table is not available yet:",
-          joinError,
-        );
-      }
+
+        if (promoCodeId) {
+          await tx.promoCodeUsage.create({
+            data: {
+              bookingId: booking.id,
+              clientId: client.id,
+              promoCodeId,
+              discountAmount: promoDiscountAmount,
+              discountPercent: promoDiscountPercent,
+            },
+          });
+        }
+
+        return booking;
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+      createdBookingId = createdBooking.id;
     } catch (createError) {
+      if (createError instanceof PromoCodeValidationError) {
+        return Response.json({ message: createError.message }, { status: 400 });
+      }
+
       if (isOverlapConstraintError(createError)) {
         return Response.json(
           {
@@ -877,6 +949,18 @@ export async function POST(request: Request) {
               "Dieser Termin ist leider gerade vergeben worden. Bitte wähle eine andere Zeit.",
           },
           { status: 400 },
+        );
+      }
+
+      if (
+        createError &&
+        typeof createError === "object" &&
+        "code" in createError &&
+        createError.code === "P2034"
+      ) {
+        return Response.json(
+          { message: "Der Promo-Code oder Termin wurde gleichzeitig verwendet. Bitte versuche es erneut." },
+          { status: 409 },
         );
       }
 
@@ -893,7 +977,7 @@ export async function POST(request: Request) {
     //     sentAt: new Date(),
     //     status: "SENT",
     //     totalAmount: estimatedTotal,
-    //     vatRate: 8.1,
+    //     vatRate: 0,
     //   },
     // });
 
@@ -931,11 +1015,17 @@ export async function POST(request: Request) {
       `Name: ${name}`,
       `E-Mail: ${email}`,
       `Telefon: ${phone}`,
+      `Adresse: ${address}`,
       `Leistungen: ${serviceNames}`,
       `Fahrzeuggrösse: ${dbCategory.name}`,
       `Zusatzleistungen: ${addOnNames}`,
       `Fahrzeugmodell: ${vehicleModel}`,
       `Geschätzte Dauer: ${totalDuration} Minuten`,
+      `Zwischensumme: CHF ${estimatedSubtotal.toFixed(2)}`,
+      ...(appliedPromoCode
+        ? [`Promo-Code: ${appliedPromoCode} (${promoDiscountPercent}%, -CHF ${promoDiscountAmount.toFixed(2)})`]
+        : []),
+      `Geschätzter Gesamtpreis: CHF ${roundCurrency(estimatedSubtotal - promoDiscountAmount).toFixed(2)}`,
       `Termin Start: ${startBookingDate.toLocaleString("de-CH", { timeZone: "Europe/Zurich" })}`,
       `Termin Ende: ${endBookingDate.toLocaleString("de-CH", { timeZone: "Europe/Zurich" })}`,
       `Hinweise/Nachricht: ${notes || "-"}`,
@@ -997,7 +1087,16 @@ export async function POST(request: Request) {
       );
     }
 
-    return Response.json({ message: "Anfrage gesendet." });
+    return Response.json({
+      message: "Anfrage gesendet.",
+      pricing: {
+        subtotal: estimatedSubtotal,
+        promoCode: appliedPromoCode || null,
+        discountPercent: promoDiscountPercent,
+        discountAmount: promoDiscountAmount,
+        total: roundCurrency(estimatedSubtotal - promoDiscountAmount),
+      },
+    });
   } catch (err) {
     console.error("Booking request failed:", err);
     return Response.json(

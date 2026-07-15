@@ -155,7 +155,7 @@ body::selection {
 .nav-item > a {
   color: rgba(246, 248, 251, 0.78);
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
   gap: 5px;
   height: 96px;
@@ -310,7 +310,7 @@ body::selection {
 .public-home .section-heading span {
   color: var(--public-orange);
   font-family: var(--font-geist-mono), monospace;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -324,7 +324,7 @@ body::selection {
   color: var(--public-text);
   font-family: Arial, Helvetica, sans-serif;
   font-size: clamp(62px, 8.2vw, 118px);
-  font-weight: 900;
+  font-weight: 500;
   letter-spacing: 0;
   line-height: 0.9;
   margin: 18px 0 22px;
@@ -428,13 +428,13 @@ body::selection {
 
 .trust-item strong {
   color: var(--public-text);
-  font-size: 14px;
+  font-size: 15px;
   margin-bottom: 5px;
 }
 
 .trust-item span {
   color: #b7c1cd;
-  font-size: 11px;
+  font-size: 15px;
   line-height: 1.4;
 }
 
@@ -485,22 +485,12 @@ body::selection {
 .public-home .service-grid {
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .public-home .service-grid > * {
   display: block;
   min-width: 0;
-}
-
-.public-home .service-grid > :nth-child(1),
-.public-home .service-grid > :nth-child(4) {
-  grid-column: span 7;
-}
-
-.public-home .service-grid > :nth-child(2),
-.public-home .service-grid > :nth-child(3) {
-  grid-column: span 5;
 }
 
 .public-home .service-card {
@@ -509,29 +499,16 @@ body::selection {
   border-radius: var(--public-radius);
   box-shadow: none;
   color: inherit;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   overflow: hidden;
 }
 
-.public-home .service-grid > :nth-child(1) .service-card,
-.public-home .service-grid > :nth-child(4) .service-card {
-  grid-template-columns: minmax(0, 1.32fr) minmax(230px, 0.68fr);
-  min-height: 370px;
-}
-
-.public-home .service-grid > :nth-child(2) .service-card,
-.public-home .service-grid > :nth-child(3) .service-card {
-  grid-template-rows: 250px 1fr;
-}
-
-.public-home .service-grid > :nth-child(4) .service-image {
-  order: 2;
-}
-
 .public-home .service-image {
-  aspect-ratio: auto;
-  min-height: 250px;
+  aspect-ratio: 0.82;
+  flex: 0 0 auto;
+  min-height: 0;
   overflow: hidden;
   position: relative;
 }
@@ -562,8 +539,26 @@ body::selection {
 
 .public-home .service-body {
   background: var(--public-surface);
-  min-height: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 190px;
   padding: 28px;
+}
+
+.public-home .service-grid > :nth-child(4) .service-body {
+  padding-right: 36px;
+}
+
+.public-home .service-body p {
+  flex: 1;
+}
+
+.public-home .service-body span {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  margin-top: 18px;
 }
 
 .public-home .service-body h3,
@@ -576,7 +571,8 @@ body::selection {
 }
 
 .public-home .service-body h3 {
-  font-size: clamp(23px, 2vw, 31px);
+  font-size: clamp(22px, 1.55vw, 28px);
+  line-height: 1.08;
 }
 
 .public-home .service-body p,
@@ -612,12 +608,21 @@ body::selection {
   border: 1px solid var(--public-line);
   border-radius: var(--public-radius);
   box-shadow: none;
-  min-height: 390px;
+  display: grid;
+  grid-template-rows: 64px 96px minmax(0, 1fr) auto;
+  min-height: 430px;
   padding: 28px;
 }
 
 .public-home .package-top {
+  align-self: start;
   gap: 18px;
+  min-width: 0;
+}
+
+.public-home .package-card > p {
+  align-self: start;
+  margin: 0;
 }
 
 .public-home .package-card h3 {
@@ -635,8 +640,10 @@ body::selection {
 }
 
 .public-home .package-card ul {
+  align-content: start;
   gap: 13px;
-  margin-top: 24px;
+  margin: 0;
+  padding-top: 24px;
 }
 
 .public-home .package-card li {
@@ -665,6 +672,24 @@ body::selection {
 .public-home .about-copy h3 {
   font-size: clamp(32px, 3vw, 46px);
   line-height: 1.08;
+  margin-bottom: 28px;
+}
+
+.public-home .about-body {
+  color: var(--public-muted);
+  display: grid;
+  font-size: 14px;
+  gap: 18px;
+  line-height: 1.65;
+}
+
+.public-home .about-body p {
+  margin: 0;
+}
+
+.public-home .about-body .about-signature {
+  color: var(--public-text);
+  margin-top: 2px;
 }
 
 .public-home .language-row {
@@ -727,7 +752,7 @@ body::selection {
 
 .public-home .about-proof span {
   color: var(--public-muted);
-  font-size: 11px;
+  font-size: 14px;
   margin-top: 8px;
 }
 
@@ -747,7 +772,7 @@ body::selection {
 }
 
 .public-home .before-after {
-  aspect-ratio: 5 / 4;
+  aspect-ratio: 8 / 9;
   background: var(--public-surface);
   border: 1px solid var(--public-line);
   border-radius: var(--public-radius);
@@ -985,16 +1010,16 @@ body::selection {
   border-top: 1px solid var(--public-line);
   color: var(--public-text);
   max-width: none;
-  padding: 66px max(32px, calc((100vw - 1376px) / 2)) 24px;
+  padding: 66px max(32px, calc((100vw - 1480px) / 2)) 24px;
 }
 
 .footer-top {
   align-items: start;
   display: grid;
-  gap: 48px;
-  grid-template-columns: minmax(220px, 0.82fr) minmax(500px, 1.55fr) minmax(260px, 0.8fr);
+  gap: 56px;
+  grid-template-columns: minmax(250px, 0.82fr) minmax(640px, 1.7fr) minmax(280px, 0.8fr);
   margin: 0 auto;
-  max-width: 1376px;
+  max-width: 1480px;
 }
 
 .footer p,
@@ -1002,6 +1027,7 @@ body::selection {
 .footer a,
 .footer span {
   color: var(--public-muted);
+  text-transform: none;
 }
 
 .footer-top > div:first-child > p {
@@ -1031,14 +1057,19 @@ body::selection {
 
 .footer-link-groups {
   display: grid;
-  gap: 28px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 36px;
+  grid-template-columns:
+    minmax(110px, 0.85fr)
+    minmax(165px, 1.25fr)
+    minmax(145px, 1fr)
+    minmax(115px, 0.9fr);
 }
 
 .footer-links {
   align-content: start;
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 
 .footer-links strong {
@@ -1052,7 +1083,10 @@ body::selection {
 .footer-links a {
   font-size: 12px;
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
   text-transform: none;
+  white-space: normal;
 }
 
 .footer-links a:hover,
@@ -1087,7 +1121,7 @@ body::selection {
 .footer-bottom {
   border-top: 1px solid var(--public-line);
   margin: 42px auto 0;
-  max-width: 1376px;
+  max-width: 1480px;
   padding-top: 20px;
 }
 
@@ -1220,21 +1254,12 @@ body::selection {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .public-home .service-grid > :nth-child(n) {
-    grid-column: span 6;
+  .public-home .service-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .public-home .work-grid > :nth-child(n) {
     grid-column: auto;
-  }
-
-  .public-home .service-grid > :nth-child(n) .service-card {
-    grid-template-columns: 1fr;
-    grid-template-rows: 280px 1fr;
-  }
-
-  .public-home .service-grid > :nth-child(4) .service-image {
-    order: 0;
   }
 
   .public-home .package-grid {
@@ -1256,11 +1281,35 @@ body::selection {
   }
 
   .footer-top {
-    grid-template-columns: 0.7fr 1.3fr;
+    grid-template-columns: minmax(230px, 0.7fr) minmax(0, 1.3fr);
   }
 
   .footer-map {
     grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1181px) and (max-width: 1380px) {
+  .footer-top {
+    grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
+  }
+
+  .footer-map {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 980px) {
+  .footer-top {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-link-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footer-map {
+    grid-column: auto;
   }
 }
 
@@ -1366,10 +1415,6 @@ body::selection {
     grid-column: auto;
   }
 
-  .public-home .service-grid > :nth-child(n) .service-card {
-    grid-template-rows: minmax(260px, 62vw) 1fr;
-  }
-
   .public-home .service-body,
   .public-home .package-card,
   .public-home .about-copy {
@@ -1377,7 +1422,18 @@ body::selection {
   }
 
   .public-home .package-card {
+    display: flex;
+    grid-template-rows: none;
     min-height: 0;
+  }
+
+  .public-home .package-card > p {
+    margin-top: 16px;
+  }
+
+  .public-home .package-card ul {
+    margin-top: 24px;
+    padding-top: 0;
   }
 
   .public-home .about-image {

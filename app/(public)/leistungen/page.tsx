@@ -33,7 +33,7 @@ export default async function LeistungenPage({
         </HeroIntro>
       </section>
 
-      <LightGroup className="service-grid page-grid">
+      <LightGroup className="service-grid page-grid" id="services-grid">
         {localizedServices.map((service) => (
           <LightItem key={service.id}>
             <LocalizedPublicLink className="service-card" href={service.path}>
