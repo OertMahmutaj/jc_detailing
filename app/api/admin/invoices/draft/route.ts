@@ -14,6 +14,13 @@ function roundCurrency(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+type InvoiceItemInput = {
+  description: string;
+  pricePerUnit: number;
+  quantity: number;
+  unit: string;
+};
+
 export async function POST(request: Request) {
   try {
     const cookieStore = await cookies();
@@ -26,7 +33,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, unknown>;
     const bookingId = cleanText(body.bookingId, 80) || null;
     const invoiceId = cleanText(body.invoiceId, 80) || null;
     const invoiceNumber = cleanText(body.invoiceNumber, 80);
@@ -40,14 +47,20 @@ export async function POST(request: Request) {
         : "de";
     const vatRate = Number(body.vatRate ?? 0);
     const serviceDate = new Date(`${cleanText(body.serviceDate, 20)}T12:00:00.000Z`);
-    const items = Array.isArray(body.items)
-      ? body.items.map((item: Record<string, unknown>) => ({
-          description: cleanText(item.description, 300),
-          pricePerUnit: roundCurrency(Number(item.pricePerUnit)),
-          quantity: Number(item.quantity),
-          unit: cleanText(item.unit, 30) || "Stk.",
-        }))
-      : [];
+    const rawItems: unknown[] = Array.isArray(body.items) ? body.items : [];
+    const items: InvoiceItemInput[] = rawItems.map((item) => {
+      const value =
+        typeof item === "object" && item !== null
+          ? (item as Record<string, unknown>)
+          : {};
+
+      return {
+        description: cleanText(value.description, 300),
+        pricePerUnit: roundCurrency(Number(value.pricePerUnit)),
+        quantity: Number(value.quantity),
+        unit: cleanText(value.unit, 30) || "Stk.",
+      };
+    });
 
     const invalidItem = items.some(
       (item) =>
