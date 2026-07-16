@@ -66,22 +66,28 @@ export function Navbar() {
   }
 
   function handleNavClick(href: string, event: MouseEvent<HTMLAnchorElement>) {
+    const menuWasOpen = mobileOpen && mobileNavActive;
     closeMenu();
 
     const targetUrl = new URL(href, window.location.href);
     const targetId = targetUrl.hash.slice(1);
+    const target = targetId ? document.getElementById(targetId) : null;
 
-    if (!targetId || pathname !== targetUrl.pathname) {
+    if (!targetId || !target || pathname !== targetUrl.pathname) {
       return;
     }
 
     event.preventDefault();
 
-    const target = document.getElementById(targetId || "top");
-
-    if (target) {
+    const scrollToTarget = () => {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
       window.history.replaceState(null, "", `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`);
+    };
+
+    if (menuWasOpen) {
+      requestAnimationFrame(() => requestAnimationFrame(scrollToTarget));
+    } else {
+      scrollToTarget();
     }
   }
 

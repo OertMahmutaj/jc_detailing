@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../(admin)/admin/_lib/prisma";
 
 const serviceOrder = [
-  "Komplett Innenreinigung",
-  "Komplett Aussenreinigung",
+  "Komplette Innenreinigung",
+  "Komplette Aussenreinigung",
   "Pflegeerhaltung Innenreinigung",
   "Pflegeerhaltung Aussenreinigung",
   "Polish Paket (1-Step)",

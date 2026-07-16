@@ -63,7 +63,7 @@ const addOnDescriptions: Record<string, string> = {
 };
 
 const serviceAddOns: Record<string, string[]> = {
-  "Komplett Innenreinigung": ["Tierhaarentfernung"],
+  "Komplette Innenreinigung": ["Tierhaarentfernung"],
   "Pflegeerhaltung Innenreinigung": [
     "Tierhaarentfernung",
     "Sitze Tiefenreinigung",
@@ -102,9 +102,9 @@ const vehicleDetails: Record<string, { title: string; description: string; image
 };
 
 const serviceDetails: Record<string, ServiceDetail> = {
-  "Komplett Innenreinigung": {
+  "Komplette Innenreinigung": {
     tag: "Innenreinigung",
-    title: "Komplett Innenreinigung",
+    title: "Komplette Innenreinigung",
     priceRange: "CHF 209.00 - CHF 309.00",
     sections: [
       {
@@ -122,9 +122,9 @@ const serviceDetails: Record<string, ServiceDetail> = {
       },
     ],
   },
-  "Komplett Aussenreinigung": {
+  "Komplette Aussenreinigung": {
     tag: "Aussenreinigung",
-    title: "Komplett Aussenreinigung",
+    title: "Komplette Aussenreinigung",
     priceRange: "CHF 109.00 - CHF 149.00",
     sections: [
       {
@@ -788,7 +788,7 @@ export function BookingForm() {
               {visibleServices.map((service) => {
                 const selected = selectedServices.some((item) => item.id === service.id);
                 const detail = localizedDetail(service.name);
-                const addOnCount = service.name === "Komplett Innenreinigung" || service.name === "Komplette Premium Paket" ? 1 : service.name === "Pflegeerhaltung Innenreinigung" ? 4 : 0;
+                const addOnCount = service.name === "Komplette Innenreinigung" || service.name === "Komplette Premium Paket" ? 1 : service.name === "Pflegeerhaltung Innenreinigung" ? 4 : 0;
 
                 return (
                   <article className={`booking-service-card${selected ? " is-selected" : ""}`} key={service.id}>

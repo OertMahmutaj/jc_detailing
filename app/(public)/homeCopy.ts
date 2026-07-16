@@ -78,7 +78,7 @@ export const homeCopy: Record<PublicLocale, HomeCopy> = {
       eyebrow: "Über uns",
       title: "Saubere Arbeit. Echter Anspruch.",
       mini: "Wer wir sind",
-      cardTitle: "Profi in Kanton Luzern.",
+      cardTitle: "Profi im Kanton Luzern.",
       body: [
         "Ich bin der Gründer von JC Detailing und habe meine Leidenschaft für Fahrzeuge zum Beruf gemacht.",
         "Mit viel Liebe zum Detail, professionellen Produkten und moderner Technik wird jedes Fahrzeug individuell behandelt und aufbereitet. Ich arbeite präzise, gründlich und mit dem Anspruch, ein perfektes Ergebnis zu liefern.",

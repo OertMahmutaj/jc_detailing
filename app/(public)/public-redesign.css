@@ -1178,22 +1178,47 @@ body::selection {
   }
 
   .menu-button {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    color: var(--public-text);
-    display: inline-flex !important;
-    flex-direction: column;
-    gap: 5px;
-    grid-column: 3;
-    grid-row: 1;
-    height: 44px;
-    justify-content: center;
-    justify-self: end;
-    margin: 0;
-    padding: 0;
-    width: 44px;
-  }
+  position: relative;
+}
+
+.menu-button span {
+  position: absolute;
+  left: 50%;
+  width: 22px;
+  height: 2px;
+  background: currentColor;
+  transform: translateX(-50%);
+  transition:
+    top 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.menu-button span:nth-child(1) {
+  top: 14px;
+}
+
+.menu-button span:nth-child(2) {
+  top: 21px;
+}
+
+.menu-button span:nth-child(3) {
+  top: 28px;
+}
+
+.menu-button.is-open span:nth-child(1) {
+  top: 21px;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.menu-button.is-open span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-button.is-open span:nth-child(3) {
+  top: 21px;
+  transform: translateX(-50%) rotate(-45deg);
+}
 
   .mobile-menu {
     background: rgba(5, 9, 15, 0.98);

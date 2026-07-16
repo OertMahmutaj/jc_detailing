@@ -9,7 +9,7 @@ const rateLimitWindowMs = 15 * 60 * 1000;
 const maxRequestsPerWindow = 5;
 const bookingRateLimit = new Map<string, { count: number; resetAt: number }>();
 const allowedAddOnsByService: Record<string, string[]> = {
-  "Komplett Innenreinigung": ["Tierhaarentfernung"],
+  "Komplette Innenreinigung": ["Tierhaarentfernung"],
   "Pflegeerhaltung Innenreinigung": [
     "Tierhaarentfernung",
     "Sitze Tiefenreinigung",

@@ -6,7 +6,8 @@ export const services = {
     path: "/leistungen/innenreinigung",
     title: "Innenreinigung",
     eyebrow: "Interior detailing",
-    short: "Tiefenreinigung von Sitzen, Teppichen, Leder, Kunststoff und Scheiben.",
+    short:
+      "Tiefenreinigung von Sitzen, Teppichen, Leder, Kunststoff und Scheiben.",
     image: "/innenreinigung.webp",
     includes: [
       "Staubsaugen von Innenraum und Kofferraum",
@@ -25,7 +26,8 @@ export const services = {
     path: "/leistungen/aussenreinigung",
     title: "Aussenreinigung",
     eyebrow: "Exterior detailing",
-    short: "Schonende Handwäsche, Felgenreinigung, Insektenentfernung und Reifenpflege.",
+    short:
+      "Schonende Handwäsche, Felgenreinigung, Insektenentfernung und Reifenpflege.",
     image: "/aussenreinigung.webp",
     includes: [
       "Snow-Foam-Vorwäsche",
@@ -71,6 +73,7 @@ export const services = {
       "Keramikbeschichtung",
       "Hydrophober Schutz",
       "Glanz- und Finishkontrolle",
+      "Politur",
     ],
     process:
       "Die Keramikversiegelung braucht eine saubere Grundlage: der Lack wird gewaschen, vorbereitet und entfettet. Danach wird die Beschichtung kontrolliert aufgetragen, auspoliert und in Ruhe gepüft, damit Schutz und Optik sauber sitzen.",
@@ -85,7 +88,7 @@ export const serviceItems = Object.values(services);
 
 export const germanOffers = [
   {
-    title: "Komplett Innenreinigung",
+    title: "Komplette Innenreinigung",
     price: "ab 209 CHF",
     text: "Gründliche Reinigung und Pflege des gesamten Innenraums.",
     details: [
@@ -98,7 +101,7 @@ export const germanOffers = [
     ],
   },
   {
-    title: "Komplett Aussenreinigung",
+    title: "Komplette Aussenreinigung",
     price: "ab 109 CHF",
     text: "Schonende Handwäsche, Felgenreinigung und gepflegtes Finish.",
     details: [
@@ -111,7 +114,7 @@ export const germanOffers = [
     ],
   },
   {
-    title: "Komplett Aufbereitung",
+    title: "Komplette Aufbereitung",
     price: "auf Anfrage",
     text: "Innen und aussen kombiniert für ein frisches Gesamtbild.",
     details: [

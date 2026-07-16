@@ -256,8 +256,8 @@ export const bookingFormCopy = {
 export const bookingServiceNames: Record<PublicLocale, Record<string, string>> = {
   de: {},
   en: {
-    "Komplett Innenreinigung": "Complete interior detailing",
-    "Komplett Aussenreinigung": "Complete exterior detailing",
+    "Komplette Innenreinigung": "Complete interior detailing",
+    "Komplette Aussenreinigung": "Complete exterior detailing",
     "Pflegeerhaltung Innenreinigung": "Interior maintenance care",
     "Pflegeerhaltung Aussenreinigung": "Exterior maintenance care",
     "Polish Paket (1-Step)": "Polish package (1-step)",
@@ -266,8 +266,8 @@ export const bookingServiceNames: Record<PublicLocale, Record<string, string>> =
     "Komplette Premium Paket": "Complete premium package",
   },
   fr: {
-    "Komplett Innenreinigung": "Nettoyage intérieur complet",
-    "Komplett Aussenreinigung": "Nettoyage extérieur complet",
+    "Komplette Innenreinigung": "Nettoyage intérieur complet",
+    "Komplette Aussenreinigung": "Nettoyage extérieur complet",
     "Pflegeerhaltung Innenreinigung": "Entretien intérieur",
     "Pflegeerhaltung Aussenreinigung": "Entretien extérieur",
     "Polish Paket (1-Step)": "Polissage 1 étape",
@@ -276,8 +276,8 @@ export const bookingServiceNames: Record<PublicLocale, Record<string, string>> =
     "Komplette Premium Paket": "Forfait premium complet",
   },
   it: {
-    "Komplett Innenreinigung": "Pulizia interna completa",
-    "Komplett Aussenreinigung": "Pulizia esterna completa",
+    "Komplette Innenreinigung": "Pulizia interna completa",
+    "Komplette Aussenreinigung": "Pulizia esterna completa",
     "Pflegeerhaltung Innenreinigung": "Manutenzione interna",
     "Pflegeerhaltung Aussenreinigung": "Manutenzione esterna",
     "Polish Paket (1-Step)": "Pacchetto lucidatura 1-step",
@@ -347,8 +347,8 @@ export const bookingVehicleCopy: Record<PublicLocale, Record<string, { title: st
 
 const nonGermanDetails: Record<Exclude<PublicLocale, "de">, Record<string, BookingServiceDetailCopy>> = {
   en: {
-    "Komplett Innenreinigung": detail("Interior detailing", "Complete interior detailing", "CHF 209.00 - CHF 309.00", ["Vacuuming of the complete interior and boot", "Cleaning and protective care of plastic surfaces", "Deep seat cleaning with shampoo and stain treatment", "Deep carpet cleaning and streak-free interior windows", "Steam cleaning for hygienic details", "Careful care of leather and Alcantara"]),
-    "Komplett Aussenreinigung": detail("Exterior detailing", "Complete exterior detailing", "CHF 109.00 - CHF 149.00", ["Snow-foam pre-wash and careful hand wash", "Gentle drying of the complete vehicle", "Intensive wheel and brake-dust cleaning", "Insect removal from the front and mirrors", "Cleaning of door shuts, windows, tyres and fine details"]),
+    "Komplette Innenreinigung": detail("Interior detailing", "Complete interior detailing", "CHF 209.00 - CHF 309.00", ["Vacuuming of the complete interior and boot", "Cleaning and protective care of plastic surfaces", "Deep seat cleaning with shampoo and stain treatment", "Deep carpet cleaning and streak-free interior windows", "Steam cleaning for hygienic details", "Careful care of leather and Alcantara"]),
+    "Komplette Aussenreinigung": detail("Exterior detailing", "Complete exterior detailing", "CHF 109.00 - CHF 149.00", ["Snow-foam pre-wash and careful hand wash", "Gentle drying of the complete vehicle", "Intensive wheel and brake-dust cleaning", "Insect removal from the front and mirrors", "Cleaning of door shuts, windows, tyres and fine details"]),
     "Pflegeerhaltung Innenreinigung": maintenanceDetail("Interior maintenance", "Interior maintenance care", "CHF 129.00 - CHF 199.00", ["Vacuuming of the cabin and boot", "Dashboard and centre-console cleaning", "Cleaning of plastics, door shuts and door panels"]),
     "Pflegeerhaltung Aussenreinigung": maintenanceDetail("Exterior maintenance", "Exterior maintenance care", "CHF 69.00 - CHF 109.00", ["Snow-foam pre-wash", "Hand wash and gentle drying", "Wheel cleaning and insect removal"]),
     "Polish Paket (1-Step)": polishDetail("Paint correction", "Polish package (1-step)", "CHF 399.00 - CHF 549.00", ["Paint wash, cleaning and degreasing", "One-step polish for gloss and light defect removal", "Reduction of light swirl marks", "High-gloss finish"]),
@@ -357,8 +357,8 @@ const nonGermanDetails: Record<Exclude<PublicLocale, "de">, Record<string, Booki
     "Komplette Premium Paket": detail("Package", "Complete premium package", "CHF 299.00 - CHF 349.00", ["Detailed interior vacuuming, deep cleaning and surface care", "Seat, carpet, leather and Alcantara care", "Careful hand wash and wheel cleaning", "Paint cleaning, gloss finish and spray protection", "Tyre and exterior-plastic care"]),
   },
   fr: {
-    "Komplett Innenreinigung": detail("Nettoyage intérieur", "Nettoyage intérieur complet", "CHF 209.00 - CHF 309.00", ["Aspiration complète de l'habitacle et du coffre", "Nettoyage et protection des surfaces en plastique", "Nettoyage profond des sièges avec shampoing et traitement des taches", "Nettoyage profond des tapis et vitres intérieures sans traces", "Nettoyage vapeur hygiénique", "Entretien du cuir et de l'Alcantara"]),
-    "Komplett Aussenreinigung": detail("Nettoyage extérieur", "Nettoyage extérieur complet", "CHF 109.00 - CHF 149.00", ["Prélavage Snow Foam et lavage à la main", "Séchage délicat du véhicule", "Nettoyage intensif des jantes et de la poussière de frein", "Retrait des insectes à l'avant et sur les rétroviseurs", "Nettoyage des seuils, vitres, pneus et détails"]),
+    "Komplette Innenreinigung": detail("Nettoyage intérieur", "Nettoyage intérieur complet", "CHF 209.00 - CHF 309.00", ["Aspiration complète de l'habitacle et du coffre", "Nettoyage et protection des surfaces en plastique", "Nettoyage profond des sièges avec shampoing et traitement des taches", "Nettoyage profond des tapis et vitres intérieures sans traces", "Nettoyage vapeur hygiénique", "Entretien du cuir et de l'Alcantara"]),
+    "Komplette Aussenreinigung": detail("Nettoyage extérieur", "Nettoyage extérieur complet", "CHF 109.00 - CHF 149.00", ["Prélavage Snow Foam et lavage à la main", "Séchage délicat du véhicule", "Nettoyage intensif des jantes et de la poussière de frein", "Retrait des insectes à l'avant et sur les rétroviseurs", "Nettoyage des seuils, vitres, pneus et détails"]),
     "Pflegeerhaltung Innenreinigung": maintenanceDetail("Entretien intérieur", "Entretien intérieur", "CHF 129.00 - CHF 199.00", ["Aspiration de l'habitacle et du coffre", "Nettoyage du tableau de bord et de la console centrale", "Nettoyage des plastiques, seuils et panneaux de porte"]),
     "Pflegeerhaltung Aussenreinigung": maintenanceDetail("Entretien extérieur", "Entretien extérieur", "CHF 69.00 - CHF 109.00", ["Prélavage Snow Foam", "Lavage à la main et séchage délicat", "Nettoyage des jantes et retrait des insectes"]),
     "Polish Paket (1-Step)": polishDetail("Correction de peinture", "Polissage 1 étape", "CHF 399.00 - CHF 549.00", ["Lavage, nettoyage et dégraissage de la peinture", "Polissage en une étape pour la brillance et les défauts légers", "Réduction des micro-rayures légères", "Finition brillante"]),
@@ -367,8 +367,8 @@ const nonGermanDetails: Record<Exclude<PublicLocale, "de">, Record<string, Booki
     "Komplette Premium Paket": detail("Forfait", "Forfait premium complet", "CHF 299.00 - CHF 349.00", ["Aspiration, nettoyage profond et entretien de l'habitacle", "Entretien des sièges, tapis, cuirs et Alcantara", "Lavage à la main et nettoyage des jantes", "Nettoyage de la peinture, finition brillante et protection", "Entretien des pneus et plastiques extérieurs"]),
   },
   it: {
-    "Komplett Innenreinigung": detail("Pulizia interna", "Pulizia interna completa", "CHF 209.00 - CHF 309.00", ["Aspirazione completa dell'abitacolo e del bagagliaio", "Pulizia e protezione delle superfici in plastica", "Pulizia profonda dei sedili con shampoo e trattamento macchie", "Pulizia profonda dei tappeti e vetri interni senza aloni", "Pulizia a vapore igienizzante", "Cura di pelle e Alcantara"]),
-    "Komplett Aussenreinigung": detail("Pulizia esterna", "Pulizia esterna completa", "CHF 109.00 - CHF 149.00", ["Prelavaggio Snow Foam e lavaggio a mano", "Asciugatura delicata del veicolo", "Pulizia intensiva dei cerchi e della polvere dei freni", "Rimozione insetti da frontale e specchietti", "Pulizia di battute, vetri, pneumatici e dettagli"]),
+    "Komplette Innenreinigung": detail("Pulizia interna", "Pulizia interna completa", "CHF 209.00 - CHF 309.00", ["Aspirazione completa dell'abitacolo e del bagagliaio", "Pulizia e protezione delle superfici in plastica", "Pulizia profonda dei sedili con shampoo e trattamento macchie", "Pulizia profonda dei tappeti e vetri interni senza aloni", "Pulizia a vapore igienizzante", "Cura di pelle e Alcantara"]),
+    "Komplette Aussenreinigung": detail("Pulizia esterna", "Pulizia esterna completa", "CHF 109.00 - CHF 149.00", ["Prelavaggio Snow Foam e lavaggio a mano", "Asciugatura delicata del veicolo", "Pulizia intensiva dei cerchi e della polvere dei freni", "Rimozione insetti da frontale e specchietti", "Pulizia di battute, vetri, pneumatici e dettagli"]),
     "Pflegeerhaltung Innenreinigung": maintenanceDetail("Manutenzione interna", "Manutenzione interna", "CHF 129.00 - CHF 199.00", ["Aspirazione di abitacolo e bagagliaio", "Pulizia di cruscotto e console centrale", "Pulizia di plastiche, battute e pannelli porta"]),
     "Pflegeerhaltung Aussenreinigung": maintenanceDetail("Manutenzione esterna", "Manutenzione esterna", "CHF 69.00 - CHF 109.00", ["Prelavaggio Snow Foam", "Lavaggio a mano e asciugatura delicata", "Pulizia cerchi e rimozione insetti"]),
     "Polish Paket (1-Step)": polishDetail("Correzione vernice", "Pacchetto lucidatura 1-step", "CHF 399.00 - CHF 549.00", ["Lavaggio, pulizia e sgrassaggio della vernice", "Lucidatura a uno step per brillantezza e difetti leggeri", "Riduzione dei segni circolari leggeri", "Finitura ad alta brillantezza"]),

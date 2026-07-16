@@ -40,10 +40,10 @@ async function main() {
   console.log("Seeding services...");
   await Promise.all([
     prisma.service.create({
-      data: { name: "Komplett Innenreinigung", basePrice: 209.0, durationMinutes: 330 },
+      data: { name: "Komplette Innenreinigung", basePrice: 209.0, durationMinutes: 330 },
     }),
     prisma.service.create({
-      data: { name: "Komplett Aussenreinigung", basePrice: 109.0, durationMinutes: 180 },
+      data: { name: "Komplette Aussenreinigung", basePrice: 109.0, durationMinutes: 180 },
     }),
     prisma.service.create({
       data: { name: "Pflegeerhaltung Innenreinigung", basePrice: 129.0, durationMinutes: 150 },

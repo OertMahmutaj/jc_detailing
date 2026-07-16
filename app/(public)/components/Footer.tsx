@@ -20,7 +20,7 @@ const email = "jcdetailinglucerne@gmail.com";
 const whatsappUrl = "https://wa.me/41772683388";
 const instagramUrl =
   "https://www.instagram.com/jcdetailinglucerne?igsh=amJoendmanBiMWVr&utm_source=qr";
-const tiktokUrl = "https://www.tiktok.com/";
+const tiktokUrl = "https://www.tiktok.com/@jcdetailinglucerne";
 
 export function Footer() {
   const locale = usePublicLocale();

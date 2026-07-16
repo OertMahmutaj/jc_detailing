@@ -465,7 +465,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
           </LightReveal>
         </section>
 
-        <section className="section" id="faq">
+        <section id="faq" className="section">
           <LightReveal className="section-heading">
             <div>
               <span>{copy.faq.eyebrow}</span>
