@@ -11,3 +11,6 @@ tsconfig.tsbuildinfo
 .agents
 
 /app/generated/prisma
+
+.vercel
+.env*

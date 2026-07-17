@@ -25,6 +25,48 @@ type ServiceMetadataInput = {
   image: string;
 };
 
+const siteName = "JC Detailing";
+const defaultImage = "/hero_poster.webp";
+
+const localizedKeywords: Record<PublicLocale, string[]> = {
+  de: [
+    "Autoaufbereitung Wauwil",
+    "Autoaufbereitung Luzern",
+    "Innenreinigung Auto",
+    "Aussenreinigung Auto",
+    "Politur Luzern",
+    "Keramikversiegelung Luzern",
+    "JC Detailing",
+  ],
+  en: [
+    "car detailing Wauwil",
+    "car detailing Lucerne",
+    "interior car detailing",
+    "exterior car detailing",
+    "paint polishing Lucerne",
+    "ceramic coating Lucerne",
+    "JC Detailing",
+  ],
+  fr: [
+    "detailing automobile Wauwil",
+    "detailing automobile Lucerne",
+    "nettoyage intérieur voiture",
+    "nettoyage extérieur voiture",
+    "polissage automobile Lucerne",
+    "protection céramique Lucerne",
+    "JC Detailing",
+  ],
+  it: [
+    "car detailing Wauwil",
+    "car detailing Lucerna",
+    "pulizia interna auto",
+    "pulizia esterna auto",
+    "lucidatura auto Lucerna",
+    "rivestimento ceramico Lucerna",
+    "JC Detailing",
+  ],
+};
+
 export const homeSeo: Record<PublicLocale, SeoText> = {
   de: {
     title: "Autoaufbereitung in Wauwil, Luzern",
@@ -34,17 +76,17 @@ export const homeSeo: Record<PublicLocale, SeoText> = {
   en: {
     title: "Car detailing in Wauwil, Lucerne",
     description:
-      "Professional car detailing in Wauwil, Canton of Lucerne: interior and exterior detailing, paint polishing, paint care and ceramic coating for vehicles in Central Switzerland.",
+      "JC Detailing provides professional car detailing in Wauwil, Canton of Lucerne: interior detailing, exterior detailing, paint polishing, paint care and ceramic coating for vehicles in Central Switzerland.",
   },
   fr: {
     title: "Detailing automobile à Wauwil, Lucerne",
     description:
-      "Detailing automobile professionnel à Wauwil, dans le canton de Lucerne: nettoyage intérieur et extérieur, polissage, entretien de la peinture et protection céramique.",
+      "JC Detailing propose un detailing automobile professionnel à Wauwil, dans le canton de Lucerne: nettoyage intérieur et extérieur, polissage, entretien de la peinture et protection céramique.",
   },
   it: {
     title: "Car detailing a Wauwil, Lucerna",
     description:
-      "Car detailing professionale a Wauwil, nel Canton Lucerna: pulizia interna ed esterna, lucidatura, cura della vernice e rivestimento ceramico per veicoli nella Svizzera centrale.",
+      "JC Detailing offre car detailing professionale a Wauwil, nel Canton Lucerna: pulizia interna ed esterna, lucidatura, cura della vernice e rivestimento ceramico per veicoli nella Svizzera centrale.",
   },
 };
 
@@ -73,7 +115,7 @@ export const publicPageSeo = {
   },
   offers: {
     de: {
-      title: "Pakete & Preise",
+      title: "Pakete & Preise für Autoaufbereitung",
       description:
         "Pakete und Preise von JC Detailing in Wauwil, Luzern. Innenreinigung, Aussenreinigung, Erhaltungspflege, Politur und Keramikversiegelung.",
     },
@@ -222,15 +264,16 @@ export function publicLanguageAlternates(path: string) {
 
 export function buildPublicMetadata(
   locale: PublicLocale,
-  { path, title, description, image = "/hero_poster.webp", imageAlt }: PublicMetadataOptions,
+  { path, title, description, image = defaultImage, imageAlt }: PublicMetadataOptions,
 ): Metadata {
   const canonical = localizedPublicUrl(path, locale);
-  const socialTitle = `${title} | JC Detailing`;
+  const socialTitle = `${title} | ${siteName}`;
   const alt = imageAlt ?? socialTitle;
 
   return {
     title,
     description,
+    keywords: localizedKeywords[locale],
     alternates: {
       canonical,
       languages: publicLanguageAlternates(path),
@@ -244,7 +287,7 @@ export function buildPublicMetadata(
       alternateLocale: publicLocales
         .filter((candidate) => candidate !== locale)
         .map((candidate) => intlLocales[candidate].replace("-", "_")),
-      siteName: "JC Detailing",
+      siteName,
       images: [{ url: image, alt }],
     },
     twitter: {
@@ -252,6 +295,11 @@ export function buildPublicMetadata(
       title: socialTitle,
       description,
       images: [image],
+    },
+    other: {
+      "geo.region": "CH-LU",
+      "geo.placename": "Wauwil",
+      "ICBM": "47.1851689, 8.027709",
     },
   };
 }

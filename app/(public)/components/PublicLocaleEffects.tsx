@@ -2,6 +2,8 @@
 
 import { ChevronUp } from "lucide-react";
 import { useEffect } from "react";
+
+import { intlLocales } from "../i18n";
 import { usePublicLocale } from "./usePublicLocale";
 
 const labels = {
@@ -15,12 +17,16 @@ export function PublicLocaleEffects() {
   const locale = usePublicLocale();
 
   useEffect(() => {
-    document.documentElement.lang = locale;
+    document.documentElement.lang = intlLocales[locale];
   }, [locale]);
 
   return (
-    <a className="back-to-top" href="#top" aria-label={labels[locale]}>
-      <ChevronUp size={18} />
+    <a
+      className="back-to-top"
+      href="#top"
+      aria-label={labels[locale]}
+    >
+      <ChevronUp aria-hidden="true" size={18} />
     </a>
   );
 }

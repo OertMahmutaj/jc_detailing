@@ -37,7 +37,10 @@ export function localeHome(locale: PublicLocale) {
   return locale === "de" ? "/" : `/${locale}`;
 }
 
-export function localizePublicHref(href: string, locale: PublicLocale) {
+export function localizePublicHref(
+  href: string,
+  locale: PublicLocale,
+) {
   if (
     href.startsWith("http") ||
     href.startsWith("mailto:") ||
@@ -47,19 +50,51 @@ export function localizePublicHref(href: string, locale: PublicLocale) {
     return href;
   }
 
-  const [pathAndQuery, hash] = href.split("#");
-  const [rawPath, rawQuery = ""] = pathAndQuery.split("?");
-  const home = localeHome(locale);
+  const hashIndex = href.indexOf("#");
+  const hash =
+    hashIndex >= 0
+      ? href.slice(hashIndex)
+      : "";
 
-  if (rawPath === "/" || rawPath === "/de" || rawPath === "/en" || rawPath === "/fr" || rawPath === "/it") {
-    return `${home}${hash ? `#${hash}` : ""}`;
+  const hrefWithoutHash =
+    hashIndex >= 0
+      ? href.slice(0, hashIndex)
+      : href;
+
+  const queryIndex = hrefWithoutHash.indexOf("?");
+
+  const rawPath =
+    queryIndex >= 0
+      ? hrefWithoutHash.slice(0, queryIndex)
+      : hrefWithoutHash;
+
+  const rawQuery =
+    queryIndex >= 0
+      ? hrefWithoutHash.slice(queryIndex + 1)
+      : "";
+
+  const isHomePath =
+    rawPath === "/" ||
+    rawPath === "/de" ||
+    rawPath === "/en" ||
+    rawPath === "/fr" ||
+    rawPath === "/it";
+
+  if (isHomePath) {
+    return `${localeHome(locale)}${hash}`;
   }
 
   const params = new URLSearchParams(rawQuery);
-  params.set("lang", locale);
+
+  if (locale === "de") {
+    params.delete("lang");
+  } else {
+    params.set("lang", locale);
+  }
+
   const query = params.toString();
 
-  return `${rawPath}${query ? `?${query}` : ""}${hash ? `#${hash}` : ""}`;
+  return `${rawPath}${query ? `?${query}` : ""}${hash}`;
 }
 
 export const sharedCopy = {

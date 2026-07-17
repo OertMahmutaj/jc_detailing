@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+
 import "./globals.css";
 
 export default function RootLayout({
@@ -9,7 +10,7 @@ export default function RootLayout({
   return (
     <html
       data-scroll-behavior="smooth"
-      lang="de"
+      lang="de-CH"
       suppressHydrationWarning
     >
       <body>{children}</body>

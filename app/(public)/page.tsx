@@ -52,7 +52,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
   const faqs = copy.faq.items;
   const localBusinessJsonLd = {
     "@context": "https://schema.org",
-    "@type": "AutoRepair",
+    "@type": "AutoWash",
     "@id": `${siteUrl}/#localbusiness`,
     name: "JC Detailing",
     url: `${siteUrl}${localeHome(locale)}`,
@@ -106,7 +106,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
         name: "Zentralschweiz",
       },
     ],
-    priceRange: "CHF",
+    priceRange: "CHF 69–1090",
     makesOffer: Object.values(serviceCopy).map(([name]) => ({
       "@type": "Offer",
       itemOffered: {
@@ -442,7 +442,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
                 {copy.contact.booking}
               </LanguageAwareBookingLink>
 
-              <a className="ghost-button" href="mailto:info@jcdetailing.ch">
+              <a className="ghost-button" href="mailto:jcdetailinglucerne@gmail.com">
                 <Mail size={18} />
                 {copy.contact.message}
               </a>
