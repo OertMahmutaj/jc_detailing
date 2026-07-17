@@ -2660,6 +2660,149 @@ html[data-admin-theme="light"] .admin-notification button:hover {
   opacity: 0.58;
 }
 
+.admin-login-secondary-actions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-login-secondary-actions button {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--admin-line-strong);
+  border-radius: var(--admin-radius-sm);
+  color: var(--admin-text-soft);
+  cursor: pointer;
+  display: inline-flex;
+  font: 750 12px/1.15 var(--admin-font);
+  gap: 8px;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.admin-login-secondary-actions button:hover {
+  border-color: rgba(255, 100, 31, 0.65);
+  color: var(--admin-orange-hover);
+}
+
+.admin-auth-modal-backdrop {
+  align-items: center;
+  background: rgba(1, 5, 12, 0.72);
+  backdrop-filter: blur(14px);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 18px;
+  position: fixed;
+  z-index: 1200;
+}
+
+.admin-auth-modal {
+  background: rgba(8, 16, 27, 0.98);
+  border: 1px solid var(--admin-line-strong);
+  border-top: 2px solid var(--admin-orange);
+  border-radius: var(--admin-radius-lg);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.62);
+  color: var(--admin-text);
+  display: grid;
+  gap: 16px;
+  max-width: 460px;
+  padding: 28px;
+  position: relative;
+  width: min(100%, 460px);
+}
+
+.admin-auth-modal-close {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--admin-line-strong);
+  border-radius: var(--admin-radius-sm);
+  color: var(--admin-text);
+  cursor: pointer;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  width: 36px;
+}
+
+.admin-auth-kicker {
+  color: var(--admin-orange);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.admin-auth-modal h2 {
+  color: var(--admin-text);
+  font-size: 26px;
+  line-height: 1.08;
+  margin: 0 46px 4px 0;
+}
+
+.admin-auth-help {
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: -4px 0 0;
+}
+
+.admin-auth-modal label {
+  color: var(--admin-muted);
+  display: grid;
+  font-size: 11px;
+  font-weight: 750;
+  gap: 8px;
+}
+
+.admin-auth-modal input {
+  background: var(--admin-field);
+  border: 1px solid var(--admin-line-strong);
+  border-radius: var(--admin-radius-sm);
+  color: var(--admin-text);
+  font: 650 14px/1.2 var(--admin-font);
+  min-height: 46px;
+  outline: 0;
+  padding: 0 13px;
+}
+
+.admin-auth-modal input:focus {
+  border-color: var(--admin-orange);
+  box-shadow: 0 0 0 3px rgba(255, 100, 31, 0.12);
+}
+
+.admin-auth-modal .admin-login-input-wrap {
+  width: 100%;
+}
+
+.admin-auth-modal .admin-login-input-wrap input {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-height: 46px;
+  padding: 0 4px;
+}
+
+.admin-auth-modal .admin-login-input-wrap input:focus {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.admin-login-success {
+  background: var(--admin-green-soft);
+  border: 1px solid rgba(73, 209, 125, 0.3);
+  border-radius: var(--admin-radius-sm);
+  color: #7ff0a7;
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+  padding: 10px 12px;
+}
+
 .admin-bookings-table {
   border-collapse: separate;
   border-spacing: 0 8px;
