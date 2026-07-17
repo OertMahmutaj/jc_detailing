@@ -4,22 +4,22 @@ import type { Metadata } from "next";
 import { LegalPage } from "../components/LegalPage";
 import { normalizeLocale } from "../i18n";
 import { imprintCopy } from "../legalCopy";
+import { buildPublicMetadata, publicPageSeo } from "../seo";
 
-export const metadata: Metadata = {
-  title: "Impressum",
-  description:
-    "Impressum von JC Detailing, Juljan Cela, Sternmatt 4, 6242 Wauwil, Schweiz.",
-  alternates: {
-    canonical: "/impressum",
-  },
-};
+type LegalPageProps = { searchParams?: Promise<{ lang?: string }> };
 
-export default async function ImpressumPage({ searchParams }: { searchParams?: Promise<{ lang?: string }> }) {
+export async function generateMetadata({ searchParams }: LegalPageProps): Promise<Metadata> {
+  const locale = normalizeLocale((await searchParams)?.lang);
+  return buildPublicMetadata(locale, { path: "/impressum", ...publicPageSeo.imprint[locale] });
+}
+
+export default async function ImpressumPage({ searchParams }: LegalPageProps) {
   const locale = normalizeLocale((await searchParams)?.lang);
   const document = imprintCopy[locale];
 
   return (
     <LegalPage
+      locale={locale}
       title={document.title}
       intro={document.intro}
       sections={document.sections}

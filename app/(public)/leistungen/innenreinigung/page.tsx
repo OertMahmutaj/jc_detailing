@@ -5,46 +5,22 @@ import { ServiceDetail } from "../../components/ServiceDetail";
 import { services } from "@/app/data/site";
 import { normalizeLocale } from "../../i18n";
 import { getLocalizedService } from "../../serviceCopy";
+import { buildServiceMetadata } from "../../seo";
 
 const service = services.innenreinigung;
 
-export const metadata: Metadata = {
-  title: "Innenreinigung in Wauwil, Luzern",
-  description:
-    "Professionelle Innenreinigung bei JC Detailing in Wauwil, Kanton Luzern. Tiefenreinigung von Sitzen, Teppichen, Leder, Kunststoff und Scheiben.",
-
-  alternates: {
-    canonical: service.path,
-  },
-
-  openGraph: {
-    title: "Innenreinigung in Wauwil, Luzern | JC Detailing",
-    description:
-      "Professionelle Innenreinigung für Fahrzeuge in Wauwil, Luzern: Sitze, Teppiche, Leder, Kunststoff und Scheiben gründlich gereinigt.",
-    url: service.path,
-    type: "website",
-    locale: "de_CH",
-    siteName: "JC Detailing",
-    images: [
-      {
-        url: service.image,
-        width: 1200,
-        height: 630,
-        alt: "Innenreinigung bei JC Detailing in Wauwil",
-      },
-    ],
-  },
-
-  twitter: {
-    card: "summary_large_image",
-    title: "Innenreinigung in Wauwil, Luzern | JC Detailing",
-    description:
-      "Professionelle Innenreinigung für Fahrzeuge in Wauwil, Kanton Luzern.",
-    images: [service.image],
-  },
+type ServicePageProps = {
+  searchParams?: Promise<{ lang?: string }>;
 };
 
-export default async function InnenreinigungPage({ searchParams }: { searchParams?: Promise<{ lang?: string }> }) {
+export async function generateMetadata({
+  searchParams,
+}: ServicePageProps): Promise<Metadata> {
+  const locale = normalizeLocale((await searchParams)?.lang);
+  return buildServiceMetadata(locale, getLocalizedService(service, locale));
+}
+
+export default async function InnenreinigungPage({ searchParams }: ServicePageProps) {
   const locale = normalizeLocale((await searchParams)?.lang);
   return <ServiceDetail locale={locale} service={getLocalizedService(service, locale)} />;
 }

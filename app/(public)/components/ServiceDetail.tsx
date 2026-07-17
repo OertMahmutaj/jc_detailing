@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { ArrowRight, CalendarCheck, Check } from "lucide-react";
-import type { PublicLocale } from "../i18n";
+import { intlLocales, type PublicLocale } from "../i18n";
 import type { LocalizedService } from "../serviceCopy";
 import { servicePageCopy } from "../serviceCopy";
 import { LanguageAwareBookingLink } from "./LanguageAwareBookingLink";
@@ -24,7 +24,7 @@ export function ServiceDetail({ service, locale }: ServiceDetailProps) {
   const copy = servicePageCopy[locale];
 
   return (
-    <PageEntry className="page-shell" id="top">
+    <PageEntry className="page-shell" id="top" lang={intlLocales[locale]}>
       <section className="detail-hero">
         <HeroIntro>
           <HeroItem>

@@ -1,24 +1,39 @@
 // app/leistungen/page.tsx
 
 import Image from "next/image";
+import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
 import { HeroIntro, HeroItem, LightGroup, LightItem, PageEntry } from "../components/StudioMotion";
 import { serviceItems } from "../../data/site";
 import { LocalizedPublicLink } from "../components/LocalizedPublicLink";
-import { normalizeLocale } from "../i18n";
+import { intlLocales, normalizeLocale } from "../i18n";
 import { getLocalizedServices, servicePageCopy } from "../serviceCopy";
+import { buildPublicMetadata, publicPageSeo } from "../seo";
+
+type LeistungenPageProps = {
+  searchParams?: Promise<{ lang?: string }>;
+};
+
+export async function generateMetadata({
+  searchParams,
+}: LeistungenPageProps): Promise<Metadata> {
+  const locale = normalizeLocale((await searchParams)?.lang);
+
+  return buildPublicMetadata(locale, {
+    path: "/leistungen",
+    ...publicPageSeo.services[locale],
+  });
+}
 
 export default async function LeistungenPage({
   searchParams,
-}: {
-  searchParams?: Promise<{ lang?: string }>;
-}) {
+}: LeistungenPageProps) {
   const locale = normalizeLocale((await searchParams)?.lang);
   const copy = servicePageCopy[locale];
   const localizedServices = getLocalizedServices(serviceItems, locale);
 
   return (
-    <PageEntry className="page-shell" id="top">
+    <PageEntry className="page-shell" id="top" lang={intlLocales[locale]}>
       <section className="sub-hero">
         <HeroIntro>
           <HeroItem>

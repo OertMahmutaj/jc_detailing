@@ -15,41 +15,33 @@ import {
   type GalleryComparison,
 } from "./GalleryGrid";
 import {
+  intlLocales,
   localizePublicHref,
   normalizeLocale,
 } from "../i18n";
+import { buildPublicMetadata, publicPageSeo } from "../seo";
 
 export const dynamic = "force-dynamic";
 
 const GALLERY_PAGE_SIZE = 6;
 
-export const metadata: Metadata = {
-  title: "Vorher-Nachher Galerie",
-
-  description:
-    "Vorher-Nachher Galerie von JC Detailing in Wauwil, Luzern. Sieh echte Ergebnisse professioneller Fahrzeugaufbereitung, Politur, Innenreinigung und Keramikversiegelung.",
-
-  alternates: {
-    canonical: "/gallery",
-  },
-
-  openGraph: {
-    title: "Vorher-Nachher Galerie | JC Detailing",
-    description:
-      "Echte Vorher-Nachher Ergebnisse professioneller Autoaufbereitung in Wauwil, Kanton Luzern.",
-    url: "/gallery",
-    type: "website",
-    locale: "de_CH",
-    siteName: "JC Detailing",
-  },
-
-  twitter: {
-    card: "summary_large_image",
-    title: "Vorher-Nachher Galerie | JC Detailing",
-    description:
-      "Echte Ergebnisse von JC Detailing: Fahrzeugaufbereitung, Politur, Innenreinigung und Keramikversiegelung in Wauwil, Luzern.",
-  },
+type GalleryPageProps = {
+  searchParams?: Promise<{
+    lang?: string;
+    page?: string;
+  }>;
 };
+
+export async function generateMetadata({
+  searchParams,
+}: GalleryPageProps): Promise<Metadata> {
+  const locale = normalizeLocale((await searchParams)?.lang);
+
+  return buildPublicMetadata(locale, {
+    path: "/gallery",
+    ...publicPageSeo.gallery[locale],
+  });
+}
 
 const publishedComparisonWhere = {
   isPublished: true,
@@ -65,12 +57,7 @@ const publishedComparisonWhere = {
 
 export default async function GalleryPage({
   searchParams,
-}: {
-  searchParams?: Promise<{
-    lang?: string;
-    page?: string;
-  }>;
-}) {
+}: GalleryPageProps) {
   const params = (await searchParams) ?? {};
 
   const locale = normalizeLocale(params.lang);
@@ -318,7 +305,7 @@ export default async function GalleryPage({
   }
 
   return (
-    <main className="public-gallery-page">
+    <main className="public-gallery-page" lang={intlLocales[locale]}>
       <section className="public-gallery-hero">
         <div className="public-gallery-hero-copy">
           <span className="public-gallery-kicker">

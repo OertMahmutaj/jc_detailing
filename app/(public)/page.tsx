@@ -26,46 +26,17 @@ import {
 } from "./components/StudioMotion";
 import { serviceItems } from "../data/site";
 import { homeCopy } from "./homeCopy";
-import { sharedCopy, type PublicLocale } from "./i18n";
+import { intlLocales, localeHome, sharedCopy, type PublicLocale } from "./i18n";
+import { buildPublicMetadata, homeSeo } from "./seo";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.jcdetailing.ch";
 
-export const metadata: Metadata = {
-  title: "Autoaufbereitung in Wauwil, Luzern",
-  description:
-    "JC Detailing bietet professionelle Autoaufbereitung in Wauwil, Kanton Luzern: Innenreinigung, Aussenreinigung, Politur, Lackpflege und Keramikversiegelung für Fahrzeuge in der Zentralschweiz.",
-
-  alternates: {
-    canonical: "/",
-  },
-
-  openGraph: {
-    title: "JC Detailing | Autoaufbereitung in Wauwil, Luzern",
-    description:
-      "Professionelle Fahrzeugaufbereitung, Innenreinigung, Politur und Keramikversiegelung in Wauwil, Kanton Luzern.",
-    url: "/",
-    type: "website",
-    locale: "de_CH",
-    siteName: "JC Detailing",
-    images: [
-      {
-        url: "/logo.png",
-        width: 1200,
-        height: 630,
-        alt: "JC Detailing Autoaufbereitung in Wauwil, Luzern",
-      },
-    ],
-  },
-
-  twitter: {
-    card: "summary_large_image",
-    title: "JC Detailing | Autoaufbereitung in Wauwil, Luzern",
-    description:
-      "Professionelle Fahrzeugaufbereitung, Innenreinigung, Politur und Keramikversiegelung in Wauwil, Kanton Luzern.",
-    images: ["/logo.png"],
-  },
-};
+export const metadata: Metadata = buildPublicMetadata("de", {
+  path: "/",
+  ...homeSeo.de,
+  imageAlt: "JC Detailing Autoaufbereitung in Wauwil, Luzern",
+});
 
 const galleryComparisons = [
   { before: "/before_1.webp", after: "/after_1.webp" },
@@ -84,13 +55,13 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
     "@type": "AutoRepair",
     "@id": `${siteUrl}/#localbusiness`,
     name: "JC Detailing",
-    url: siteUrl,
+    url: `${siteUrl}${localeHome(locale)}`,
+    inLanguage: intlLocales[locale],
     telephone: "+41 77 268 33 88",
     email: "jcdetailinglucerne@gmail.com",
     image: [`${siteUrl}/logo.png`],
     logo: `${siteUrl}/logo.png`,
-    description:
-      "Professionelle Autoaufbereitung, Innenreinigung, Aussenreinigung, Politur, Lackpflege und Keramikversiegelung in Wauwil, Kanton Luzern.",
+    description: homeSeo[locale].description,
     address: {
       "@type": "PostalAddress",
       streetAddress: "Sternmatt 4",
@@ -136,43 +107,13 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
       },
     ],
     priceRange: "CHF",
-    makesOffer: [
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Service",
-          name: "Autoaufbereitung",
-        },
+    makesOffer: Object.values(serviceCopy).map(([name]) => ({
+      "@type": "Offer",
+      itemOffered: {
+        "@type": "Service",
+        name,
       },
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Service",
-          name: "Innenreinigung",
-        },
-      },
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Service",
-          name: "Aussenreinigung",
-        },
-      },
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Service",
-          name: "Politur und Lackpflege",
-        },
-      },
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Service",
-          name: "Keramikversiegelung",
-        },
-      },
-    ],
+    })),
   };
 
   const faqJsonLd = {
@@ -202,7 +143,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
         }}
       />
 
-      <PageEntry className="public-home">
+      <PageEntry className="public-home" lang={intlLocales[locale]}>
         <section id="top" className="hero">
           <div className="video-background" aria-hidden="true">
             <Image

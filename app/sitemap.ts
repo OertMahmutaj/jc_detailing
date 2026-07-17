@@ -1,5 +1,10 @@
 import type { MetadataRoute } from "next";
 import { serviceItems } from "./data/site";
+import {
+  localizedPublicUrl,
+  publicLanguageAlternates,
+} from "./(public)/seo";
+import { publicLocales } from "./(public)/i18n";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.jcdetailing.ch";
@@ -11,7 +16,7 @@ function absoluteUrl(path: string) {
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
 
-  const staticRoutes = [
+  const localizedRoutes = [
     {
       path: "/",
       changeFrequency: "weekly",
@@ -23,7 +28,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      path: "/angebote/de",
+      path: "/angebote",
       changeFrequency: "monthly",
       priority: 0.85,
     },
@@ -37,6 +42,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.75,
     },
+  ] as const;
+
+  const legalRoutes = [
     {
       path: "/impressum",
       changeFrequency: "yearly",
@@ -64,16 +72,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: number;
   }>;
 
-  const routes = [...staticRoutes, ...serviceRoutes];
+  const routes = [...localizedRoutes, ...serviceRoutes, ...legalRoutes];
 
   const uniqueRoutes = Array.from(
     new Map(routes.map((route) => [route.path, route])).values(),
   );
 
-  return uniqueRoutes.map((route) => ({
-    url: absoluteUrl(route.path),
-    lastModified,
-    changeFrequency: route.changeFrequency,
-    priority: route.priority,
-  }));
+  return uniqueRoutes.flatMap((route) => {
+    const alternates = Object.fromEntries(
+      Object.entries(publicLanguageAlternates(route.path)).map(
+        ([language, path]) => [language, absoluteUrl(path)],
+      ),
+    );
+
+    return publicLocales.map((locale) => ({
+      url: absoluteUrl(localizedPublicUrl(route.path, locale)),
+      lastModified,
+      changeFrequency: route.changeFrequency,
+      priority: route.priority,
+      alternates: {
+        languages: alternates,
+      },
+    }));
+  });
 }

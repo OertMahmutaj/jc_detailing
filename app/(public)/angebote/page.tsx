@@ -1,15 +1,32 @@
 // app/angebote/page.tsx
 
+import type { Metadata } from "next";
 import { GermanOffersGrid } from "../components/GermanOffersGrid";
 import { HeroIntro, HeroItem, PageEntry } from "../components/StudioMotion";
-import { normalizeLocale, type PublicLocale } from "../i18n";
+import { intlLocales, normalizeLocale, type PublicLocale } from "../i18n";
 import { offersPageCopy } from "../offerCopy";
+import { buildPublicMetadata, publicPageSeo } from "../seo";
+
+type AngebotePageProps = {
+  searchParams?: Promise<{ lang?: string }>;
+};
+
+export async function generateMetadata({
+  searchParams,
+}: AngebotePageProps): Promise<Metadata> {
+  const locale = normalizeLocale((await searchParams)?.lang);
+
+  return buildPublicMetadata(locale, {
+    path: "/angebote",
+    ...publicPageSeo.offers[locale],
+  });
+}
 
 export function OffersPageContent({ locale }: { locale: PublicLocale }) {
   const copy = offersPageCopy[locale];
 
   return (
-    <PageEntry className="page-shell" id="top">
+    <PageEntry className="page-shell" id="top" lang={intlLocales[locale]}>
       <section className="sub-hero">
         <HeroIntro>
           <HeroItem>
@@ -29,7 +46,7 @@ export function OffersPageContent({ locale }: { locale: PublicLocale }) {
   );
 }
 
-export default async function AngebotePage({ searchParams }: { searchParams?: Promise<{ lang?: string }> }) {
+export default async function AngebotePage({ searchParams }: AngebotePageProps) {
   const locale = normalizeLocale((await searchParams)?.lang);
   return <OffersPageContent locale={locale} />;
 }

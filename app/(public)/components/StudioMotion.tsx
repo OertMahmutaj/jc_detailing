@@ -11,14 +11,16 @@ type MotionProps = {
   className?: string;
   delay?: number;
   id?: string;
+  lang?: string;
   style?: CSSProperties;
 };
 
-export function PageEntry({ children, className, id }: MotionProps) {
+export function PageEntry({ children, className, id, lang }: MotionProps) {
   return (
     <motion.main
       className={className}
       id={id}
+      lang={lang}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.46, ease: premiumEase }}
