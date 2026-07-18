@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { directionsUrl, mapEmbedUrl, serviceItems } from "../../data/site";
 import { sharedCopy } from "../i18n";
+import { PrivacyMap } from "./PrivacyMap";
 
 const phoneNumber = "+41 77 268 33 88";
 const email = "jcdetailinglucerne@gmail.com";
@@ -203,31 +204,11 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="footer-map">
-          <iframe
-            height="230"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            src={mapEmbedUrl}
-            title="JC Detailing Wauwil"
-            width="600"
-          />
-
-          <a
-            className="map-directions"
-            href={directionsUrl}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <Navigation size={15} />
-            {copy.directions}
-          </a>
-
-          <span>
-            <MapPin size={16} />
-            Sternmatt 4, 6242 Wauwil
-          </span>
-        </div>
+        <PrivacyMap
+          directionsUrl={directionsUrl}
+          embedUrl={mapEmbedUrl}
+          locale={locale}
+        />
       </div>
 
       <div className="footer-bottom">
