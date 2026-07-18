@@ -115,7 +115,10 @@ export function GoogleReviewWidget() {
   }, []);
 
   return (
-    <div className={`google-review-widget${open ? " is-open" : ""}${hiddenWhileScrolled || hiddenWhileMenuOpen ? " is-hidden" : ""}`}>
+    <div
+      className={`google-review-widget${open ? " is-open" : ""}${hiddenWhileScrolled || hiddenWhileMenuOpen ? " is-hidden" : ""
+        }`}
+    >
       {!open && (
         <div className="google-review-badge">
           <a
@@ -127,19 +130,32 @@ export function GoogleReviewWidget() {
           >
             G
           </a>
+
           <button
             className="google-rating-toggle"
             type="button"
             onClick={() => setOpen(true)}
             aria-expanded={open}
-            aria-label={copy.open}
+            aria-controls="google-review-panel"
           >
             <span className="google-rating">
               <strong>{rating.toFixed(1)}</strong>
-              <span aria-hidden="true">{"*".repeat(5)}</span>
-              <small>{total} {copy.reviews}</small>
+
+              <span aria-hidden="true">
+                {"★".repeat(5)}
+              </span>
+
+              <small>
+                {total} {copy.reviews}
+              </small>
             </span>
-            <span className="google-review-arrow" aria-hidden="true">
+
+            <span className="sr-only">{copy.open}</span>
+
+            <span
+              className="google-review-arrow"
+              aria-hidden="true"
+            >
               <ChevronDown className="svg" size={21} />
             </span>
           </button>
@@ -147,42 +163,69 @@ export function GoogleReviewWidget() {
       )}
 
       {open && (
-        <div className="google-review-panel">
+        <div
+          className="google-review-panel"
+          id="google-review-panel"
+          role="region"
+          aria-label={copy.panel}
+        >
           <div className="google-review-panel-head">
             <span>{copy.panel}</span>
-            <button type="button" onClick={() => setOpen(false)} aria-label={copy.close}>
-              <X size={17} />
+
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label={copy.close}
+            >
+              <X aria-hidden="true" size={17} />
             </button>
           </div>
 
           <div className="google-review-table">
             {reviews.length ? (
               reviews.map((review, index) => (
-                <article className="google-review-row" key={`${review.author_name}-${index}`}>
-                  <div className="review-avatar" aria-hidden="true">
+                <article
+                  className="google-review-row"
+                  key={`${review.author_name}-${index}`}
+                >
+                  <div
+                    className="review-avatar"
+                    aria-hidden="true"
+                  >
                     {review.author_name
                       .split(" ")
                       .map((part) => part[0])
                       .join("")
                       .slice(0, 2)}
                   </div>
+
                   <div>
                     <div className="review-row-top">
                       <strong>{review.author_name}</strong>
-                      {review.relative_time_description && <small>{review.relative_time_description}</small>}
+
+                      {review.relative_time_description && (
+                        <small>
+                          {review.relative_time_description}
+                        </small>
+                      )}
                     </div>
-                    <span aria-label={`${review.rating} ${copy.stars}`}>
-                      {"*".repeat(review.rating)}
+
+                    <span
+                      className="review-stars"
+                      aria-label={`${review.rating} ${copy.stars}`}
+                    >
+                      <span aria-hidden="true">
+                        {"★".repeat(review.rating)}
+                      </span>
                     </span>
+
                     <p>{review.text}</p>
                   </div>
                 </article>
               ))
             ) : (
               <p className="google-review-empty">
-                {loaded
-                  ? copy.failed
-                  : copy.loading}
+                {loaded ? copy.failed : copy.loading}
               </p>
             )}
           </div>
