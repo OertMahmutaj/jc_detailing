@@ -1212,24 +1212,22 @@ body {
 }
 
 .public-page-loading {
-  align-items: center;
-  display: flex;
-  flex: 1;
-  justify-content: center;
-  min-height: calc(100dvh - 180px);
+  display: grid;
+  min-height: calc(100svh - var(--header-height, 90px));
+  place-items: center;
   width: 100%;
 }
 
 .public-page-loading-spinner {
-  animation: public-page-loading-spin 700ms linear infinite;
-  border: 2px solid rgba(0, 0, 0, 0.16);
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
   border-top-color: currentColor;
-  height: 26px;
-  width: 26px;
+  border-radius: 50%;
+  animation: public-loading-spin 0.8s linear infinite;
 }
 
-@keyframes public-page-loading-spin {
+@keyframes public-loading-spin {
   to {
     transform: rotate(360deg);
   }
