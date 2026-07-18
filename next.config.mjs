@@ -2,6 +2,9 @@
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
+const supabaseOrigin =
+  "https://ofoackjdiwiawgjmfars.supabase.co";
+
 const contentSecurityPolicy = `
   default-src 'self';
 
@@ -20,6 +23,7 @@ const contentSecurityPolicy = `
     'self'
     data:
     blob:
+    ${supabaseOrigin}
     https://maps.googleapis.com
     https://maps.gstatic.com
     https://www.google.com
@@ -29,7 +33,8 @@ const contentSecurityPolicy = `
 
   media-src
     'self'
-    blob:;
+    blob:
+    ${supabaseOrigin};
 
   font-src
     'self'
@@ -37,6 +42,7 @@ const contentSecurityPolicy = `
 
   connect-src
     'self'
+    ${supabaseOrigin}
     https://maps.googleapis.com
     https://maps.gstatic.com
     https://www.google.com;
