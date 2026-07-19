@@ -1309,6 +1309,33 @@ details p {
   color: #ff9f8f;
 }
 
+.booking-notice {
+  background: rgba(13, 21, 31, 0.94);
+  border: 1px solid rgba(241, 237, 231, 0.16);
+  color: rgba(247, 242, 232, 0.88);
+  grid-column: 1 / -1;
+  line-height: 1.5;
+  margin-top: 14px;
+  padding: 14px 16px;
+  width: 100%;
+}
+
+.booking-notice p {
+  margin: 0;
+}
+
+.booking-notice.error {
+  background: rgba(255, 100, 31, 0.13);
+  border-color: rgba(255, 100, 31, 0.58);
+  color: #fff;
+}
+
+.booking-notice.success {
+  background: rgba(22, 163, 74, 0.13);
+  border-color: rgba(74, 222, 128, 0.46);
+  color: #dcfce7;
+}
+
 .booking-loading,
 .booking-loading-inline {
   align-items: center;
@@ -1616,6 +1643,12 @@ details p {
   cursor: not-allowed;
   opacity: 0.24;
   text-decoration: line-through;
+}
+
+.booking-days button.is-unavailable {
+  border-color: rgba(255, 96, 48, 0.45);
+  color: rgba(247, 242, 232, 0.55);
+  opacity: 0.42;
 }
 
 .booking-days button.is-selected,

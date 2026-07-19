@@ -5,7 +5,7 @@ import {
   ArrowRight,
   CalendarCheck,
   Check,
-  Mail,
+  MessageCircle,
   MapPin,
   ShieldCheck,
   Sparkles,
@@ -31,6 +31,7 @@ import { buildPublicMetadata, homeSeo } from "./seo";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.jcdetailing.ch";
+const whatsappUrl = "https://wa.me/41772683388";
 
 export const metadata: Metadata = buildPublicMetadata("de", {
   path: "/",
@@ -442,8 +443,13 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
                 {copy.contact.booking}
               </LanguageAwareBookingLink>
 
-              <a className="ghost-button" href="mailto:jcdetailinglucerne@gmail.com">
-                <Mail size={18} />
+              <a
+                className="ghost-button"
+                href={whatsappUrl}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <MessageCircle size={18} />
                 {copy.contact.message}
               </a>
             </div>

@@ -3,6 +3,11 @@
 import { Mail, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAdminNotification } from "../../_components/AdminNotificationProvider";
+import {
+  normalizeInvoiceLanguage,
+  translateInvoiceItems,
+  type InvoiceLanguage,
+} from "@/app/lib/invoiceItemTranslations";
 
 interface Item {
   description: string;
@@ -52,6 +57,13 @@ function roundCurrency(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+const defaultItemLabels: Record<InvoiceLanguage, string> = {
+  de: "Zusatzleistung",
+  en: "Additional service",
+  fr: "Service supplémentaire",
+  it: "Servizio aggiuntivo",
+};
+
 function toDateInputValue(value?: Date | string | null) {
   const date = value ? new Date(value) : new Date();
   return Number.isNaN(date.getTime())
@@ -76,9 +88,10 @@ export default function InvoiceEditor({
   onSaved,
 }: InvoiceEditorProps) {
   const { showNotification } = useAdminNotification();
+  const initialLanguage = normalizeInvoiceLanguage(initialData.language);
 
   const [invoiceNumber, setInvoiceNumber] = useState(initialData.invoiceNumber);
-  const [language, setLanguage] = useState(initialData.language || "de");
+  const [language, setLanguage] = useState<InvoiceLanguage>(initialLanguage);
   const [targetEmail, setTargetEmail] = useState(initialData.clientEmail);
   const [recipientName, setRecipientName] = useState(initialData.clientName || "");
   const [clientAddress, setClientAddress] = useState(initialData.clientAddress || "");
@@ -91,22 +104,25 @@ export default function InvoiceEditor({
   const [vatRate, setVatRate] = useState(initialData.vatRate ?? 0);
   const [isSending, setIsSending] = useState(false);
 
-  const [items, setItems] = useState<Item[]>(
-    initialData.items && initialData.items.length > 0
-      ? initialData.items.map((item) => ({
-          description: item.description || "",
-          pricePerUnit: Number(item.pricePerUnit) || 0,
-          quantity: Number(item.quantity) || 1,
-          unit: item.unit || "Stk.",
-        }))
-      : [
-          {
-            description: initialData.serviceName || "Rechnung ohne Buchung",
-            pricePerUnit: initialData.basePrice + initialData.modifierPrice,
-            quantity: 1,
-            unit: "Stk.",
-          },
-        ],
+  const [items, setItems] = useState<Item[]>(() =>
+    translateInvoiceItems(
+      initialData.items && initialData.items.length > 0
+        ? initialData.items.map((item) => ({
+            description: item.description || "",
+            pricePerUnit: Number(item.pricePerUnit) || 0,
+            quantity: Number(item.quantity) || 1,
+            unit: item.unit || "Stk.",
+          }))
+        : [
+            {
+              description: initialData.serviceName || "Rechnung ohne Buchung",
+              pricePerUnit: initialData.basePrice + initialData.modifierPrice,
+              quantity: 1,
+              unit: "Stk.",
+            },
+          ],
+      initialLanguage,
+    ),
   );
 
   const subtotalAmount = roundCurrency(
@@ -129,12 +145,19 @@ export default function InvoiceEditor({
     setItems([
       ...items,
       {
-        description: "Zusatzleistung",
+        description: defaultItemLabels[language],
         pricePerUnit: 0,
         quantity: 1,
         unit: "Stk.",
       },
     ]);
+  }
+
+  function handleLanguageChange(value: string) {
+    const nextLanguage = normalizeInvoiceLanguage(value);
+
+    setLanguage(nextLanguage);
+    setItems((current) => translateInvoiceItems(current, nextLanguage));
   }
 
   function removeItem(index: number) {
@@ -308,7 +331,7 @@ export default function InvoiceEditor({
               Sprache
               <select
                 value={language}
-                onChange={(event) => setLanguage(event.target.value)}
+                onChange={(event) => handleLanguageChange(event.target.value)}
               >
                 <option value="de">Deutsch</option>
                 <option value="en">English</option>

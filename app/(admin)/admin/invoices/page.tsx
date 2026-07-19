@@ -3,6 +3,11 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../_lib/prisma";
 import InvoicesDashboardClient from "./_components/InvoicesDashboardClient";
 import { InvoiceFilters } from "./_components/InvoiceFilters";
+import {
+  invoiceVehicleCategoryDescription,
+  normalizeInvoiceLanguage,
+  translateInvoiceItemDescription,
+} from "@/app/lib/invoiceItemTranslations";
 
 const PAGE_SIZE = 5;
 
@@ -260,7 +265,10 @@ export default async function AdminInvoicesPage({
     draftItems: [
       ...(booking.services.length ? booking.services : [booking.service]).map(
         (service) => ({
-          description: service.name,
+          description: translateInvoiceItemDescription(
+            service.name,
+            normalizeInvoiceLanguage(booking.language),
+          ),
           pricePerUnit: service.basePrice,
           quantity: 1,
           unit: "Stk.",
@@ -269,7 +277,10 @@ export default async function AdminInvoicesPage({
       ...(booking.vehicleCategory.priceModifier > 0
         ? [
             {
-              description: `Fahrzeuggrösse: ${booking.vehicleCategory.name}`,
+              description: invoiceVehicleCategoryDescription(
+                booking.vehicleCategory.name,
+                normalizeInvoiceLanguage(booking.language),
+              ),
               pricePerUnit: booking.vehicleCategory.priceModifier,
               quantity: 1,
               unit: "Stk.",
@@ -277,13 +288,17 @@ export default async function AdminInvoicesPage({
           ]
         : []),
       ...booking.addOns.map((addOn) => ({
-        description: addOn.name,
+        description: translateInvoiceItemDescription(
+          addOn.name,
+          normalizeInvoiceLanguage(booking.language),
+        ),
         pricePerUnit: addOn.price,
         quantity: 1,
         unit: "Stk.",
       })),
     ],
     invoice: booking.invoice,
+    language: booking.language,
     modifierPrice: booking.vehicleCategory.priceModifier,
     promoCode: booking.promoCode?.code || null,
     promoDiscountAmount: booking.promoDiscountAmount,

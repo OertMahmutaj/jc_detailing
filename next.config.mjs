@@ -99,6 +99,20 @@ const nextConfig = {
   serverExternalPackages: ["pdfmake"],
 
   images: {
+    localPatterns: [
+      {
+        pathname: "/**",
+        search: "",
+      },
+      {
+        pathname: "/innenreinigung.webp",
+        search: "?v=20260718",
+      },
+      {
+        pathname: "/aussenreinigung.webp",
+        search: "?v=20260718",
+      },
+    ],
     deviceSizes: [
       480,
       640,

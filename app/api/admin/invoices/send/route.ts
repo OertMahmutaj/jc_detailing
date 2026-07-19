@@ -9,6 +9,7 @@ import {
   ADMIN_SESSION_COOKIE,
   verifyAdminSession,
 } from "@/app/lib/adminSession";
+import { translateInvoiceItems } from "@/app/lib/invoiceItemTranslations";
 
 export const runtime = "nodejs";
 
@@ -91,8 +92,17 @@ async function archiveInvoicePdf(pdfBuffer: Buffer, invoiceNumber: string) {
   return data.publicUrl;
 }
 
-function cleanLanguage(value: unknown): InvoiceLanguage {
-  return value === "en" || value === "fr" || value === "it" ? value : "de";
+function cleanLanguage(value: unknown): InvoiceLanguage | null {
+  if (typeof value !== "string") return null;
+
+  const language = value.toLowerCase();
+
+  return language === "de" ||
+    language === "en" ||
+    language === "fr" ||
+    language === "it"
+    ? language
+    : null;
 }
 
 function invoicePdfLabels(language: InvoiceLanguage) {
@@ -519,8 +529,6 @@ export async function POST(req: Request) {
       unit: cleanText(item.unit, 30) || "Stk.",
     }));
 
-    const language = cleanLanguage(rawLanguage);
-    const t = invoicePdfLabels(language);
     const payment = getPaymentDetails();
 
     const [booking, existingInvoice] = await Promise.all([
@@ -546,12 +554,19 @@ export async function POST(req: Request) {
     }
 
     const promoCode = booking?.promoCode?.code || existingInvoice?.promoCode || null;
+    const language =
+      cleanLanguage(rawLanguage) ||
+      cleanLanguage(booking?.language) ||
+      cleanLanguage(existingInvoice?.language) ||
+      "de";
+    const t = invoicePdfLabels(language);
+    const localizedItems = translateInvoiceItems(items, language);
     const promoDiscountPercent =
       booking?.promoDiscountPercent ??
       existingInvoice?.promoDiscountPercent ??
       0;
     const subtotalAmount = roundCurrency(
-      items.reduce(
+      localizedItems.reduce(
         (sum, item) => sum + item.quantity * item.pricePerUnit,
         0,
       ),
@@ -603,7 +618,7 @@ export async function POST(req: Request) {
     });
 
     await prisma.invoiceItem.createMany({
-      data: items.map((item) => ({
+      data: localizedItems.map((item) => ({
         invoiceId: invoice.id,
         description: item.description,
         quantity: item.quantity,
@@ -649,7 +664,7 @@ export async function POST(req: Request) {
       ],
     ];
 
-    items.forEach((item) => {
+    localizedItems.forEach((item) => {
       const itemTotal = item.quantity * item.pricePerUnit;
 
       tableBody.push([

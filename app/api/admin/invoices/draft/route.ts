@@ -5,6 +5,7 @@ import {
   ADMIN_SESSION_COOKIE,
   verifyAdminSession,
 } from "@/app/lib/adminSession";
+import { translateInvoiceItems } from "@/app/lib/invoiceItemTranslations";
 
 function cleanText(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
@@ -20,6 +21,21 @@ type InvoiceItemInput = {
   quantity: number;
   unit: string;
 };
+
+type InvoiceLanguage = "de" | "en" | "fr" | "it";
+
+function cleanLanguage(value: unknown): InvoiceLanguage | null {
+  if (typeof value !== "string") return null;
+
+  const language = value.toLowerCase();
+
+  return language === "de" ||
+    language === "en" ||
+    language === "fr" ||
+    language === "it"
+    ? language
+    : null;
+}
 
 export async function POST(request: Request) {
   try {
@@ -41,10 +57,7 @@ export async function POST(request: Request) {
     const recipientName = cleanText(body.recipientName, 160);
     const clientAddress = cleanText(body.clientAddress, 400);
     const businessAddress = cleanText(body.businessAddress, 400);
-    const language =
-      body.language === "en" || body.language === "fr" || body.language === "it"
-        ? body.language
-        : "de";
+    const requestedLanguage = cleanLanguage(body.language);
     const vatRate = Number(body.vatRate ?? 0);
     const serviceDate = new Date(`${cleanText(body.serviceDate, 20)}T12:00:00.000Z`);
     const rawItems: unknown[] = Array.isArray(body.items) ? body.items : [];
@@ -113,12 +126,18 @@ export async function POST(request: Request) {
     }
 
     const promoCode = booking?.promoCode?.code || existingInvoice?.promoCode || null;
+    const language =
+      requestedLanguage ||
+      cleanLanguage(booking?.language) ||
+      cleanLanguage(existingInvoice?.language) ||
+      "de";
+    const localizedItems = translateInvoiceItems(items, language);
     const promoDiscountPercent =
       booking?.promoDiscountPercent ??
       existingInvoice?.promoDiscountPercent ??
       0;
     const subtotal = roundCurrency(
-      items.reduce(
+      localizedItems.reduce(
         (sum, item) => sum + item.quantity * item.pricePerUnit,
         0,
       ),
@@ -163,7 +182,7 @@ export async function POST(request: Request) {
 
     await prisma.invoiceItem.deleteMany({ where: { invoiceId: invoice.id } });
     await prisma.invoiceItem.createMany({
-      data: items.map((item) => ({
+      data: localizedItems.map((item) => ({
         ...item,
         invoiceId: invoice.id,
       })),

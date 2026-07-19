@@ -8,7 +8,7 @@ export const services = {
     eyebrow: "Interior detailing",
     short:
       "Tiefenreinigung von Sitzen, Teppichen, Leder, Kunststoff und Scheiben.",
-    image: "/innenreinigung.webp",
+    image: "/innenreinigung.webp?v=20260718",
     includes: [
       "Staubsaugen von Innenraum und Kofferraum",
       "Shampoo- und Fleckenbehandlung",
@@ -28,7 +28,7 @@ export const services = {
     eyebrow: "Exterior detailing",
     short:
       "Schonende Handwäsche, Felgenreinigung, Insektenentfernung und Reifenpflege.",
-    image: "/aussenreinigung.webp",
+    image: "/aussenreinigung.webp?v=20260718",
     includes: [
       "Snow-Foam-Vorwäsche",
       "Schonende Handwäsche",
@@ -76,7 +76,7 @@ export const services = {
       "Politur",
     ],
     process:
-      "Die Keramikversiegelung braucht eine saubere Grundlage: der Lack wird gewaschen, vorbereitet und entfettet. Danach wird die Beschichtung kontrolliert aufgetragen, auspoliert und in Ruhe gepüft, damit Schutz und Optik sauber sitzen.",
+      "Die Keramikversiegelung braucht eine saubere Grundlage: der Lack wird gewaschen, vorbereitet, poliert und anschliessend entfettet. Danach wird die Beschichtung kontrolliert aufgetragen und in Ruhe gepüft, damit Schutz und Optik sauber sitzen.",
     outcome:
       "Die Oberfläche bekommt einen glänzenden, hydrophoben Schutzfilm. Wasser perlt leichter ab, Schmutz haftet weniger stark und die Pflege wird im Alltag einfacher.",
   },

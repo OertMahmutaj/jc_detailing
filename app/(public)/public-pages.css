@@ -599,6 +599,12 @@ body {
   color: var(--public-text);
 }
 
+.page-shell .booking-days button.is-unavailable {
+  border-color: rgba(255, 96, 48, 0.45);
+  color: rgba(245, 248, 255, 0.54);
+  opacity: 0.42;
+}
+
 .page-shell .booking-weekdays {
   color: var(--public-muted);
 }

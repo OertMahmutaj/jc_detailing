@@ -2,6 +2,11 @@
 
 import { BookingStatus, Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import {
+  invoiceVehicleCategoryDescription,
+  normalizeInvoiceLanguage,
+  translateInvoiceItemDescription,
+} from "@/app/lib/invoiceItemTranslations";
 import { prisma } from "../_lib/prisma";
 
 type InvoiceLanguage = "de" | "en" | "fr" | "it";
@@ -1163,6 +1168,8 @@ export async function updateAdminBooking(
       });
 
       if (currentBooking.invoice) {
+        const invoiceLanguage = normalizeInvoiceLanguage(currentBooking.language);
+
         await tx.invoice.update({
           where: {
             id: currentBooking.invoice.id,
@@ -1181,7 +1188,10 @@ export async function updateAdminBooking(
         await tx.invoiceItem.createMany({
           data: [
             ...allSelectedServices.map((service) => ({
-              description: service.name,
+              description: translateInvoiceItemDescription(
+                service.name,
+                invoiceLanguage,
+              ),
               invoiceId: currentBooking.invoice!.id,
               pricePerUnit: service.basePrice,
               quantity: 1,
@@ -1190,7 +1200,10 @@ export async function updateAdminBooking(
             ...(vehicleCategory.priceModifier > 0
               ? [
                   {
-                    description: `Fahrzeuggroesse: ${vehicleCategory.name}`,
+                    description: invoiceVehicleCategoryDescription(
+                      vehicleCategory.name,
+                      invoiceLanguage,
+                    ),
                     invoiceId: currentBooking.invoice!.id,
                     pricePerUnit: vehicleCategory.priceModifier,
                     quantity: 1,
@@ -1199,7 +1212,10 @@ export async function updateAdminBooking(
                 ]
               : []),
             ...addOns.map((addOn) => ({
-              description: addOn.name,
+              description: translateInvoiceItemDescription(
+                addOn.name,
+                invoiceLanguage,
+              ),
               invoiceId: currentBooking.invoice!.id,
               pricePerUnit: addOn.price,
               quantity: 1,

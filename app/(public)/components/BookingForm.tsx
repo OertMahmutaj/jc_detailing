@@ -12,7 +12,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
   bookingAddOnCopy,
@@ -53,6 +53,17 @@ type SubmittedBookingSummary = {
   services: string;
   vehicleCategory: string;
   vehicleModel: string;
+};
+
+type BookingResponsePayload = {
+  error?: string;
+  message?: string;
+  pricing?: {
+    discountAmount: number;
+    discountPercent: number;
+    promoCode: string | null;
+    total: number;
+  };
 };
 
 const addOnDescriptions: Record<string, string> = {
@@ -358,7 +369,14 @@ export function BookingForm() {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [blockedSlots, setBlockedSlots] = useState<string[]>([]);
+  const [fullyBookedDates, setFullyBookedDates] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const formTopRef = useRef<HTMLFormElement | null>(null);
+  const nextButtonRef = useRef<HTMLButtonElement | null>(null);
+  const timeSlotsRef = useRef<HTMLDivElement | null>(null);
+  const submitButtonRef = useRef<HTMLButtonElement | null>(null);
+  const noticeRef = useRef<HTMLDivElement | null>(null);
+  const guidedToSubmitRef = useRef(false);
 
   const totalDuration = useMemo(() => {
     const serviceDuration = selectedServices.reduce((sum, service) => sum + service.durationMinutes, 0);
@@ -369,6 +387,78 @@ export function BookingForm() {
   const displayAddOn = (name: string) => bookingAddOnCopy[currentLanguage][name] ?? { name, description: "" };
   const displayVehicle = (name: string) => bookingVehicleCopy[currentLanguage][name];
   const localizedDetail = (name: string) => getBookingServiceDetail(currentLanguage, name, serviceDetails[name]);
+
+  function guideToElement(target: HTMLElement | null, block: ScrollLogicalPosition = "center") {
+    if (!target) return;
+
+    window.setTimeout(() => {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        target.scrollIntoView({ block, inline: "nearest" });
+        return;
+      }
+
+      const targetRect = target.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const startY = window.scrollY;
+      const root = document.documentElement;
+      const previousScrollBehavior = root.style.scrollBehavior;
+      let targetY = targetRect.top + startY - (viewportHeight - targetRect.height) / 2;
+
+      if (block === "start") {
+        targetY = targetRect.top + startY - 92;
+      }
+
+      const distance = Math.max(targetY, 0) - startY;
+      const duration = 700;
+      const startTime = performance.now();
+      root.style.scrollBehavior = "auto";
+
+      function step(now: number) {
+        const progress = Math.min((now - startTime) / duration, 1);
+
+        window.scrollTo({ top: startY + distance * progress, behavior: "auto" });
+
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        } else {
+          root.style.scrollBehavior = previousScrollBehavior;
+        }
+      }
+
+      window.requestAnimationFrame(step);
+    }, 80);
+  }
+
+  function guideToTimeSlots() {
+    window.setTimeout(() => guideToElement(timeSlotsRef.current, "start"), 120);
+  }
+
+  function showBookingNotice(nextStatus: "success" | "error", nextMessage: string) {
+    setStatus(nextStatus);
+    setMessage(nextMessage);
+    window.setTimeout(() => guideToElement(noticeRef.current), 0);
+  }
+
+  function bookingResponseMessage(data: BookingResponsePayload) {
+    return data.message || data.error || copy.requestError;
+  }
+
+  function handleDetailsInput(event: FormEvent<HTMLFormElement>) {
+    if (step !== 4 || guidedToSubmitRef.current) return;
+
+    const requiredFields = Array.from(
+      event.currentTarget.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+        "input[required], textarea[required], select[required]",
+      ),
+    );
+
+    const detailsAreComplete = requiredFields.every((field) => field.value.trim().length > 0 && field.checkValidity());
+
+    if (detailsAreComplete) {
+      guidedToSubmitRef.current = true;
+      guideToElement(submitButtonRef.current);
+    }
+  }
 
   const availableAddOns = useMemo(() => {
     const allowedNames = new Set(selectedServices.flatMap((service) => serviceAddOns[service.name] ?? []));
@@ -427,6 +517,68 @@ export function BookingForm() {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (totalDuration <= 0) {
+      setFullyBookedDates([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const year = currentMonthDate.getFullYear();
+    const month = (currentMonthDate.getMonth() + 1).toString().padStart(2, "0");
+
+    async function checkFullyBookedDays() {
+      try {
+        const params = new URLSearchParams({
+          month: `${year}-${month}`,
+          durationMinutes: String(totalDuration),
+        });
+
+        const res = await fetch(`/api/availability?${params.toString()}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          throw new Error(`Availability month request failed: ${res.status}`);
+        }
+
+        const data = (await res.json()) as {
+          fullyBookedDates?: string[];
+        };
+
+        setFullyBookedDates(
+          Array.isArray(data.fullyBookedDates) ? data.fullyBookedDates : [],
+        );
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        console.error(
+          "Ausgebuchte Tage konnten nicht geladen werden:",
+          error,
+        );
+
+        setFullyBookedDates([]);
+      }
+    }
+
+    checkFullyBookedDays();
+
+    return () => {
+      controller.abort();
+    };
+  }, [currentMonthDate, totalDuration]);
+
+  useEffect(() => {
+    if (selectedDate && fullyBookedDates.includes(selectedDate)) {
+      setSelectedDate("");
+      setSelectedTime("");
+      setBlockedSlots([]);
+    }
+  }, [fullyBookedDates, selectedDate]);
 
   useEffect(() => {
     if (!selectedDate || totalDuration <= 0) {
@@ -515,13 +667,25 @@ export function BookingForm() {
     );
   }, [availableAddOns]);
 
+  useEffect(() => {
+    if (step !== 4) {
+      guidedToSubmitRef.current = false;
+    }
+  }, [step]);
+
   function toggleService(service: Service) {
+    const isAdding = !selectedServices.some((item) => item.id === service.id);
+
     setSelectedServices((current) =>
       current.some((item) => item.id === service.id)
         ? current.filter((item) => item.id !== service.id)
         : [...current, service]
     );
     setSelectedTime("");
+
+    if (isAdding) {
+      guideToElement(nextButtonRef.current);
+    }
   }
 
   function handleAddOnToggle(addOn: AddOn) {
@@ -542,17 +706,18 @@ export function BookingForm() {
 
   function handleNextStep() {
     if (step === 0 && selectedServices.length === 0) {
-      setMessage(copy.chooseServiceError);
+      showBookingNotice("error", copy.chooseServiceError);
       return;
     }
 
     if (step === 3 && (!selectedDate || !selectedTime)) {
-      setMessage(copy.chooseDateError);
+      showBookingNotice("error", copy.chooseDateError);
       return;
     }
 
     setMessage("");
     setStep(step + 1);
+    guideToElement(formTopRef.current, "start");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -587,18 +752,16 @@ export function BookingForm() {
         body: JSON.stringify(fullPayload),
       });
 
-      const data = (await response.json()) as {
-        message?: string;
-        pricing?: {
-          discountAmount: number;
-          discountPercent: number;
-          promoCode: string | null;
-          total: number;
-        };
-      };
+      let data: BookingResponsePayload = {};
+
+      try {
+        data = (await response.json()) as BookingResponsePayload;
+      } catch {
+        data = {};
+      }
 
       if (!response.ok) {
-        throw new Error(currentLanguage === "de" ? (data.message ?? copy.requestError) : copy.requestError);
+        throw new Error(bookingResponseMessage(data));
       }
 
       const endDateTime = new Date(
@@ -629,8 +792,7 @@ export function BookingForm() {
       setMessage("");
       setStep(0);
     } catch (error) {
-      setStatus("error");
-      setMessage(error instanceof Error ? error.message : copy.requestError);
+      showBookingNotice("error", error instanceof Error ? error.message : copy.requestError);
     }
   }
 
@@ -763,7 +925,7 @@ export function BookingForm() {
 
   return (
     <>
-      <form className="booking-form" onSubmit={handleSubmit}>
+      <form className="booking-form" ref={formTopRef} onInput={handleDetailsInput} onSubmit={handleSubmit}>
         <input
           aria-hidden="true"
           autoComplete="off"
@@ -842,7 +1004,10 @@ export function BookingForm() {
                   className={selectedCategory?.id === category.id ? "is-selected" : ""}
                   key={category.id}
                   type="button"
-                  onClick={() => setSelectedCategory(category)}
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    guideToElement(nextButtonRef.current);
+                  }}
                 >
                   <span
                     className="booking-vehicle-image"
@@ -949,16 +1114,24 @@ export function BookingForm() {
                     const dateString = `${year}-${(month + 1).toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
                     const isPast = cellDate < todayObj;
                     const isSelected = selectedDate === dateString;
+                    const isFullyBooked = fullyBookedDates.includes(dateString);
 
                     cells.push(
                       <button
-                        className={isSelected ? "is-selected" : ""}
-                        disabled={isPast}
+                        className={[
+                          isSelected ? "is-selected" : "",
+                          isFullyBooked ? "is-unavailable" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        disabled={isPast || isFullyBooked}
                         key={`day-${day}`}
+                        title={isFullyBooked ? "Ausgebucht" : undefined}
                         type="button"
                         onClick={() => {
                           setSelectedDate(dateString);
                           setSelectedTime("");
+                          guideToTimeSlots();
                         }}
                       >
                         {day}
@@ -972,7 +1145,7 @@ export function BookingForm() {
             </div>
 
             {selectedDate && (
-              <div className="booking-time-block">
+              <div className="booking-time-block" ref={timeSlotsRef}>
                 <p>
                   {copy.availableAt} {new Date(`${selectedDate}T12:00:00`).toLocaleDateString(intlLocales[currentLanguage])} {copy.forAbout}{" "}
                   {formatDuration(totalDuration)}:
@@ -993,7 +1166,9 @@ export function BookingForm() {
                           disabled={isBlocked}
                           key={slot}
                           type="button"
-                          onClick={() => setSelectedTime(slot)}
+                          onClick={() => {
+                            setSelectedTime(slot);
+                          }}
                         >
                           {slot}
                         </button>
@@ -1066,11 +1241,11 @@ export function BookingForm() {
             )}
 
             {step < 4 ? (
-              <button className="booking-submit" type="button" onClick={handleNextStep}>
+              <button className="booking-submit" ref={nextButtonRef} type="button" onClick={handleNextStep}>
                 {copy.next} <ChevronRight size={16} />
               </button>
             ) : (
-              <button className="booking-submit" type="submit" disabled={status === "loading"}>
+              <button className="booking-submit" ref={submitButtonRef} type="submit" disabled={status === "loading"}>
                 {status === "loading" ? (
                   <>
                     <CalendarCheck size={18} /> {copy.sending}
@@ -1086,8 +1261,13 @@ export function BookingForm() {
         </div>
 
         {message && (
-          <div className="booking-field booking-field-wide">
-            <p className={`booking-status ${status}`}>{message}</p>
+          <div
+            aria-live="polite"
+            className={`booking-notice ${status}`}
+            ref={noticeRef}
+            role={status === "error" ? "alert" : "status"}
+          >
+            <p>{message}</p>
           </div>
         )}
       </form>

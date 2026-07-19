@@ -43,6 +43,7 @@ type InvoiceBooking = {
     totalAmount: number;
     vatRate?: number;
   } | null;
+  language?: string | null;
   modifierPrice: number;
   promoCode?: string | null;
   promoDiscountAmount: number;
@@ -358,7 +359,10 @@ export default function InvoicesDashboardClient({
                 issuedAt: selectedBooking.invoice?.issuedAt,
                 items:
                   selectedBooking.invoice?.items || selectedBooking.draftItems,
-                language: selectedBooking.invoice?.language || "de",
+                language:
+                  selectedBooking.invoice?.language ||
+                  selectedBooking.language ||
+                  "de",
                 modifierPrice: selectedBooking.modifierPrice,
                 promoCode:
                   selectedBooking.invoice?.promoCode ||

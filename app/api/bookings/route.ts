@@ -1,5 +1,10 @@
-import { prisma } from "../../(admin)/admin/_lib/prisma";
+﻿import { prisma } from "../../(admin)/admin/_lib/prisma";
 import { Prisma } from "@prisma/client";
+import {
+  calculateServerBookingEnd,
+  getServerScheduleHorizonEnd,
+  isDateInsideScheduleBlock,
+} from "../../lib/bookingServerTime";
 
 const ownerEmail = process.env.BOOKING_OWNER_EMAIL ?? "oert64@gmail.com";
 const fromEmail =
@@ -37,6 +42,108 @@ type BookingPayload = {
 };
 
 type InvoiceLanguage = "de" | "en" | "fr" | "it";
+type BookingApiMessageKey =
+  | "addOnNotFound"
+  | "invalidAddOn"
+  | "invalidContact"
+  | "invalidDate"
+  | "invalidTime"
+  | "missingChoice"
+  | "promoInvalid"
+  | "promoPerClient"
+  | "promoRetry"
+  | "promoUsedUp"
+  | "rateLimited"
+  | "requestFailed"
+  | "requestSent"
+  | "serviceNotFound"
+  | "slotTaken"
+  | "vehicleNotFound";
+
+const BOOKING_API_MESSAGES: Record<
+  InvoiceLanguage,
+  Record<BookingApiMessageKey, string>
+> = {
+  de: {
+    addOnNotFound: "Eine Zusatzleistung wurde nicht gefunden.",
+    invalidAddOn: "Eine Zusatzleistung passt nicht zu den ausgewﾃ､hlten Leistungen.",
+    invalidContact: "Bitte prﾃｼfe Name, E-Mail, Telefon, Adresse und Fahrzeugmodell.",
+    invalidDate: "Bitte wﾃ､hle einen gﾃｼltigen Termin in der Zukunft.",
+    invalidTime: "Bitte wﾃ､hle eine Uhrzeit zwischen 08:00 und 13:30.",
+    missingChoice: "Bitte wﾃ､hle mindestens eine Leistung und eine Fahrzeuggrﾃｶsse.",
+    promoInvalid: "Dieser Promo-Code ist ungﾃｼltig oder abgelaufen.",
+    promoPerClient: "Du hast diesen Promo-Code bereits maximal oft verwendet.",
+    promoRetry: "Der Promo-Code oder Termin wurde gleichzeitig verwendet. Bitte versuche es erneut.",
+    promoUsedUp: "Dieser Promo-Code wurde bereits vollstﾃ､ndig eingelﾃｶst.",
+    rateLimited: "Zu viele Anfragen. Bitte versuche es in einigen Minuten erneut.",
+    requestFailed: "Fehler beim Verarbeiten der Anfrage.",
+    requestSent: "Anfrage gesendet.",
+    serviceNotFound: "Eine ausgewﾃ､hlte Leistung wurde nicht gefunden.",
+    slotTaken: "Dieser Termin ist leider gerade vergeben worden. Bitte wﾃ､hle eine andere Zeit.",
+    vehicleNotFound: "Die Fahrzeuggrﾃｶsse wurde nicht gefunden.",
+  },
+  en: {
+    addOnNotFound: "One selected add-on could not be found.",
+    invalidAddOn: "One selected add-on does not match the selected services.",
+    invalidContact: "Please check your name, email, phone, address, and vehicle model.",
+    invalidDate: "Please choose a valid appointment in the future.",
+    invalidTime: "Please choose a time between 08:00 and 13:30.",
+    missingChoice: "Please choose at least one service and a vehicle size.",
+    promoInvalid: "This promo code is invalid or has expired.",
+    promoPerClient: "You have already used this promo code the maximum number of times.",
+    promoRetry: "The promo code or appointment was used at the same time. Please try again.",
+    promoUsedUp: "This promo code has already been fully used.",
+    rateLimited: "Too many requests. Please try again in a few minutes.",
+    requestFailed: "The request could not be processed.",
+    requestSent: "Request sent.",
+    serviceNotFound: "One selected service could not be found.",
+    slotTaken: "This appointment has just been taken. Please choose another time.",
+    vehicleNotFound: "The vehicle size could not be found.",
+  },
+  fr: {
+    addOnNotFound: "Une option sﾃｩlectionnﾃｩe est introuvable.",
+    invalidAddOn: "Une option sﾃｩlectionnﾃｩe ne correspond pas aux services choisis.",
+    invalidContact: "Veuillez vﾃｩrifier le nom, l'e-mail, le tﾃｩlﾃｩphone, l'adresse et le modﾃｨle du vﾃｩhicule.",
+    invalidDate: "Veuillez choisir un rendez-vous valide dans le futur.",
+    invalidTime: "Veuillez choisir une heure entre 08:00 et 13:30.",
+    missingChoice: "Veuillez choisir au moins un service et une taille de vﾃｩhicule.",
+    promoInvalid: "Ce code promo est invalide ou a expirﾃｩ.",
+    promoPerClient: "Vous avez dﾃｩjﾃ utilisﾃｩ ce code promo le nombre maximal de fois.",
+    promoRetry: "Le code promo ou le rendez-vous a ﾃｩtﾃｩ utilisﾃｩ en mﾃｪme temps. Veuillez rﾃｩessayer.",
+    promoUsedUp: "Ce code promo a dﾃｩjﾃ ﾃｩtﾃｩ entiﾃｨrement utilisﾃｩ.",
+    rateLimited: "Trop de demandes. Veuillez rﾃｩessayer dans quelques minutes.",
+    requestFailed: "La demande n'a pas pu ﾃｪtre traitﾃｩe.",
+    requestSent: "Demande envoyﾃｩe.",
+    serviceNotFound: "Un service sﾃｩlectionnﾃｩ est introuvable.",
+    slotTaken: "Ce rendez-vous vient d'ﾃｪtre rﾃｩservﾃｩ. Veuillez choisir une autre heure.",
+    vehicleNotFound: "La taille du vﾃｩhicule est introuvable.",
+  },
+  it: {
+    addOnNotFound: "Un extra selezionato non ﾃｨ stato trovato.",
+    invalidAddOn: "Un extra selezionato non corrisponde ai servizi scelti.",
+    invalidContact: "Controlla nome, e-mail, telefono, indirizzo e modello del veicolo.",
+    invalidDate: "Scegli un appuntamento valido nel futuro.",
+    invalidTime: "Scegli un orario tra le 08:00 e le 13:30.",
+    missingChoice: "Scegli almeno un servizio e una dimensione del veicolo.",
+    promoInvalid: "Questo codice promo non ﾃｨ valido o ﾃｨ scaduto.",
+    promoPerClient: "Hai giﾃ usato questo codice promo il numero massimo di volte.",
+    promoRetry: "Il codice promo o l'appuntamento ﾃｨ stato usato nello stesso momento. Riprova.",
+    promoUsedUp: "Questo codice promo ﾃｨ giﾃ stato utilizzato completamente.",
+    rateLimited: "Troppe richieste. Riprova tra qualche minuto.",
+    requestFailed: "La richiesta non puﾃｲ essere elaborata.",
+    requestSent: "Richiesta inviata.",
+    serviceNotFound: "Un servizio selezionato non ﾃｨ stato trovato.",
+    slotTaken: "Questo appuntamento ﾃｨ appena stato prenotato. Scegli un altro orario.",
+    vehicleNotFound: "La dimensione del veicolo non ﾃｨ stata trovata.",
+  },
+};
+
+function bookingApiMessage(
+  language: InvoiceLanguage,
+  key: BookingApiMessageKey,
+) {
+  return BOOKING_API_MESSAGES[language][key];
+}
 
 function cleanText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return "";
@@ -69,7 +176,11 @@ function roundCurrency(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-class PromoCodeValidationError extends Error {}
+class PromoCodeValidationError extends Error {
+  constructor(readonly key: BookingApiMessageKey) {
+    super(key);
+  }
+}
 
 function getClientIp(request: Request) {
   const forwardedFor = request.headers
@@ -177,7 +288,7 @@ function formatEmailTimeRange(
   start: Date,
   end: Date,
 ) {
-  const range = `${formatEmailTime(start)}–${formatEmailTime(end)}`;
+  const range = `${formatEmailTime(start)}窶・{formatEmailTime(end)}`;
 
   return language === "de" ? `${range} Uhr` : range;
 }
@@ -198,25 +309,25 @@ function bookingRequestCopy(language: InvoiceLanguage) {
       badge: "Terminanfrage erhalten",
       subject: "JC Detailing - Terminanfrage erhalten",
       intro:
-        "Danke für deine Anfrage bei JC Detailing. Deine Terminanfrage ist bei uns eingegangen.",
+        "Danke fﾃｼr deine Anfrage bei JC Detailing. Deine Terminanfrage ist bei uns eingegangen.",
       notice:
-        "Wichtig: Der Termin ist noch nicht bestätigt. Wir prüfen deine Anfrage und senden dir so schnell wie möglich eine separate Terminbestätigung per E-Mail.",
+        "Wichtig: Der Termin ist noch nicht bestﾃ､tigt. Wir prﾃｼfen deine Anfrage und senden dir so schnell wie mﾃｶglich eine separate Terminbestﾃ､tigung per E-Mail.",
       labels: {
         date: "Datum",
         time: "Uhrzeit",
         services: "Leistung",
         vehicle: "Fahrzeug",
-        category: "Fahrzeuggrösse",
+        category: "Fahrzeuggrﾃｶsse",
         addOns: "Zusatzleistungen",
-        duration: "Geschätzte Dauer",
+        duration: "Geschﾃ､tzte Dauer",
         name: "Name",
         email: "E-Mail",
         phone: "Telefon",
         notes: "Hinweise",
       },
-      greeting: "Freundliche Grüsse",
+      greeting: "Freundliche Grﾃｼsse",
       question:
-        "Bei Fragen oder Änderungen erreichst du uns per Telefon, WhatsApp oder E-Mail.",
+        "Bei Fragen oder ﾃ・derungen erreichst du uns per Telefon, WhatsApp oder E-Mail.",
     },
     en: {
       badge: "Request received",
@@ -243,28 +354,28 @@ function bookingRequestCopy(language: InvoiceLanguage) {
         "For questions or changes, you can reach us by phone, WhatsApp or email.",
     },
     fr: {
-      badge: "Demande reçue",
-      subject: "JC Detailing - Demande de rendez-vous reçue",
+      badge: "Demande reﾃｧue",
+      subject: "JC Detailing - Demande de rendez-vous reﾃｧue",
       intro:
-        "Merci pour votre demande chez JC Detailing. Nous avons bien reçu votre demande de rendez-vous.",
+        "Merci pour votre demande chez JC Detailing. Nous avons bien reﾃｧu votre demande de rendez-vous.",
       notice:
-        "Important : le rendez-vous n’est pas encore confirmé. Nous vérifions votre demande et vous enverrons une confirmation séparée par e-mail dès que possible.",
+        "Important : le rendez-vous n窶册st pas encore confirmﾃｩ. Nous vﾃｩrifions votre demande et vous enverrons une confirmation sﾃｩparﾃｩe par e-mail dﾃｨs que possible.",
       labels: {
         date: "Date",
         time: "Heure",
         services: "Service",
-        vehicle: "Véhicule",
-        category: "Taille du véhicule",
-        addOns: "Services supplémentaires",
-        duration: "Durée estimée",
+        vehicle: "Vﾃｩhicule",
+        category: "Taille du vﾃｩhicule",
+        addOns: "Services supplﾃｩmentaires",
+        duration: "Durﾃｩe estimﾃｩe",
         name: "Nom",
         email: "E-mail",
-        phone: "Téléphone",
+        phone: "Tﾃｩlﾃｩphone",
         notes: "Remarques",
       },
       greeting: "Meilleures salutations",
       question:
-        "Pour toute question ou modification, vous pouvez nous contacter par téléphone, WhatsApp ou e-mail.",
+        "Pour toute question ou modification, vous pouvez nous contacter par tﾃｩlﾃｩphone, WhatsApp ou e-mail.",
     },
     it: {
       badge: "Richiesta ricevuta",
@@ -272,7 +383,7 @@ function bookingRequestCopy(language: InvoiceLanguage) {
       intro:
         "Grazie per la tua richiesta presso JC Detailing. Abbiamo ricevuto la tua richiesta di appuntamento.",
       notice:
-        "Importante: l’appuntamento non è ancora confermato. Controlleremo la tua richiesta e ti invieremo una conferma separata via e-mail il prima possibile.",
+        "Importante: l窶兮ppuntamento non ﾃｨ ancora confermato. Controlleremo la tua richiesta e ti invieremo una conferma separata via e-mail il prima possibile.",
       labels: {
         date: "Data",
         time: "Orario",
@@ -385,7 +496,7 @@ function bookingRequestReceivedEmail(
                     </div>
 
                     <div style="margin-top:4px;font-size:12px;color:#6b6256;">
-                      Luzern · Wauwil · Switzerland
+                      Luzern ﾂｷ Wauwil ﾂｷ Switzerland
                     </div>
 
                     <div style="display:inline-block;margin-top:20px;padding:7px 12px;border-radius:999px;background:#f1d675;color:#111111;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">
@@ -429,7 +540,7 @@ function bookingRequestReceivedEmail(
 
                 <tr>
                   <td style="padding:18px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;line-height:1.7;text-align:center;">
-                    JC Detailing · Sternmatt 4, 6242 Wauwil · +41 77 268 33 88 · jcdetailinglucerne@gmail.com
+                    JC Detailing ﾂｷ Sternmatt 4, 6242 Wauwil ﾂｷ +41 77 268 33 88 ﾂｷ jcdetailinglucerne@gmail.com
                   </td>
                 </tr>
               </table>
@@ -474,12 +585,12 @@ function adminBookingEmail({
     ["E-Mail", clientEmail],
     ["Telefon", clientPhone],
     ["Datum", formatEmailDate(dateTime)],
-    ["Uhrzeit", `${formatEmailTime(dateTime)}–${formatEmailTime(endTime)} Uhr`],
+    ["Uhrzeit", `${formatEmailTime(dateTime)}窶・{formatEmailTime(endTime)} Uhr`],
     ["Leistung", services],
     ["Fahrzeug", vehicleModel],
-    ["Fahrzeuggrösse", vehicleCategory],
+    ["Fahrzeuggrﾃｶsse", vehicleCategory],
     ["Zusatzleistungen", addOns],
-    ["Geschätzte Dauer", formatEmailDuration(durationMinutes)],
+    ["Geschﾃ､tzte Dauer", formatEmailDuration(durationMinutes)],
   ];
 
   if (notes?.trim()) {
@@ -510,9 +621,9 @@ function adminBookingEmail({
   const text =
     `${subject}\n\n` +
     `${detailsText}\n\n` +
-    `Buchung öffnen: ${bookingUrl}\n` +
-    `Bestätigen: ${confirmUrl}\n` +
-    `Termin ändern: ${rescheduleUrl}\n` +
+    `Buchung ﾃｶffnen: ${bookingUrl}\n` +
+    `Bestﾃ､tigen: ${confirmUrl}\n` +
+    `Termin ﾃ､ndern: ${rescheduleUrl}\n` +
     `Stornieren: ${cancelUrl}`;
 
   const buttonStyle =
@@ -541,7 +652,7 @@ function adminBookingEmail({
                     </h1>
 
                     <p style="margin:0 auto;max-width:460px;color:#4b5563;font-size:15px;line-height:1.7;">
-                      Eine neue Terminanfrage wurde über die Website eingereicht.
+                      Eine neue Terminanfrage wurde ﾃｼber die Website eingereicht.
                     </p>
                   </td>
                 </tr>
@@ -552,12 +663,12 @@ function adminBookingEmail({
                       <tr>
                         <td style="padding:0 6px 10px 0;width:50%;">
                           <a href="${bookingUrl}" style="${buttonStyle}background:#f15a24;color:#ffffff;">
-                            Buchung öffnen
+                            Buchung ﾃｶffnen
                           </a>
                         </td>
                         <td style="padding:0 0 10px 6px;width:50%;">
                           <a href="${confirmUrl}" style="${buttonStyle}background:#dcfce7;color:#166534;border:1px solid #86efac;">
-                            Bestätigen
+                            Bestﾃ､tigen
                           </a>
                         </td>
                       </tr>
@@ -565,7 +676,7 @@ function adminBookingEmail({
                       <tr>
                         <td style="padding:0 6px 0 0;width:50%;">
                           <a href="${rescheduleUrl}" style="${buttonStyle}background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;">
-                            Termin ändern
+                            Termin ﾃ､ndern
                           </a>
                         </td>
                         <td style="padding:0 0 0 6px;width:50%;">
@@ -578,7 +689,7 @@ function adminBookingEmail({
 
                     <div style="margin:0 0 24px;padding:16px;border-radius:12px;background:#fff8db;border:1px solid #f1d675;">
                       <p style="margin:0;color:#3f3520;font-size:14px;line-height:1.7;">
-                        Die Buttons öffnen die Admin-Seite. Die Buchung wird nicht direkt aus der E-Mail geändert.
+                        Die Buttons ﾃｶffnen die Admin-Seite. Die Buchung wird nicht direkt aus der E-Mail geﾃ､ndert.
                       </p>
                     </div>
 
@@ -590,7 +701,7 @@ function adminBookingEmail({
 
                 <tr>
                   <td style="padding:18px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;line-height:1.7;text-align:center;">
-                    JC Detailing Admin · ${escapeHtml(bookingId)}
+                    JC Detailing Admin ﾂｷ ${escapeHtml(bookingId)}
                   </td>
                 </tr>
               </table>
@@ -654,23 +765,23 @@ async function sendEmail({
 }
 
 export async function POST(request: Request) {
+  let responseLanguage: InvoiceLanguage = "de";
+
   try {
+    const body = (await request.json()) as BookingPayload;
+    const language = cleanLanguage(body.language);
+    responseLanguage = language;
     const clientIp = getClientIp(request);
 
     if (isRateLimited(clientIp)) {
       return Response.json(
-        {
-          message:
-            "Zu viele Anfragen. Bitte versuche es in einigen Minuten erneut.",
-        },
+        { message: bookingApiMessage(language, "rateLimited") },
         { status: 429 },
       );
     }
 
-    const body = (await request.json()) as BookingPayload;
-
     if (cleanText(body.website, 120)) {
-      return Response.json({ message: "Anfrage gesendet." });
+      return Response.json({ message: bookingApiMessage(language, "requestSent") });
     }
 
     const name = cleanText(body.name, 100);
@@ -680,7 +791,6 @@ export async function POST(request: Request) {
     const vehicleModel = cleanText(body.vehicleModel, 120);
     const notes = cleanText(body.notes, 1200);
     const vehicleCategoryId = cleanText(body.vehicleCategoryId, 80);
-    const language = cleanLanguage(body.language);
     const requestedPromoCode = normalizePromoCode(body.promoCode);
     const addOnIds = cleanIdArray(body.addOnIds);
     const serviceIds = cleanIdArray(body.serviceIds).length
@@ -693,7 +803,7 @@ export async function POST(request: Request) {
 
     if (!name || !emailPattern.test(email) || !phone || !address || !vehicleModel) {
       return Response.json(
-        { message: "Bitte prüfe Name, E-Mail, Telefon, Adresse und Fahrzeugmodell." },
+        { message: bookingApiMessage(language, "invalidContact") },
         { status: 400 },
       );
     }
@@ -704,7 +814,7 @@ export async function POST(request: Request) {
       startBookingDate.getTime() <= Date.now()
     ) {
       return Response.json(
-        { message: "Bitte wähle einen gültigen Termin in der Zukunft." },
+        { message: bookingApiMessage(language, "invalidDate") },
         { status: 400 },
       );
     }
@@ -713,17 +823,14 @@ export async function POST(request: Request) {
 
     if (startMinutes < 8 * 60 || startMinutes > 13 * 60 + 30) {
       return Response.json(
-        { message: "Bitte waehle eine Uhrzeit zwischen 08:00 und 13:30." },
+        { message: bookingApiMessage(language, "invalidTime") },
         { status: 400 },
       );
     }
 
     if (!vehicleCategoryId || serviceIds.length === 0) {
       return Response.json(
-        {
-          message:
-            "Bitte wähle mindestens eine Leistung und eine Fahrzeuggrösse.",
-        },
+        { message: bookingApiMessage(language, "missingChoice") },
         { status: 400 },
       );
     }
@@ -740,21 +847,21 @@ export async function POST(request: Request) {
 
     if (dbServices.length !== uniqueServiceIds.length) {
       return Response.json(
-        { message: "Eine ausgewählte Leistung wurde nicht gefunden." },
+        { message: bookingApiMessage(language, "serviceNotFound") },
         { status: 400 },
       );
     }
 
     if (!dbCategory) {
       return Response.json(
-        { message: "Die Fahrzeuggrösse wurde nicht gefunden." },
+        { message: bookingApiMessage(language, "vehicleNotFound") },
         { status: 400 },
       );
     }
 
     if (dbAddOns.length !== uniqueAddOnIds.length) {
       return Response.json(
-        { message: "Eine Zusatzleistung wurde nicht gefunden." },
+        { message: bookingApiMessage(language, "addOnNotFound") },
         { status: 400 },
       );
     }
@@ -775,10 +882,7 @@ export async function POST(request: Request) {
 
     if (hasInvalidAddOn) {
       return Response.json(
-        {
-          message:
-            "Eine Zusatzleistung passt nicht zu den ausgewählten Leistungen.",
-        },
+        { message: bookingApiMessage(language, "invalidAddOn") },
         { status: 400 },
       );
     }
@@ -792,9 +896,35 @@ export async function POST(request: Request) {
       0,
     );
     const totalDuration = baseDuration + addOnsDuration;
-    const endBookingDate = new Date(
-      startBookingDate.getTime() + totalDuration * 60000,
+    const scheduleHorizonEnd = getServerScheduleHorizonEnd(
+      startBookingDate,
+      totalDuration,
     );
+    const availabilityBlocks = await prisma.availabilityBlock.findMany({
+      where: {
+        startTime: { lt: scheduleHorizonEnd },
+        endTime: { gt: startBookingDate },
+      },
+      select: {
+        startTime: true,
+        endTime: true,
+      },
+    });
+    const endBookingDate = calculateServerBookingEnd(
+      startBookingDate,
+      totalDuration,
+      availabilityBlocks,
+    );
+
+    if (
+      !endBookingDate ||
+      isDateInsideScheduleBlock(startBookingDate, availabilityBlocks)
+    ) {
+      return Response.json(
+        { message: bookingApiMessage(language, "slotTaken") },
+        { status: 400 },
+      );
+    }
 
     const conflictingBooking = await prisma.booking.findFirst({
       where: {
@@ -804,19 +934,9 @@ export async function POST(request: Request) {
       },
     });
 
-    const conflictingBlock = await prisma.availabilityBlock.findFirst({
-      where: {
-        startTime: { lt: endBookingDate },
-        endTime: { gt: startBookingDate },
-      },
-    });
-
-    if (conflictingBooking || conflictingBlock) {
+    if (conflictingBooking) {
       return Response.json(
-        {
-          message:
-            "Dieser Termin ist leider gerade vergeben worden. Bitte wähle eine andere Zeit.",
-        },
+        { message: bookingApiMessage(language, "slotTaken") },
         { status: 400 },
       );
     }
@@ -829,7 +949,7 @@ export async function POST(request: Request) {
     const internalNotes = [
       notes,
       servicesByRequestOrder.length > 1
-        ? `Ausgewählte Leistungen: ${serviceNames}`
+        ? `Ausgewﾃ､hlte Leistungen: ${serviceNames}`
         : "",
     ]
       .filter(Boolean)
@@ -866,7 +986,7 @@ export async function POST(request: Request) {
           const now = new Date();
 
           if (!promo || !promo.isActive || (promo.expiresAt && promo.expiresAt <= now)) {
-            throw new PromoCodeValidationError("Dieser Promo-Code ist ungültig oder abgelaufen.");
+            throw new PromoCodeValidationError("promoInvalid");
           }
 
           const [totalUses, clientUses] = await Promise.all([
@@ -877,11 +997,11 @@ export async function POST(request: Request) {
           ]);
 
           if (totalUses >= promo.maxUses) {
-            throw new PromoCodeValidationError("Dieser Promo-Code wurde bereits vollständig eingelöst.");
+            throw new PromoCodeValidationError("promoUsedUp");
           }
 
           if (clientUses >= promo.maxUsesPerClient) {
-            throw new PromoCodeValidationError("Du hast diesen Promo-Code bereits maximal oft verwendet.");
+            throw new PromoCodeValidationError("promoPerClient");
           }
 
           promoCodeId = promo.id;
@@ -939,15 +1059,15 @@ export async function POST(request: Request) {
       createdBookingId = createdBooking.id;
     } catch (createError) {
       if (createError instanceof PromoCodeValidationError) {
-        return Response.json({ message: createError.message }, { status: 400 });
+        return Response.json(
+          { message: bookingApiMessage(language, createError.key) },
+          { status: 400 },
+        );
       }
 
       if (isOverlapConstraintError(createError)) {
         return Response.json(
-          {
-            message:
-              "Dieser Termin ist leider gerade vergeben worden. Bitte wähle eine andere Zeit.",
-          },
+          { message: bookingApiMessage(language, "slotTaken") },
           { status: 400 },
         );
       }
@@ -959,7 +1079,7 @@ export async function POST(request: Request) {
         createError.code === "P2034"
       ) {
         return Response.json(
-          { message: "Der Promo-Code oder Termin wurde gleichzeitig verwendet. Bitte versuche es erneut." },
+          { message: bookingApiMessage(language, "promoRetry") },
           { status: 409 },
         );
       }
@@ -1017,15 +1137,15 @@ export async function POST(request: Request) {
       `Telefon: ${phone}`,
       `Adresse: ${address}`,
       `Leistungen: ${serviceNames}`,
-      `Fahrzeuggrösse: ${dbCategory.name}`,
+      `Fahrzeuggrﾃｶsse: ${dbCategory.name}`,
       `Zusatzleistungen: ${addOnNames}`,
       `Fahrzeugmodell: ${vehicleModel}`,
-      `Geschätzte Dauer: ${totalDuration} Minuten`,
+      `Geschﾃ､tzte Dauer: ${totalDuration} Minuten`,
       `Zwischensumme: CHF ${estimatedSubtotal.toFixed(2)}`,
       ...(appliedPromoCode
         ? [`Promo-Code: ${appliedPromoCode} (${promoDiscountPercent}%, -CHF ${promoDiscountAmount.toFixed(2)})`]
         : []),
-      `Geschätzter Gesamtpreis: CHF ${roundCurrency(estimatedSubtotal - promoDiscountAmount).toFixed(2)}`,
+      `Geschﾃ､tzter Gesamtpreis: CHF ${roundCurrency(estimatedSubtotal - promoDiscountAmount).toFixed(2)}`,
       `Termin Start: ${startBookingDate.toLocaleString("de-CH", { timeZone: "Europe/Zurich" })}`,
       `Termin Ende: ${endBookingDate.toLocaleString("de-CH", { timeZone: "Europe/Zurich" })}`,
       `Hinweise/Nachricht: ${notes || "-"}`,
@@ -1088,7 +1208,7 @@ export async function POST(request: Request) {
     }
 
     return Response.json({
-      message: "Anfrage gesendet.",
+      message: bookingApiMessage(language, "requestSent"),
       pricing: {
         subtotal: estimatedSubtotal,
         promoCode: appliedPromoCode || null,
@@ -1100,7 +1220,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("Booking request failed:", err);
     return Response.json(
-      { message: "Fehler beim Verarbeiten der Anfrage." },
+      { message: bookingApiMessage(responseLanguage, "requestFailed") },
       { status: 500 },
     );
   }
