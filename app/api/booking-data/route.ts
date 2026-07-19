@@ -1,31 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../(admin)/admin/_lib/prisma";
-
-const serviceOrder = [
-  "Komplette Innenreinigung",
-  "Komplette Aussenreinigung",
-  "Pflegeerhaltung Innenreinigung",
-  "Pflegeerhaltung Aussenreinigung",
-  "Polish Paket (1-Step)",
-  "Polish Paket (2-Step)",
-  "Keramik Versiegelung",
-  "Komplette Premium Paket",
-];
-
-const categoryOrder = [
-  "City Car",
-  "Sedan",
-  "Sports Car",
-  "SUV",
-  "Van",
-];
-
-const addOnOrder = [
-  "Tierhaarentfernung",
-  "Sitze Tiefenreinigung",
-  "Fussmatten intensiv",
-  "Kofferraum Deep Clean",
-];
+import {
+  addOnOrder,
+  categoryOrder,
+  ensureBookingCatalog,
+  serviceOrder,
+} from "./catalog";
 
 function sortByCatalogOrder<T extends { name: string }>(
   items: T[],
@@ -42,57 +22,95 @@ function sortByCatalogOrder<T extends { name: string }>(
   );
 }
 
+function uniqueByName<T extends { name: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+
+  return items.filter((item) => {
+    if (seen.has(item.name)) {
+      return false;
+    }
+
+    seen.add(item.name);
+    return true;
+  });
+}
+
+async function loadBookingCatalogData() {
+  const [services, categories, addOns] = await Promise.all([
+    prisma.service.findMany({
+      where: {
+        name: {
+          in: serviceOrder,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        basePrice: true,
+        durationMinutes: true,
+      },
+    }),
+
+    prisma.vehicleCategory.findMany({
+      where: {
+        name: {
+          in: categoryOrder,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        priceModifier: true,
+      },
+    }),
+
+    prisma.addOn.findMany({
+      where: {
+        name: {
+          in: addOnOrder,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        additionalDuration: true,
+      },
+    }),
+  ]);
+
+  return {
+    services: uniqueByName(services),
+    categories: uniqueByName(categories),
+    addOns: uniqueByName(addOns),
+  };
+}
+
+function isCatalogComplete(
+  catalog: Awaited<ReturnType<typeof loadBookingCatalogData>>,
+) {
+  return (
+    catalog.services.length >= serviceOrder.length &&
+    catalog.categories.length >= categoryOrder.length &&
+    catalog.addOns.length >= addOnOrder.length
+  );
+}
+
 export async function GET() {
   const startedAt = performance.now();
 
   try {
-    const [services, categories, addOns] = await Promise.all([
-      prisma.service.findMany({
-        where: {
-          name: {
-            in: serviceOrder,
-          },
-        },
-        select: {
-          id: true,
-          name: true,
-          basePrice: true,
-          durationMinutes: true,
-        },
-      }),
+    let catalog = await loadBookingCatalogData();
 
-      prisma.vehicleCategory.findMany({
-        where: {
-          name: {
-            in: categoryOrder,
-          },
-        },
-        select: {
-          id: true,
-          name: true,
-          priceModifier: true,
-        },
-      }),
-
-      prisma.addOn.findMany({
-        where: {
-          name: {
-            in: addOnOrder,
-          },
-        },
-        select: {
-          id: true,
-          name: true,
-          price: true,
-          additionalDuration: true,
-        },
-      }),
-    ]);
+    if (!isCatalogComplete(catalog)) {
+      await ensureBookingCatalog(prisma);
+      catalog = await loadBookingCatalogData();
+    }
 
     const responseData = {
-      services: sortByCatalogOrder(services, serviceOrder),
-      categories: sortByCatalogOrder(categories, categoryOrder),
-      addOns: sortByCatalogOrder(addOns, addOnOrder),
+      services: sortByCatalogOrder(catalog.services, serviceOrder),
+      categories: sortByCatalogOrder(catalog.categories, categoryOrder),
+      addOns: sortByCatalogOrder(catalog.addOns, addOnOrder),
     };
 
     console.log(
