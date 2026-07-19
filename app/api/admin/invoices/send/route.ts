@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/(admin)/admin/_lib/prisma";
 import { cookies } from "next/headers";
+import fs from "fs/promises";
 import path from "path";
-import QRCode from "qrcode";
 import pdfmake from "pdfmake";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -14,6 +14,11 @@ import { translateInvoiceItems } from "@/app/lib/invoiceItemTranslations";
 export const runtime = "nodejs";
 
 const FONTS_DIR = path.join(process.cwd(), "public", "fonts");
+const DEFAULT_INVOICE_QR_IMAGE = path.join(
+  process.cwd(),
+  "public",
+  "invoice-payment-qr.jpeg",
+);
 
 pdfmake.setLocalAccessPolicy((filePath: string) => {
   return filePath.startsWith(FONTS_DIR);
@@ -57,6 +62,18 @@ type InvoiceSendRequest = {
 
 function roundCurrency(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+async function getInvoiceQrDataUrl() {
+  const configuredPath = process.env.INVOICE_QR_IMAGE_PATH;
+  const qrPath = configuredPath
+    ? path.isAbsolute(configuredPath)
+      ? configuredPath
+      : path.join(process.cwd(), configuredPath)
+    : DEFAULT_INVOICE_QR_IMAGE;
+
+  const qrBuffer = await fs.readFile(qrPath);
+  return `data:image/jpeg;base64,${qrBuffer.toString("base64")}`;
 }
 
 function cleanText(value: unknown, maxLength: number) {
@@ -627,33 +644,7 @@ export async function POST(req: Request) {
       })),
     });
 
-    const qrPayload = [
-      "SPC",
-      "0200",
-      "1",
-      payment.iban,
-      "K",
-      payment.name,
-      payment.street,
-      payment.postCode,
-      payment.city,
-      payment.country,
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "NON",
-      totalAmount.toFixed(2),
-      "CHF",
-      "",
-    ].join("\n");
-
-    const qrCodeDataUrl = await QRCode.toDataURL(qrPayload, {
-      margin: 1,
-    });
+    const qrCodeDataUrl = await getInvoiceQrDataUrl();
 
     const tableBody: any[][] = [
       [
