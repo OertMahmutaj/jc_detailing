@@ -22,6 +22,11 @@ type VehicleCategory = {
   id: string;
   name: string;
   priceModifier: number;
+  serviceOptions?: Array<{
+    serviceId: string;
+    isActive?: boolean;
+    price?: number;
+  }>;
 };
 
 type AddOn = {
@@ -29,6 +34,12 @@ type AddOn = {
   name: string;
   price: number;
   additionalDuration: number;
+  serviceOptions?: Array<{
+    serviceId: string;
+    isActive?: boolean;
+    price?: number;
+    additionalDuration?: number;
+  }>;
 };
 
 type BookingEditorProps = {
@@ -122,6 +133,43 @@ export function AdminBookingEditor({
     toBookingStatus(booking.status)
   );
   const [statusActionLabel, setStatusActionLabel] = useState<string | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState(booking.serviceId);
+  const [selectedAdditionalServiceIds, setSelectedAdditionalServiceIds] =
+    useState(() =>
+      booking.serviceIds.filter((serviceId) => serviceId !== booking.serviceId),
+    );
+  const selectedServiceIds = [selectedServiceId, ...selectedAdditionalServiceIds];
+  const visibleVehicleCategories = vehicleCategories.filter(
+    (category) =>
+      category.id === booking.vehicleCategoryId ||
+      category.serviceOptions?.some(
+        (option) =>
+          option.serviceId === selectedServiceId && option.isActive !== false,
+      ),
+  );
+  const visibleAddOns = addOns.filter(
+    (addOn) =>
+      booking.addOnIds.includes(addOn.id) ||
+      addOn.serviceOptions?.some(
+        (option) =>
+          selectedServiceIds.includes(option.serviceId) &&
+          option.isActive !== false,
+      ),
+  );
+
+  function addOnPrice(addOn: AddOn) {
+    for (const serviceId of selectedServiceIds) {
+      const option = addOn.serviceOptions?.find(
+        (serviceOption) =>
+          serviceOption.serviceId === serviceId &&
+          serviceOption.isActive !== false,
+      );
+
+      if (typeof option?.price === "number") return option.price;
+    }
+
+    return addOn.price;
+  }
 
   function runBookingUpdate(
     formData: FormData,
@@ -335,7 +383,7 @@ export function AdminBookingEditor({
               name="vehicleCategoryId"
               required
             >
-              {vehicleCategories.map((category) => (
+              {visibleVehicleCategories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
@@ -346,9 +394,10 @@ export function AdminBookingEditor({
           <label>
             <span>Hauptleistung</span>
             <select
-              defaultValue={booking.serviceId}
               name="serviceId"
+              onChange={(event) => setSelectedServiceId(event.target.value)}
               required
+              value={selectedServiceId}
             >
               {services.map((service) => (
                 <option key={service.id} value={service.id}>
@@ -364,12 +413,19 @@ export function AdminBookingEditor({
 
           <div className="admin-checkbox-grid">
             {services
-              .filter((service) => service.id !== booking.serviceId)
+              .filter((service) => service.id !== selectedServiceId)
               .map((service) => (
                 <label className="admin-checkbox-label" key={service.id}>
                   <input
                     defaultChecked={booking.serviceIds.includes(service.id)}
                     name="additionalServiceIds"
+                    onChange={(event) =>
+                      setSelectedAdditionalServiceIds((current) =>
+                        event.target.checked
+                          ? Array.from(new Set([...current, service.id]))
+                          : current.filter((serviceId) => serviceId !== service.id),
+                      )
+                    }
                     type="checkbox"
                     value={service.id}
                   />
@@ -386,7 +442,7 @@ export function AdminBookingEditor({
           <strong>Add-ons</strong>
 
           <div className="admin-checkbox-grid">
-            {addOns.map((addOn) => (
+            {visibleAddOns.map((addOn) => (
               <label className="admin-checkbox-label" key={addOn.id}>
                 <input
                   defaultChecked={booking.addOnIds.includes(addOn.id)}
@@ -396,7 +452,7 @@ export function AdminBookingEditor({
                 />
 
                 <span>
-                  {addOn.name} (+ CHF {addOn.price.toFixed(2)})
+                  {addOn.name} (+ CHF {addOnPrice(addOn).toFixed(2)})
                 </span>
               </label>
             ))}

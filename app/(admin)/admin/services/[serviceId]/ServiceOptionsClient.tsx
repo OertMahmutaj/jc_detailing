@@ -8,7 +8,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 
 type VehicleOption = {
   id: string;
@@ -65,6 +65,50 @@ function readDuration(formData: FormData) {
   return hours * 60 + minutes;
 }
 
+async function imageFileToDataUrl(file: File) {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Bitte ein Bild auswaehlen.");
+  }
+
+  if (file.size > 6 * 1024 * 1024) {
+    throw new Error("Das Bild ist zu gross. Bitte ein Bild unter 6 MB verwenden.");
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const nextImage = new Image();
+      nextImage.onload = () => resolve(nextImage);
+      nextImage.onerror = () => reject(new Error("Bild konnte nicht gelesen werden."));
+      nextImage.src = objectUrl;
+    });
+
+    const maxWidth = 900;
+    const maxHeight = 620;
+    const scale = Math.min(1, maxWidth / image.width, maxHeight / image.height);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Bild konnte nicht vorbereitet werden.");
+    }
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const dataUrl = canvas.toDataURL("image/webp", 0.78);
+    if (dataUrl.length > 950000) {
+      throw new Error("Das Bild ist nach dem Verkleinern noch zu gross.");
+    }
+
+    return dataUrl;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 async function readResponseMessage(response: Response, fallback: string) {
   try {
     const result = await response.json();
@@ -80,10 +124,47 @@ export default function ServiceOptionsClient({
   service: ServiceWithOptions;
 }) {
   const router = useRouter();
-  const [message, setMessage] = useState("");
+  const [notice, setNotice] = useState<{
+    text: string;
+    tone: "success" | "error";
+  } | null>(null);
+  const [imageDrafts, setImageDrafts] = useState<Record<string, string>>({});
   const [savingKey, setSavingKey] = useState("");
 
   const endpoint = `/api/admin/services/${service.id}/options`;
+
+  function setSuccess(text: string) {
+    setNotice({ text, tone: "success" });
+  }
+
+  function setError(text: string) {
+    setNotice({ text, tone: "error" });
+  }
+
+  async function handleVehicleImageChange(
+    event: ChangeEvent<HTMLInputElement>,
+    key: string,
+  ) {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+
+    try {
+      const imageUrl = await imageFileToDataUrl(file);
+      setImageDrafts((current) => ({ ...current, [key]: imageUrl }));
+      setSuccess("Bild vorbereitet. Bitte speichern.");
+    } catch (error) {
+      event.currentTarget.value = "";
+      setError(error instanceof Error ? error.message : "Bild konnte nicht vorbereitet werden.");
+    }
+  }
+
+  function clearImageDraft(key: string) {
+    setImageDrafts((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  }
 
   async function createVehicleOption(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -91,7 +172,7 @@ export default function ServiceOptionsClient({
     const formData = new FormData(form);
 
     setSavingKey("create-vehicle");
-    setMessage("");
+    setNotice(null);
 
     try {
       const response = await fetch(endpoint, {
@@ -112,10 +193,11 @@ export default function ServiceOptionsClient({
       }
 
       form.reset();
-      setMessage("Fahrzeugoption erstellt.");
+      clearImageDraft("create-vehicle");
+      setSuccess("Fahrzeugoption erstellt.");
       router.refresh();
     } catch (error) {
-      setMessage(
+      setError(
         error instanceof Error
           ? error.message
           : "Fahrzeugoption konnte nicht erstellt werden.",
@@ -132,12 +214,12 @@ export default function ServiceOptionsClient({
     const additionalDuration = readDuration(formData);
 
     if (additionalDuration === null) {
-      setMessage("Bitte Dauer pruefen.");
+      setError("Bitte Dauer pruefen.");
       return;
     }
 
     setSavingKey("create-add-on");
-    setMessage("");
+    setNotice(null);
 
     try {
       const response = await fetch(endpoint, {
@@ -158,10 +240,10 @@ export default function ServiceOptionsClient({
       }
 
       form.reset();
-      setMessage("Zusatzleistung erstellt.");
+      setSuccess("Zusatzleistung erstellt.");
       router.refresh();
     } catch (error) {
-      setMessage(
+      setError(
         error instanceof Error
           ? error.message
           : "Zusatzleistung konnte nicht erstellt werden.",
@@ -179,7 +261,7 @@ export default function ServiceOptionsClient({
     const formData = new FormData(event.currentTarget);
 
     setSavingKey(optionId);
-    setMessage("");
+    setNotice(null);
 
     try {
       const response = await fetch(endpoint, {
@@ -201,10 +283,11 @@ export default function ServiceOptionsClient({
         );
       }
 
-      setMessage("Fahrzeugoption gespeichert.");
+      clearImageDraft(optionId);
+      setSuccess("Fahrzeugoption gespeichert.");
       router.refresh();
     } catch (error) {
-      setMessage(
+      setError(
         error instanceof Error
           ? error.message
           : "Fahrzeugoption konnte nicht gespeichert werden.",
@@ -223,12 +306,12 @@ export default function ServiceOptionsClient({
     const additionalDuration = readDuration(formData);
 
     if (additionalDuration === null) {
-      setMessage("Bitte Dauer pruefen.");
+      setError("Bitte Dauer pruefen.");
       return;
     }
 
     setSavingKey(optionId);
-    setMessage("");
+    setNotice(null);
 
     try {
       const response = await fetch(endpoint, {
@@ -250,10 +333,10 @@ export default function ServiceOptionsClient({
         );
       }
 
-      setMessage("Zusatzleistung gespeichert.");
+      setSuccess("Zusatzleistung gespeichert.");
       router.refresh();
     } catch (error) {
-      setMessage(
+      setError(
         error instanceof Error
           ? error.message
           : "Zusatzleistung konnte nicht gespeichert werden.",
@@ -267,7 +350,7 @@ export default function ServiceOptionsClient({
     if (!window.confirm("Diese Option wirklich entfernen?")) return;
 
     setSavingKey(optionId);
-    setMessage("");
+    setNotice(null);
 
     try {
       const response = await fetch(
@@ -281,10 +364,10 @@ export default function ServiceOptionsClient({
         );
       }
 
-      setMessage("Option entfernt.");
+      setSuccess("Option entfernt.");
       router.refresh();
     } catch (error) {
-      setMessage(
+      setError(
         error instanceof Error ? error.message : "Option konnte nicht entfernt werden.",
       );
     } finally {
@@ -294,9 +377,12 @@ export default function ServiceOptionsClient({
 
   return (
     <section className="admin-service-options-grid">
-      {message && (
-        <p className="admin-services-message admin-service-options-message" role="status">
-          {message}
+      {notice && (
+        <p
+          className={`admin-services-message admin-service-options-message is-${notice.tone}`}
+          role={notice.tone === "error" ? "alert" : "status"}
+        >
+          {notice.text}
         </p>
       )}
 
@@ -322,8 +408,20 @@ export default function ServiceOptionsClient({
             <input min="0" name="priceModifier" required step="0.01" type="number" />
           </label>
           <label className="is-wide">
-            Bild-Pfad
-            <input name="imageUrl" placeholder="/sedan.webp" />
+            Bild
+            <span className="admin-image-upload">
+              <input
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => handleVehicleImageChange(event, "create-vehicle")}
+                type="file"
+              />
+              <input
+                name="imageUrl"
+                readOnly
+                type="hidden"
+                value={imageDrafts["create-vehicle"] ?? ""}
+              />
+            </span>
           </label>
           <button
             className="admin-primary-button"
@@ -337,7 +435,8 @@ export default function ServiceOptionsClient({
 
         <div className="admin-service-option-list">
           {service.vehicleOptions.map((option) => {
-            const imageUrl = option.vehicleCategory.imageUrl ?? "";
+            const savedImageUrl = option.vehicleCategory.imageUrl ?? "";
+            const imageUrl = imageDrafts[option.id] ?? savedImageUrl;
 
             return (
               <form
@@ -376,8 +475,15 @@ export default function ServiceOptionsClient({
                 </label>
 
                 <label className="is-wide">
-                  Bild-Pfad
-                  <input defaultValue={imageUrl} name="imageUrl" />
+                  Bild
+                  <span className="admin-image-upload">
+                    <input
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={(event) => handleVehicleImageChange(event, option.id)}
+                      type="file"
+                    />
+                    <input name="imageUrl" readOnly type="hidden" value={imageUrl} />
+                  </span>
                 </label>
 
                 <label className="admin-service-option-toggle">

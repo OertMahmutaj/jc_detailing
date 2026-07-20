@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../_lib/prisma";
+import { getAdminBookingCatalog } from "../_lib/bookingCatalog";
 import { AdminSearchForm } from "../_components/AdminSearchForm";
 import { AdminBookingCreator } from "../_components/AdminBookingCreator";
 import { createAdminBooking } from "../_actions/bookingActions";
@@ -244,7 +245,7 @@ export default async function AdminBookingsPage({
     }
     : {};
 
-  const [bookings, totalBookings, services, categories, addOns] = await Promise.all([
+  const [bookings, totalBookings, catalog] = await Promise.all([
     prisma.booking.findMany({
       include: {
         addOns: true,
@@ -259,10 +260,9 @@ export default async function AdminBookingsPage({
       where,
     }),
     prisma.booking.count({ where }),
-    prisma.service.findMany({ orderBy: { name: "asc" } }),
-    prisma.vehicleCategory.findMany({ orderBy: { name: "asc" } }),
-    prisma.addOn.findMany({ orderBy: { name: "asc" } }),
+    getAdminBookingCatalog(),
   ]);
+  const { addOns, categories, services } = catalog;
   const totalPages = Math.max(1, Math.ceil(totalBookings / PAGE_SIZE));
 
   return (

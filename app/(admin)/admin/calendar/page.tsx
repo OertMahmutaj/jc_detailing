@@ -1,10 +1,42 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "../_lib/prisma";
+import { getAdminBookingCatalog } from "../_lib/bookingCatalog";
 import { AdminCalendarClient } from "./AdminCalendarClient";
 import { createAdminBooking } from "../_actions/bookingActions";
 
 function buildDateTime(date: string, time: string) {
   return new Date(`${date}T${time}:00`);
+}
+
+function serviceVehiclePrice(
+  service: {
+    vehicleOptions?: { priceModifier: number; vehicleCategoryId: string }[];
+  },
+  vehicleCategoryId: string,
+) {
+  return (
+    service.vehicleOptions?.find(
+      (option) => option.vehicleCategoryId === vehicleCategoryId,
+    )?.priceModifier ?? 0
+  );
+}
+
+function addOnPriceForServices(
+  addOn: {
+    price: number;
+    serviceOptions?: { price: number; serviceId: string }[];
+  },
+  serviceIds: string[],
+) {
+  for (const serviceId of serviceIds) {
+    const option = addOn.serviceOptions?.find(
+      (serviceOption) => serviceOption.serviceId === serviceId,
+    );
+
+    if (option) return option.price;
+  }
+
+  return addOn.price;
 }
 
 async function createAvailabilityBlock(formData: FormData) {
@@ -81,10 +113,46 @@ export default async function AdminCalendarPage({
 
   const bookings = await prisma.booking.findMany({
     include: {
-      addOns: true,
+      addOns: {
+        include: {
+          serviceOptions: {
+            select: {
+              price: true,
+              serviceId: true,
+            },
+            where: {
+              isActive: true,
+            },
+          },
+        },
+      },
       client: true,
-      service: true,
-      services: true,
+      service: {
+        include: {
+          vehicleOptions: {
+            select: {
+              priceModifier: true,
+              vehicleCategoryId: true,
+            },
+            where: {
+              isActive: true,
+            },
+          },
+        },
+      },
+      services: {
+        include: {
+          vehicleOptions: {
+            select: {
+              priceModifier: true,
+              vehicleCategoryId: true,
+            },
+            where: {
+              isActive: true,
+            },
+          },
+        },
+      },
       vehicleCategory: true,
     },
     orderBy: {
@@ -115,23 +183,7 @@ export default async function AdminCalendarPage({
     },
   });
 
-  const services = await prisma.service.findMany({
-    orderBy: {
-      name: "asc",
-    },
-  });
-
-  const categories = await prisma.vehicleCategory.findMany({
-    orderBy: {
-      name: "asc",
-    },
-  });
-
-  const addOns = await prisma.addOn.findMany({
-    orderBy: {
-      name: "asc",
-    },
-  });
+  const { addOns, categories, services } = await getAdminBookingCatalog();
 
   return (
     <div className="admin-page">
@@ -152,14 +204,26 @@ export default async function AdminCalendarPage({
           const selectedServices = booking.services.length
             ? booking.services
             : [booking.service];
+          const selectedServiceIds = selectedServices.map(
+            (service) => service.id,
+          );
 
           const totalAmount =
             selectedServices.reduce(
               (sum, service) => sum + service.basePrice,
               0,
             ) +
-            booking.vehicleCategory.priceModifier +
-            booking.addOns.reduce((sum, addOn) => sum + addOn.price, 0);
+            selectedServices.reduce(
+              (sum, service) =>
+                sum +
+                serviceVehiclePrice(service, booking.vehicleCategoryId),
+              0,
+            ) +
+            booking.addOns.reduce(
+              (sum, addOn) =>
+                sum + addOnPriceForServices(addOn, selectedServiceIds),
+              0,
+            );
 
           return {
             addOns: booking.addOns.map((addOn) => addOn.name),

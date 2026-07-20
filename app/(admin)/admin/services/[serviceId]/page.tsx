@@ -38,6 +38,30 @@ async function getService(serviceId: string) {
   });
 }
 
+async function ensureVehicleOptionsForService(serviceId: string) {
+  await ensureBookingCatalog(prisma, {
+    includeAddOns: false,
+    includeServices: false,
+  });
+
+  const categories = await prisma.vehicleCategory.findMany({
+    select: { id: true, priceModifier: true },
+    where: { isActive: true },
+  });
+
+  if (categories.length === 0) return;
+
+  await prisma.serviceVehicleCategory.createMany({
+    data: categories.map((category) => ({
+      isActive: true,
+      priceModifier: category.priceModifier,
+      serviceId,
+      vehicleCategoryId: category.id,
+    })),
+    skipDuplicates: true,
+  });
+}
+
 export default async function AdminServiceOptionsPage({ params }: PageProps) {
   const { serviceId } = await params;
   let service = await getService(serviceId);
@@ -47,7 +71,7 @@ export default async function AdminServiceOptionsPage({ params }: PageProps) {
   }
 
   if (service.vehicleOptions.length === 0) {
-    await ensureBookingCatalog(prisma, { includeServices: false });
+    await ensureVehicleOptionsForService(serviceId);
     service = await getService(serviceId);
   }
 

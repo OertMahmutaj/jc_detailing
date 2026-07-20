@@ -49,6 +49,19 @@ function serviceResponseError(message: string, status = 400) {
   return Response.json({ message }, { status });
 }
 
+function revalidateServiceCatalog(serviceId?: string) {
+  revalidatePath("/admin/services");
+  if (serviceId) {
+    revalidatePath(`/admin/services/${serviceId}`);
+  }
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin/calendar");
+  revalidatePath("/admin/clients");
+  revalidatePath("/buchen");
+  revalidatePath("/api/booking-data");
+}
+
 export async function POST(request: Request) {
   if (!(await isAuthorized())) {
     return serviceResponseError("Nicht autorisiert.", 401);
@@ -69,16 +82,33 @@ export async function POST(request: Request) {
       return serviceResponseError("Eine Leistung mit diesem Namen existiert bereits.", 409);
     }
 
+    const categories = await prisma.vehicleCategory.findMany({
+      select: { id: true, priceModifier: true },
+      where: { isActive: true },
+    });
+
+    const vehicleOptions =
+      categories.length > 0
+        ? {
+            create: categories.map((category) => ({
+              isActive: true,
+              priceModifier: category.priceModifier,
+              vehicleCategoryId: category.id,
+            })),
+          }
+        : undefined;
+
     const service = await prisma.service.create({
       data: {
         basePrice,
         durationMinutes,
         isActive,
         name,
+        ...(vehicleOptions ? { vehicleOptions } : {}),
       },
     });
 
-    revalidatePath("/admin/services");
+    revalidateServiceCatalog(service.id);
 
     return Response.json({ service }, { status: 201 });
   } catch (error) {
@@ -134,7 +164,7 @@ export async function PATCH(request: Request) {
       },
     });
 
-    revalidatePath("/admin/services");
+    revalidateServiceCatalog(service.id);
 
     return Response.json({ service });
   } catch (error) {
@@ -190,13 +220,13 @@ export async function DELETE(request: Request) {
         data: { isActive: false },
       });
 
-      revalidatePath("/admin/services");
+      revalidateServiceCatalog(service.id);
 
       return Response.json({ ok: true, service });
     }
 
     await prisma.service.delete({ where: { id } });
-    revalidatePath("/admin/services");
+    revalidateServiceCatalog(id);
 
     return Response.json({ ok: true });
   } catch (error) {

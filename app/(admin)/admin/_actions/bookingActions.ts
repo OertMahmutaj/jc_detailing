@@ -86,6 +86,40 @@ function cleanLanguage(value: FormDataEntryValue | null): InvoiceLanguage {
   return normalizeLanguage(value);
 }
 
+function vehiclePriceForService(
+  service: {
+    vehicleOptions?: { priceModifier: number; vehicleCategoryId?: string }[];
+  },
+  vehicleCategoryId?: string,
+) {
+  const option = vehicleCategoryId
+    ? service.vehicleOptions?.find(
+        (vehicleOption) =>
+          vehicleOption.vehicleCategoryId === vehicleCategoryId,
+      )
+    : service.vehicleOptions?.[0];
+
+  return option?.priceModifier ?? 0;
+}
+
+function addOnPriceForServices(
+  addOn: {
+    price: number;
+    serviceOptions?: { price: number; serviceId: string }[];
+  },
+  serviceIds: string[],
+) {
+  for (const serviceId of serviceIds) {
+    const option = addOn.serviceOptions?.find(
+      (serviceOption) => serviceOption.serviceId === serviceId,
+    );
+
+    if (option) return option.price;
+  }
+
+  return addOn.price;
+}
+
 function buildDateTime(date: string, time: string) {
   return new Date(`${date}T${time}:00`);
 }
@@ -556,14 +590,28 @@ async function sendEmail({
 }
 
 function selectedBookingServices(booking: {
-  service: { name: string; basePrice: number };
-  services: { name: string; basePrice: number }[];
+  service: {
+    id: string;
+    name: string;
+    basePrice: number;
+    vehicleOptions?: { priceModifier: number; vehicleCategoryId?: string }[];
+  };
+  services: {
+    id: string;
+    name: string;
+    basePrice: number;
+    vehicleOptions?: { priceModifier: number; vehicleCategoryId?: string }[];
+  }[];
 }) {
   return booking.services.length ? booking.services : [booking.service];
 }
 
 function bookingEmailDetails(booking: {
-  addOns: { name: string; price: number }[];
+  addOns: {
+    name: string;
+    price: number;
+    serviceOptions?: { price: number; serviceId: string }[];
+  }[];
   client: {
     email: string;
     name: string;
@@ -573,25 +621,37 @@ function bookingEmailDetails(booking: {
   endTime: Date;
   notes?: string | null;
   service: {
+    id: string;
     name: string;
     basePrice: number;
+    vehicleOptions?: { priceModifier: number; vehicleCategoryId?: string }[];
   };
   services: {
+    id: string;
     name: string;
     basePrice: number;
+    vehicleOptions?: { priceModifier: number; vehicleCategoryId?: string }[];
   }[];
   vehicleCategory: {
+    id: string;
     name: string;
-    priceModifier: number;
   };
   vehicleModel: string;
 }): BookingEmailData {
   const services = selectedBookingServices(booking);
+  const serviceIds = services.map((service) => service.id);
 
   const totalAmount =
     services.reduce((sum, service) => sum + service.basePrice, 0) +
-    booking.vehicleCategory.priceModifier +
-    booking.addOns.reduce((sum, addOn) => sum + addOn.price, 0);
+    services.reduce(
+      (sum, service) =>
+        sum + vehiclePriceForService(service, booking.vehicleCategory.id),
+      0,
+    ) +
+    booking.addOns.reduce(
+      (sum, addOn) => sum + addOnPriceForServices(addOn, serviceIds),
+      0,
+    );
 
   return {
     addOns: getNameList(booking.addOns),
@@ -708,21 +768,61 @@ export async function createAdminBooking(formData: FormData): Promise<{
     }
 
     const [service, category, addOns, selectedClient] = await Promise.all([
-      prisma.service.findUnique({
-        where: { id: serviceId },
-      }),
-      prisma.vehicleCategory.findUnique({
-        where: { id: vehicleCategoryId },
-      }),
-      addOnIds.length
-        ? prisma.addOn.findMany({
-            where: {
-              id: {
-                in: addOnIds,
-              },
+      prisma.service.findFirst({
+        include: {
+          vehicleOptions: {
+            select: {
+              priceModifier: true,
             },
-          })
-        : Promise.resolve([]),
+            where: {
+              isActive: true,
+              vehicleCategoryId,
+            },
+          },
+        },
+        where: {
+          id: serviceId,
+          isActive: true,
+        },
+      }),
+      prisma.vehicleCategory.findFirst({
+        where: {
+          id: vehicleCategoryId,
+          isActive: true,
+          serviceOptions: {
+            some: {
+              isActive: true,
+              serviceId,
+            },
+          },
+        },
+      }),
+      prisma.addOn.findMany({
+        include: {
+          serviceOptions: {
+            select: {
+              price: true,
+              serviceId: true,
+            },
+            where: {
+              isActive: true,
+              serviceId,
+            },
+          },
+        },
+        where: {
+          id: {
+            in: addOnIds,
+          },
+          isActive: true,
+          serviceOptions: {
+            some: {
+              isActive: true,
+              serviceId,
+            },
+          },
+        },
+      }),
       clientId
         ? prisma.client.findUnique({
             where: { id: clientId },
@@ -735,6 +835,21 @@ export async function createAdminBooking(formData: FormData): Promise<{
         success: false,
         error:
           "Die gewählte Leistung oder Fahrzeugklasse wurde nicht gefunden.",
+      };
+    }
+
+    if (!service.vehicleOptions.length) {
+      return {
+        success: false,
+        error:
+          "Die gewﾃ､hlte Fahrzeugklasse ist fﾃｼr diese Leistung nicht verfﾃｼgbar.",
+      };
+    }
+
+    if (addOns.length !== addOnIds.length) {
+      return {
+        success: false,
+        error: "Ein oder mehrere Add-ons wurden nicht gefunden.",
       };
     }
 
@@ -811,8 +926,11 @@ export async function createAdminBooking(formData: FormData): Promise<{
 
     const totalAmount =
       service.basePrice +
-      category.priceModifier +
-      addOns.reduce((sum, addOn) => sum + addOn.price, 0);
+      vehiclePriceForService(service) +
+      addOns.reduce(
+        (sum, addOn) => sum + addOnPriceForServices(addOn, [service.id]),
+        0,
+      );
 
     // const number = invoiceNumber();
 
@@ -929,6 +1047,7 @@ export async function updateAdminBooking(
     ).filter((id) => id !== serviceId);
 
     const addOnIds = getSelectedIds(formData, "addOnIds");
+    const selectedServiceIds = [serviceId, ...additionalServiceIds];
 
     if (!isBookingStatus(statusValue)) {
       return failure("Der ausgewählte Buchungsstatus ist ungültig.");
@@ -963,30 +1082,86 @@ export async function updateAdminBooking(
           invoice: true,
         },
       }),
-      prisma.service.findUnique({
-        where: { id: serviceId },
-      }),
-      prisma.vehicleCategory.findUnique({
-        where: { id: vehicleCategoryId },
-      }),
-      additionalServiceIds.length
-        ? prisma.service.findMany({
+      prisma.service.findFirst({
+        include: {
+          vehicleOptions: {
+            select: {
+              priceModifier: true,
+            },
             where: {
-              id: {
-                in: additionalServiceIds,
+              isActive: true,
+              vehicleCategoryId,
+            },
+          },
+        },
+        where: {
+          id: serviceId,
+          isActive: true,
+        },
+      }),
+      prisma.vehicleCategory.findFirst({
+        where: {
+          id: vehicleCategoryId,
+          isActive: true,
+          serviceOptions: {
+            some: {
+              isActive: true,
+              serviceId: {
+                in: selectedServiceIds,
               },
             },
-          })
-        : Promise.resolve([]),
-      addOnIds.length
-        ? prisma.addOn.findMany({
+          },
+        },
+      }),
+      prisma.service.findMany({
+        include: {
+          vehicleOptions: {
+            select: {
+              priceModifier: true,
+            },
             where: {
-              id: {
-                in: addOnIds,
+              isActive: true,
+              vehicleCategoryId,
+            },
+          },
+        },
+        where: {
+          id: {
+            in: additionalServiceIds,
+          },
+          isActive: true,
+        },
+      }),
+      prisma.addOn.findMany({
+        include: {
+          serviceOptions: {
+            select: {
+              price: true,
+              serviceId: true,
+            },
+            where: {
+              isActive: true,
+              serviceId: {
+                in: selectedServiceIds,
               },
             },
-          })
-        : Promise.resolve([]),
+          },
+        },
+        where: {
+          id: {
+            in: addOnIds,
+          },
+          isActive: true,
+          serviceOptions: {
+            some: {
+              isActive: true,
+              serviceId: {
+                in: selectedServiceIds,
+              },
+            },
+          },
+        },
+      }),
     ]);
 
     if (!currentBooking) {
@@ -1009,6 +1184,14 @@ export async function updateAdminBooking(
 
     if (addOns.length !== addOnIds.length) {
       return failure("Ein oder mehrere Add-ons wurden nicht gefunden.");
+    }
+
+    const allSelectedServices = [primaryService, ...additionalServices];
+
+    if (allSelectedServices.some((service) => !service.vehicleOptions.length)) {
+      return failure(
+        "Die gewﾃ､hlte Fahrzeugkategorie ist nicht fﾃｼr alle Leistungen verfﾃｼgbar.",
+      );
     }
 
     const conflictingBooking = await prisma.booking.findFirst({
@@ -1053,12 +1236,16 @@ export async function updateAdminBooking(
       );
     }
 
-    const allSelectedServices = [primaryService, ...additionalServices];
-
     const totalAmount =
       allSelectedServices.reduce((sum, service) => sum + service.basePrice, 0) +
-      vehicleCategory.priceModifier +
-      addOns.reduce((sum, addOn) => sum + addOn.price, 0);
+      allSelectedServices.reduce(
+        (sum, service) => sum + vehiclePriceForService(service),
+        0,
+      ) +
+      addOns.reduce(
+        (sum, addOn) => sum + addOnPriceForServices(addOn, selectedServiceIds),
+        0,
+      );
 
     const changes: string[] = [];
 
@@ -1185,6 +1372,11 @@ export async function updateAdminBooking(
           },
         });
 
+        const vehicleTotal = allSelectedServices.reduce(
+          (sum, service) => sum + vehiclePriceForService(service),
+          0,
+        );
+
         await tx.invoiceItem.createMany({
           data: [
             ...allSelectedServices.map((service) => ({
@@ -1197,7 +1389,7 @@ export async function updateAdminBooking(
               quantity: 1,
               unit: "Stk.",
             })),
-            ...(vehicleCategory.priceModifier > 0
+            ...(vehicleTotal > 0
               ? [
                   {
                     description: invoiceVehicleCategoryDescription(
@@ -1205,7 +1397,7 @@ export async function updateAdminBooking(
                       invoiceLanguage,
                     ),
                     invoiceId: currentBooking.invoice!.id,
-                    pricePerUnit: vehicleCategory.priceModifier,
+                    pricePerUnit: vehicleTotal,
                     quantity: 1,
                     unit: "Stk.",
                   },
@@ -1217,7 +1409,7 @@ export async function updateAdminBooking(
                 invoiceLanguage,
               ),
               invoiceId: currentBooking.invoice!.id,
-              pricePerUnit: addOn.price,
+              pricePerUnit: addOnPriceForServices(addOn, selectedServiceIds),
               quantity: 1,
               unit: "Stk.",
             })),
@@ -1358,10 +1550,46 @@ export async function updateBookingStatus(
       },
       include: {
         client: true,
-        service: true,
-        services: true,
+        service: {
+          include: {
+            vehicleOptions: {
+              select: {
+                priceModifier: true,
+                vehicleCategoryId: true,
+              },
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
+        services: {
+          include: {
+            vehicleOptions: {
+              select: {
+                priceModifier: true,
+                vehicleCategoryId: true,
+              },
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
         vehicleCategory: true,
-        addOns: true,
+        addOns: {
+          include: {
+            serviceOptions: {
+              select: {
+                price: true,
+                serviceId: true,
+              },
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
       },
     });
 

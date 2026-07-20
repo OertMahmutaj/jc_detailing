@@ -66,6 +66,14 @@ async function loadBookingCatalogData() {
     prisma.vehicleCategory.findMany({
       where: {
         isActive: true,
+        serviceOptions: {
+          some: {
+            isActive: true,
+            service: {
+              isActive: true,
+            },
+          },
+        },
       },
       select: {
         imageUrl: true,
@@ -79,6 +87,12 @@ async function loadBookingCatalogData() {
             priceModifier: true,
             serviceId: true,
           },
+          where: {
+            isActive: true,
+            service: {
+              isActive: true,
+            },
+          },
         },
       },
     }),
@@ -86,6 +100,14 @@ async function loadBookingCatalogData() {
     prisma.addOn.findMany({
       where: {
         isActive: true,
+        serviceOptions: {
+          some: {
+            isActive: true,
+            service: {
+              isActive: true,
+            },
+          },
+        },
       },
       select: {
         additionalDuration: true,
@@ -100,6 +122,12 @@ async function loadBookingCatalogData() {
             price: true,
             serviceId: true,
           },
+          where: {
+            isActive: true,
+            service: {
+              isActive: true,
+            },
+          },
         },
       },
     }),
@@ -112,25 +140,21 @@ async function loadBookingCatalogData() {
   };
 }
 
-function isCatalogComplete(
-  catalog: Awaited<ReturnType<typeof loadBookingCatalogData>>,
-) {
-  return (
-    catalog.services.length > 0 &&
-    catalog.categories.length >= categoryOrder.length &&
-    catalog.addOns.length >= addOnOrder.length
-  );
-}
-
 export async function GET() {
   const startedAt = performance.now();
 
   try {
     let catalog = await loadBookingCatalogData();
+    const shouldSeedServices = catalog.services.length === 0;
+    const shouldSeedCategories = catalog.categories.length === 0;
+    const shouldSeedAddOns =
+      catalog.addOns.length === 0 && (shouldSeedServices || shouldSeedCategories);
 
-    if (!isCatalogComplete(catalog)) {
+    if (shouldSeedServices || shouldSeedCategories || shouldSeedAddOns) {
       await ensureBookingCatalog(prisma, {
-        includeServices: catalog.services.length === 0,
+        includeAddOns: shouldSeedAddOns,
+        includeCategories: shouldSeedCategories,
+        includeServices: shouldSeedServices,
       });
       catalog = await loadBookingCatalogData();
     }

@@ -9,6 +9,11 @@ type Option = {
   id: string;
   name: string;
   price?: number;
+  serviceOptions?: Array<{
+    serviceId: string;
+    isActive?: boolean;
+    price?: number;
+  }>;
 };
 
 type ExistingClient = {
@@ -39,11 +44,41 @@ export function AdminBookingCreator({
 }) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedServiceId, setSelectedServiceId] = useState("");
 
   const router = useRouter();
   const { showNotification } = useAdminNotification();
 
   const isExistingClientBooking = Boolean(client);
+  const filteredCategories = selectedServiceId
+    ? categories.filter((category) =>
+        category.serviceOptions?.some(
+          (option) =>
+            option.serviceId === selectedServiceId && option.isActive !== false,
+        ),
+      )
+    : [];
+  const filteredAddOns = selectedServiceId
+    ? addOns.filter((addOn) =>
+        addOn.serviceOptions?.some(
+          (option) =>
+            option.serviceId === selectedServiceId && option.isActive !== false,
+        ),
+      )
+    : [];
+
+  function addOnPrice(addOn: Option) {
+    return addOn.serviceOptions?.find(
+      (option) =>
+        option.serviceId === selectedServiceId && option.isActive !== false,
+    )?.price;
+  }
+
+  useEffect(() => {
+    if (!open) {
+      setSelectedServiceId("");
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -203,7 +238,12 @@ export function AdminBookingCreator({
 
               <label>
                 Leistung
-                <select name="serviceId" required defaultValue="">
+                <select
+                  name="serviceId"
+                  onChange={(event) => setSelectedServiceId(event.target.value)}
+                  required
+                  value={selectedServiceId}
+                >
                   <option disabled value="">
                     Leistung wählen
                   </option>
@@ -218,12 +258,18 @@ export function AdminBookingCreator({
 
               <label>
                 Fahrzeugklasse
-                <select name="vehicleCategoryId" required defaultValue="">
+                <select
+                  defaultValue=""
+                  disabled={!selectedServiceId}
+                  key={selectedServiceId || "no-service"}
+                  name="vehicleCategoryId"
+                  required
+                >
                   <option disabled value="">
                     Fahrzeugklasse wählen
                   </option>
 
-                  {categories.map((category) => (
+                  {filteredCategories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
                     </option>
@@ -274,16 +320,23 @@ export function AdminBookingCreator({
               </label>
             </div>
 
-            {addOns.length > 0 && (
-              <div className="admin-addon-checks">
+            {filteredAddOns.length > 0 && (
+              <div className="admin-addon-checks" key={selectedServiceId}>
                 <span>Extras</span>
 
-                {addOns.map((addOn) => (
-                  <label className="admin-check-row" key={addOn.id}>
-                    <input name="addOnIds" type="checkbox" value={addOn.id} />
-                    {addOn.name}
-                  </label>
-                ))}
+                {filteredAddOns.map((addOn) => {
+                  const price = addOnPrice(addOn) ?? addOn.price;
+
+                  return (
+                    <label className="admin-check-row" key={addOn.id}>
+                      <input name="addOnIds" type="checkbox" value={addOn.id} />
+                      <span>{addOn.name}</span>
+                      {typeof price === "number" && (
+                        <small>+ CHF {price.toFixed(2)}</small>
+                      )}
+                    </label>
+                  );
+                })}
               </div>
             )}
 

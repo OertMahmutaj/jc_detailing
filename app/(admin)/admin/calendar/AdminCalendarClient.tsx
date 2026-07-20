@@ -33,16 +33,33 @@ type CalendarBlock = {
   startTime: string;
 };
 
+type CatalogOption = {
+  id: string;
+  name: string;
+  price?: number;
+  basePrice?: number;
+  durationMinutes?: number;
+  priceModifier?: number;
+  additionalDuration?: number;
+  serviceOptions?: Array<{
+    serviceId: string;
+    isActive?: boolean;
+    price?: number;
+    priceModifier?: number;
+    additionalDuration?: number;
+  }>;
+};
+
 type CalendarProps = {
-  addOns: Array<{ id: string; name: string; price?: number }>;
+  addOns: CatalogOption[];
   blocks: CalendarBlock[];
   bookings: CalendarBooking[];
   initialDate?: string;
-  categories: Array<{ id: string; name: string; price?: number }>;
+  categories: CatalogOption[];
   createBookingAction: (formData: FormData) => Promise<ActionResult>;
   createBlockAction: (formData: FormData) => Promise<void>;
   deleteBlockAction: (formData: FormData) => Promise<void>;
-  services: Array<{ id: string; name: string; price?: number }>;
+  services: CatalogOption[];
 };
 
 const weekdays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];

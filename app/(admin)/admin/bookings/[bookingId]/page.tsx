@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "../../_lib/prisma";
+import { getAdminBookingCatalog } from "../../_lib/bookingCatalog";
 import { AdminBookingEditor } from "../../_components/AdminBookingEditor";
 
 export default async function AdminBookingDetailPage({
@@ -10,7 +11,7 @@ export default async function AdminBookingDetailPage({
 }) {
     const { bookingId } = await params;
 
-    const [booking, services, vehicleCategories, addOns] = await Promise.all([
+    const [booking, catalog] = await Promise.all([
         prisma.booking.findUnique({
             where: {
                 id: bookingId,
@@ -43,22 +44,9 @@ export default async function AdminBookingDetailPage({
                 },
             },
         }),
-        prisma.service.findMany({
-            orderBy: {
-                name: "asc",
-            },
-        }),
-        prisma.vehicleCategory.findMany({
-            orderBy: {
-                name: "asc",
-            },
-        }),
-        prisma.addOn.findMany({
-            orderBy: {
-                name: "asc",
-            },
-        }),
+        getAdminBookingCatalog(),
     ]);
+    const { addOns, categories: vehicleCategories, services } = catalog;
 
     if (!booking) {
         notFound();

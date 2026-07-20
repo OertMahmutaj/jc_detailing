@@ -11,6 +11,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { prisma } from "../_lib/prisma";
+import { getAdminBookingCatalog } from "../_lib/bookingCatalog";
 import { AdminBookingCreator } from "../_components/AdminBookingCreator";
 import { createAdminBooking } from "../_actions/bookingActions";
 
@@ -112,19 +113,67 @@ function formatGrossCurrency(netAmount: number, vatRate = DEFAULT_VAT_RATE) {
   return formatCurrency(toGrossAmount(netAmount, vatRate));
 }
 
-function bookingNetAmount(booking: {
-  service: { basePrice: number };
-  vehicleCategory: { priceModifier: number };
-  addOns: { price: number }[];
+type DashboardService = {
+  id: string;
+  basePrice: number;
+  vehicleOptions?: { priceModifier: number; vehicleCategoryId: string }[];
+};
+
+type DashboardAddOn = {
+  price: number;
+  serviceOptions?: { price: number; serviceId: string }[];
+};
+
+function dashboardBookingServices(booking: {
+  service: DashboardService;
+  services?: DashboardService[];
 }) {
+  return booking.services?.length ? booking.services : [booking.service];
+}
+
+function dashboardVehiclePrice(
+  service: DashboardService,
+  vehicleCategoryId: string,
+) {
+  return (
+    service.vehicleOptions?.find(
+      (option) => option.vehicleCategoryId === vehicleCategoryId,
+    )?.priceModifier ?? 0
+  );
+}
+
+function dashboardAddOnPrice(addOn: DashboardAddOn, serviceIds: string[]) {
+  for (const serviceId of serviceIds) {
+    const option = addOn.serviceOptions?.find(
+      (serviceOption) => serviceOption.serviceId === serviceId,
+    );
+
+    if (option) return option.price;
+  }
+
+  return addOn.price;
+}
+
+function bookingNetAmount(booking: {
+  service: DashboardService;
+  services?: DashboardService[];
+  vehicleCategoryId: string;
+  addOns: DashboardAddOn[];
+}) {
+  const services = dashboardBookingServices(booking);
+  const serviceIds = services.map((service) => service.id);
   const addOnsTotal = booking.addOns.reduce(
-    (sum, addOn) => sum + addOn.price,
+    (sum, addOn) => sum + dashboardAddOnPrice(addOn, serviceIds),
     0
   );
 
   return (
-    booking.service.basePrice +
-    booking.vehicleCategory.priceModifier +
+    services.reduce((sum, service) => sum + service.basePrice, 0) +
+    services.reduce(
+      (sum, service) =>
+        sum + dashboardVehiclePrice(service, booking.vehicleCategoryId),
+      0,
+    ) +
     addOnsTotal
   );
 }
@@ -152,9 +201,7 @@ export default async function AdminDashboardPage() {
     openInvoices,
     overdueInvoices,
     nextSevenDaysBookings,
-    services,
-    categories,
-    addOns,
+    catalog,
   ] = await Promise.all([
     prisma.booking.findMany({
       where: {
@@ -197,8 +244,45 @@ export default async function AdminDashboardPage() {
         },
       },
       include: {
-        addOns: true,
-        service: true,
+        addOns: {
+          include: {
+            serviceOptions: {
+              select: {
+                price: true,
+                serviceId: true,
+              },
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
+        service: {
+          include: {
+            vehicleOptions: {
+              select: {
+                priceModifier: true,
+                vehicleCategoryId: true,
+              },
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
+        services: {
+          include: {
+            vehicleOptions: {
+              select: {
+                priceModifier: true,
+                vehicleCategoryId: true,
+              },
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
         vehicleCategory: true,
       },
     }),
@@ -282,8 +366,45 @@ export default async function AdminDashboardPage() {
         },
       },
       include: {
-        addOns: true,
-        service: true,
+        addOns: {
+          include: {
+            serviceOptions: {
+              select: {
+                price: true,
+                serviceId: true,
+              },
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
+        service: {
+          include: {
+            vehicleOptions: {
+              select: {
+                priceModifier: true,
+                vehicleCategoryId: true,
+              },
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
+        services: {
+          include: {
+            vehicleOptions: {
+              select: {
+                priceModifier: true,
+                vehicleCategoryId: true,
+              },
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
         vehicleCategory: true,
       },
       orderBy: {
@@ -291,24 +412,9 @@ export default async function AdminDashboardPage() {
       },
     }),
 
-    prisma.service.findMany({
-      orderBy: {
-        name: "asc",
-      },
-    }),
-
-    prisma.vehicleCategory.findMany({
-      orderBy: {
-        name: "asc",
-      },
-    }),
-
-    prisma.addOn.findMany({
-      orderBy: {
-        name: "asc",
-      },
-    }),
+    getAdminBookingCatalog(),
   ]);
+  const { addOns, categories, services } = catalog;
 
   console.log(
     `[admin-dashboard] queries: ${Math.round(

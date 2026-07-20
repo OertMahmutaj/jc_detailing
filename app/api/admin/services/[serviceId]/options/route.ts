@@ -10,6 +10,15 @@ type RouteContext = {
   params: Promise<{ serviceId: string }>;
 };
 
+class OptionInputError extends Error {
+  status: number;
+
+  constructor(message: string, status = 400) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function isAuthorized() {
   const cookieStore = await cookies();
   return verifyAdminSession(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
@@ -23,7 +32,21 @@ function normalizeName(value: unknown) {
 function normalizeImageUrl(value: unknown) {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
-  return trimmed ? trimmed.slice(0, 240) : null;
+  if (!trimmed) return null;
+
+  if (trimmed.startsWith("data:image/")) {
+    if (trimmed.length > 950000) {
+      throw new OptionInputError("Das Bild ist zu gross.", 413);
+    }
+
+    if (!/^data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/.test(trimmed)) {
+      throw new OptionInputError("Dieses Bildformat wird nicht unterstuetzt.");
+    }
+
+    return trimmed;
+  }
+
+  return trimmed.slice(0, 240);
 }
 
 function parsePrice(value: unknown) {
@@ -49,6 +72,10 @@ function optionResponseError(message: string, status = 400) {
 function revalidateServiceOptions(serviceId: string) {
   revalidatePath("/admin/services");
   revalidatePath(`/admin/services/${serviceId}`);
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin/calendar");
+  revalidatePath("/admin/clients");
   revalidatePath("/buchen");
   revalidatePath("/api/booking-data");
 }
@@ -167,6 +194,10 @@ export async function POST(request: Request, context: RouteContext) {
 
     return Response.json({ option }, { status: 201 });
   } catch (error) {
+    if (error instanceof OptionInputError) {
+      return optionResponseError(error.message, error.status);
+    }
+
     console.error("Service option creation failed:", error);
     return optionResponseError("Die Option konnte nicht erstellt werden.", 500);
   }
@@ -265,6 +296,10 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     return Response.json({ option: updatedOption });
   } catch (error) {
+    if (error instanceof OptionInputError) {
+      return optionResponseError(error.message, error.status);
+    }
+
     console.error("Service option update failed:", error);
     return optionResponseError("Die Option konnte nicht gespeichert werden.", 500);
   }

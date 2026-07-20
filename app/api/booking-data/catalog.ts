@@ -83,8 +83,14 @@ export const defaultAddOnsByService: Record<string, string[]> = {
 
 export async function ensureBookingCatalog(
   prisma: PrismaClient,
-  options: { includeServices?: boolean } = {},
+  options: {
+    includeAddOns?: boolean;
+    includeCategories?: boolean;
+    includeServices?: boolean;
+  } = {},
 ) {
+  const includeAddOns = options.includeAddOns ?? true;
+  const includeCategories = options.includeCategories ?? true;
   const includeServices = options.includeServices ?? true;
 
   if (includeServices) {
@@ -118,88 +124,93 @@ export async function ensureBookingCatalog(
     }
   }
 
-  for (const category of vehicleCategoryCatalog) {
-    const existingCategory = await prisma.vehicleCategory.findFirst({
-      where: { name: category.name },
-      select: { id: true },
-    });
+  if (includeCategories) {
+    for (const category of vehicleCategoryCatalog) {
+      const existingCategory = await prisma.vehicleCategory.findFirst({
+        where: { name: category.name },
+        select: { id: true, imageUrl: true },
+      });
 
-    if (existingCategory) {
-      await prisma.vehicleCategory.update({
-        where: { id: existingCategory.id },
-        data: {
-          imageUrl: category.imageUrl,
-          isActive: true,
-        },
-      });
-    } else {
-      await prisma.vehicleCategory.create({
-        data: {
-          imageUrl: category.imageUrl,
-          isActive: true,
-          name: category.name,
-          priceModifier: category.priceModifier,
-        },
-      });
+      if (existingCategory?.imageUrl === null) {
+        await prisma.vehicleCategory.update({
+          where: { id: existingCategory.id },
+          data: { imageUrl: category.imageUrl },
+        });
+      } else if (!existingCategory) {
+        await prisma.vehicleCategory.create({
+          data: {
+            imageUrl: category.imageUrl,
+            isActive: true,
+            name: category.name,
+            priceModifier: category.priceModifier,
+          },
+        });
+      }
     }
   }
 
-  for (const addOn of addOnCatalog) {
-    const existingAddOn = await prisma.addOn.findFirst({
-      where: { name: addOn.name },
-      select: { id: true },
-    });
+  if (includeAddOns) {
+    for (const addOn of addOnCatalog) {
+      const existingAddOn = await prisma.addOn.findFirst({
+        where: { name: addOn.name },
+        select: { id: true },
+      });
 
-    if (existingAddOn) {
-      await prisma.addOn.update({
-        where: { id: existingAddOn.id },
-        data: {
-          isActive: true,
-        },
-      });
-    } else {
-      await prisma.addOn.create({
-        data: {
-          additionalDuration: addOn.additionalDuration,
-          isActive: true,
-          name: addOn.name,
-          price: addOn.price,
-        },
-      });
+      if (!existingAddOn) {
+        await prisma.addOn.create({
+          data: {
+            additionalDuration: addOn.additionalDuration,
+            isActive: true,
+            name: addOn.name,
+            price: addOn.price,
+          },
+        });
+      }
     }
   }
 
-  const [services, categories, addOns] = await Promise.all([
+  const [services, categories, addOns, vehicleOptionCount, addOnOptionCount] = await Promise.all([
     prisma.service.findMany({
       select: { id: true, name: true },
+      where: { isActive: true },
     }),
     prisma.vehicleCategory.findMany({
       select: { id: true, name: true, priceModifier: true },
+      where: { isActive: true },
     }),
     prisma.addOn.findMany({
       select: { additionalDuration: true, id: true, name: true, price: true },
+      where: { isActive: true },
     }),
+    prisma.serviceVehicleCategory.count(),
+    prisma.serviceAddOn.count(),
   ]);
 
-  for (const service of services) {
-    for (const category of categories) {
-      await prisma.serviceVehicleCategory.upsert({
-        where: {
-          serviceId_vehicleCategoryId: {
+  if (vehicleOptionCount === 0) {
+    for (const service of services) {
+      for (const category of categories) {
+        await prisma.serviceVehicleCategory.upsert({
+          where: {
+            serviceId_vehicleCategoryId: {
+              serviceId: service.id,
+              vehicleCategoryId: category.id,
+            },
+          },
+          update: {},
+          create: {
+            isActive: true,
+            priceModifier: category.priceModifier,
             serviceId: service.id,
             vehicleCategoryId: category.id,
           },
-        },
-        update: {},
-        create: {
-          isActive: true,
-          priceModifier: category.priceModifier,
-          serviceId: service.id,
-          vehicleCategoryId: category.id,
-        },
-      });
+        });
+      }
     }
+  }
 
+  if (addOnOptionCount > 0) return;
+
+  for (const service of services) {
     const defaultAddOnNames = defaultAddOnsByService[service.name] ?? [];
 
     for (const addOn of addOns.filter((item) => defaultAddOnNames.includes(item.name))) {

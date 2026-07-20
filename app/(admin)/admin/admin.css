@@ -275,6 +275,18 @@
   margin: 0;
 }
 
+.admin-service-options-message.is-success {
+  background: var(--admin-green-soft);
+  border-color: rgba(73, 209, 125, 0.45);
+  color: var(--admin-text);
+}
+
+.admin-service-options-message.is-error {
+  background: var(--admin-red-soft);
+  border-color: rgba(255, 86, 86, 0.48);
+  color: var(--admin-text);
+}
+
 .admin-service-option-panel {
   overflow: hidden;
 }
@@ -331,6 +343,42 @@
 .admin-service-option-form input:focus {
   border-color: rgba(255, 100, 31, 0.7);
   box-shadow: 0 0 0 3px rgba(255, 100, 31, 0.12);
+}
+
+.admin-image-upload {
+  align-items: center;
+  background: var(--admin-field);
+  border: 1px dashed var(--admin-line-strong);
+  border-radius: var(--admin-radius-sm);
+  display: flex;
+  min-height: 40px;
+  padding: 8px;
+}
+
+.admin-image-upload input[type="file"] {
+  border: 0;
+  color: var(--admin-muted);
+  min-height: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.admin-image-upload input[type="file"]::file-selector-button {
+  background: var(--admin-orange);
+  border: 0;
+  border-radius: var(--admin-radius-sm);
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  margin-right: 12px;
+  min-height: 30px;
+  padding: 0 12px;
+}
+
+.admin-image-upload input[type="file"]::file-selector-button:hover {
+  background: var(--admin-orange-hover);
 }
 
 .admin-service-option-list {
@@ -3480,6 +3528,9 @@ html[data-admin-theme="light"] .admin-bookings-table tbody td {
 }
 
 .admin-notification--success {
+  --admin-notification-bg: rgba(17, 74, 43, 0.96);
+  --admin-notification-border: rgba(73, 209, 125, 0.5);
+  --admin-notification-text: #f6fff9;
   border-left-color: #49d17d;
 }
 

@@ -58,23 +58,76 @@ function pageHref({
   return `/admin/invoices?${params.toString()}`;
 }
 
+type LinkedVehicleOption = {
+  priceModifier: number;
+  vehicleCategoryId: string;
+};
+
+type LinkedService = {
+  basePrice: number;
+  id: string;
+  name: string;
+  vehicleOptions?: LinkedVehicleOption[];
+};
+
+type LinkedAddOn = {
+  price: number;
+  serviceOptions?: {
+    price: number;
+    serviceId: string;
+  }[];
+};
+
+function bookingServices(booking: {
+  service: LinkedService;
+  services: LinkedService[];
+}) {
+  return booking.services.length ? booking.services : [booking.service];
+}
+
+function serviceVehiclePrice(
+  service: LinkedService,
+  vehicleCategoryId: string,
+) {
+  return (
+    service.vehicleOptions?.find(
+      (option) => option.vehicleCategoryId === vehicleCategoryId,
+    )?.priceModifier ?? 0
+  );
+}
+
+function addOnPrice(addOn: LinkedAddOn, serviceIds: string[]) {
+  for (const serviceId of serviceIds) {
+    const option = addOn.serviceOptions?.find(
+      (serviceOption) => serviceOption.serviceId === serviceId,
+    );
+
+    if (option) return option.price;
+  }
+
+  return addOn.price;
+}
+
 function bookingAmount(booking: {
-  addOns: { price: number }[];
+  addOns: LinkedAddOn[];
   invoice: { totalAmount: number } | null;
   promoDiscountAmount: number;
-  service: { basePrice: number };
-  services: { basePrice: number }[];
-  vehicleCategory: { priceModifier: number };
+  service: LinkedService;
+  services: LinkedService[];
+  vehicleCategoryId: string;
 }) {
   if (booking.invoice) return booking.invoice.totalAmount;
 
-  const services = booking.services.length
-    ? booking.services
-    : [booking.service];
+  const services = bookingServices(booking);
+  const serviceIds = services.map((service) => service.id);
   const subtotal =
     services.reduce((sum, service) => sum + service.basePrice, 0) +
-    booking.vehicleCategory.priceModifier +
-    booking.addOns.reduce((sum, addOn) => sum + addOn.price, 0);
+    services.reduce(
+      (sum, service) =>
+        sum + serviceVehiclePrice(service, booking.vehicleCategoryId),
+      0,
+    ) +
+    booking.addOns.reduce((sum, addOn) => sum + addOnPrice(addOn, serviceIds), 0);
 
   return Math.max(0, subtotal - booking.promoDiscountAmount);
 }
@@ -196,11 +249,47 @@ export default async function AdminInvoicesPage({
   const [allBookings, allInvoices] = await Promise.all([
     prisma.booking.findMany({
       include: {
-        addOns: true,
+        addOns: {
+          include: {
+            serviceOptions: {
+              select: {
+                price: true,
+                serviceId: true,
+              },
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
         client: true,
         promoCode: true,
-        service: true,
-        services: true,
+        service: {
+          include: {
+            vehicleOptions: {
+              select: {
+                priceModifier: true,
+                vehicleCategoryId: true,
+              },
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
+        services: {
+          include: {
+            vehicleOptions: {
+              select: {
+                priceModifier: true,
+                vehicleCategoryId: true,
+              },
+              where: {
+                isActive: true,
+              },
+            },
+          },
+        },
         vehicleCategory: true,
         invoice: {
           include: {
@@ -251,70 +340,73 @@ export default async function AdminInvoicesPage({
     .filter((invoice) => invoice.status !== "PAID" && invoice.dueDate < now)
     .reduce((sum, invoice) => sum + invoice.totalAmount, 0);
 
-  const formattedBookings = bookings.map((booking) => ({
-    basePrice: (booking.services.length ? booking.services : [booking.service])
-      .reduce((sum, service) => sum + service.basePrice, 0),
-    bookingId: booking.id,
-    businessAddress:
-      booking.invoice?.businessAddress || "Sternmatt 4, 6242 Wauwil",
-    clientAddress:
-      booking.invoice?.clientAddress || booking.client.address || "",
-    clientEmail: booking.invoice?.emailOverride || booking.client.email,
-    clientName: booking.client.name,
-    dateTime: booking.dateTime,
-    draftItems: [
-      ...(booking.services.length ? booking.services : [booking.service]).map(
-        (service) => ({
+  const formattedBookings = bookings.map((booking) => {
+    const services = bookingServices(booking);
+    const serviceIds = services.map((service) => service.id);
+    const invoiceLanguage = normalizeInvoiceLanguage(booking.language);
+    const vehiclePrice = services.reduce(
+      (sum, service) =>
+        sum + serviceVehiclePrice(service, booking.vehicleCategoryId),
+      0,
+    );
+
+    return {
+      basePrice: services.reduce((sum, service) => sum + service.basePrice, 0),
+      bookingId: booking.id,
+      businessAddress:
+        booking.invoice?.businessAddress || "Sternmatt 4, 6242 Wauwil",
+      clientAddress:
+        booking.invoice?.clientAddress || booking.client.address || "",
+      clientEmail: booking.invoice?.emailOverride || booking.client.email,
+      clientName: booking.client.name,
+      dateTime: booking.dateTime,
+      draftItems: [
+        ...services.map((service) => ({
           description: translateInvoiceItemDescription(
             service.name,
-            normalizeInvoiceLanguage(booking.language),
+            invoiceLanguage,
           ),
           pricePerUnit: service.basePrice,
           quantity: 1,
           unit: "Stk.",
-        }),
-      ),
-      ...(booking.vehicleCategory.priceModifier > 0
-        ? [
-            {
-              description: invoiceVehicleCategoryDescription(
-                booking.vehicleCategory.name,
-                normalizeInvoiceLanguage(booking.language),
-              ),
-              pricePerUnit: booking.vehicleCategory.priceModifier,
-              quantity: 1,
-              unit: "Stk.",
-            },
-          ]
-        : []),
-      ...booking.addOns.map((addOn) => ({
-        description: translateInvoiceItemDescription(
-          addOn.name,
-          normalizeInvoiceLanguage(booking.language),
-        ),
-        pricePerUnit: addOn.price,
-        quantity: 1,
-        unit: "Stk.",
-      })),
-    ],
-    invoice: booking.invoice,
-    language: booking.language,
-    modifierPrice: booking.vehicleCategory.priceModifier,
-    promoCode: booking.promoCode?.code || null,
-    promoDiscountAmount: booking.promoDiscountAmount,
-    promoDiscountPercent: booking.promoDiscountPercent,
-    serviceName: (booking.services.length
-      ? booking.services
-      : [booking.service]
-    )
-      .map((service) => service.name)
-      .join(", "),
-    suggestedInvoiceNumber: `RE-${booking.id
-      .replace(/-/g, "")
-      .slice(0, 10)
-      .toUpperCase()}`,
-    totalAmount: bookingAmount(booking),
-  }));
+        })),
+        ...(vehiclePrice > 0
+          ? [
+              {
+                description: invoiceVehicleCategoryDescription(
+                  booking.vehicleCategory.name,
+                  invoiceLanguage,
+                ),
+                pricePerUnit: vehiclePrice,
+                quantity: 1,
+                unit: "Stk.",
+              },
+            ]
+          : []),
+        ...booking.addOns.map((addOn) => ({
+          description: translateInvoiceItemDescription(
+            addOn.name,
+            invoiceLanguage,
+          ),
+          pricePerUnit: addOnPrice(addOn, serviceIds),
+          quantity: 1,
+          unit: "Stk.",
+        })),
+      ],
+      invoice: booking.invoice,
+      language: booking.language,
+      modifierPrice: vehiclePrice,
+      promoCode: booking.promoCode?.code || null,
+      promoDiscountAmount: booking.promoDiscountAmount,
+      promoDiscountPercent: booking.promoDiscountPercent,
+      serviceName: services.map((service) => service.name).join(", "),
+      suggestedInvoiceNumber: `RE-${booking.id
+        .replace(/-/g, "")
+        .slice(0, 10)
+        .toUpperCase()}`,
+      totalAmount: bookingAmount(booking),
+    };
+  });
 
   const metrics = {
     openRevenue,
