@@ -14,6 +14,7 @@ import {
   LogOut,
   TicketPercent,
   Users,
+  Wrench,
   X,
 } from "lucide-react";
 import AdminThemeToggle from "../_components/AdminThemeToggle.client";
@@ -32,6 +33,7 @@ const adminGroups = [
   {
     title: "Verwaltung",
     links: [
+      { href: "/admin/services", label: "Leistungen", icon: Wrench },
       { href: "/admin/invoices", label: "Rechnungen", icon: FileText },
     ],
   },

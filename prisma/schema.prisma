@@ -99,6 +99,7 @@ model Service {
   name            String    
   basePrice       Float     
   durationMinutes Int       
+  isActive        Boolean   @default(true)
   primaryBookings Booking[] @relation("PrimaryBookingService")
   bookings        Booking[] @relation("BookingToServices")
 }

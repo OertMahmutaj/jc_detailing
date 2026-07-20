@@ -15,11 +15,24 @@ function sortByCatalogOrder<T extends { name: string }>(
     order.map((name, index) => [name, index]),
   );
 
-  return [...items].sort(
-    (first, second) =>
-      (positions.get(first.name) ?? Number.MAX_SAFE_INTEGER) -
-      (positions.get(second.name) ?? Number.MAX_SAFE_INTEGER),
-  );
+  return [...items].sort((first, second) => {
+    const firstPosition = positions.get(first.name);
+    const secondPosition = positions.get(second.name);
+
+    if (firstPosition !== undefined && secondPosition !== undefined) {
+      return firstPosition - secondPosition;
+    }
+
+    if (firstPosition !== undefined) {
+      return -1;
+    }
+
+    if (secondPosition !== undefined) {
+      return 1;
+    }
+
+    return first.name.localeCompare(second.name, "de");
+  });
 }
 
 function uniqueByName<T extends { name: string }>(items: T[]): T[] {
@@ -39,15 +52,14 @@ async function loadBookingCatalogData() {
   const [services, categories, addOns] = await Promise.all([
     prisma.service.findMany({
       where: {
-        name: {
-          in: serviceOrder,
-        },
+        isActive: true,
       },
       select: {
         id: true,
         name: true,
         basePrice: true,
         durationMinutes: true,
+        isActive: true,
       },
     }),
 
@@ -90,7 +102,7 @@ function isCatalogComplete(
   catalog: Awaited<ReturnType<typeof loadBookingCatalogData>>,
 ) {
   return (
-    catalog.services.length >= serviceOrder.length &&
+    catalog.services.length > 0 &&
     catalog.categories.length >= categoryOrder.length &&
     catalog.addOns.length >= addOnOrder.length
   );
@@ -103,7 +115,9 @@ export async function GET() {
     let catalog = await loadBookingCatalogData();
 
     if (!isCatalogComplete(catalog)) {
-      await ensureBookingCatalog(prisma);
+      await ensureBookingCatalog(prisma, {
+        includeServices: catalog.services.length === 0,
+      });
       catalog = await loadBookingCatalogData();
     }
 

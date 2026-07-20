@@ -70,33 +70,42 @@ export const serviceOrder = serviceCatalog.map((service) => service.name);
 export const categoryOrder = vehicleCategoryCatalog.map((category) => category.name);
 export const addOnOrder = addOnCatalog.map((addOn) => addOn.name);
 
-export async function ensureBookingCatalog(prisma: PrismaClient) {
-  for (const service of serviceCatalog) {
-    const acceptedNames = [service.name, ...service.aliases];
-    const existingServices = await prisma.service.findMany({
-      where: { name: { in: acceptedNames } },
-      select: { id: true, name: true },
-    });
-    const existingService =
-      existingServices.find((entry) => entry.name === service.name) ?? existingServices[0];
+export async function ensureBookingCatalog(
+  prisma: PrismaClient,
+  options: { includeServices?: boolean } = {},
+) {
+  const includeServices = options.includeServices ?? true;
 
-    if (existingService) {
-      await prisma.service.update({
-        where: { id: existingService.id },
-        data: {
-          name: service.name,
-          basePrice: service.basePrice,
-          durationMinutes: service.durationMinutes,
-        },
+  if (includeServices) {
+    for (const service of serviceCatalog) {
+      const acceptedNames = [service.name, ...service.aliases];
+      const existingServices = await prisma.service.findMany({
+        where: { name: { in: acceptedNames } },
+        select: { id: true, name: true },
       });
-    } else {
-      await prisma.service.create({
-        data: {
-          name: service.name,
-          basePrice: service.basePrice,
-          durationMinutes: service.durationMinutes,
-        },
-      });
+      const existingService =
+        existingServices.find((entry) => entry.name === service.name) ?? existingServices[0];
+
+      if (existingService) {
+        await prisma.service.update({
+          where: { id: existingService.id },
+          data: {
+            basePrice: service.basePrice,
+            durationMinutes: service.durationMinutes,
+            isActive: true,
+            name: service.name,
+          },
+        });
+      } else {
+        await prisma.service.create({
+          data: {
+            basePrice: service.basePrice,
+            durationMinutes: service.durationMinutes,
+            isActive: true,
+            name: service.name,
+          },
+        });
+      }
     }
   }
 
