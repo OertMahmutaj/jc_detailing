@@ -95,28 +95,66 @@ model PromoCodeUsage {
 }
 
 model Service {
-  id              String    @id @default(uuid())
+  id              String                   @id @default(uuid())
   name            String    
   basePrice       Float     
   durationMinutes Int       
-  isActive        Boolean   @default(true)
-  primaryBookings Booking[] @relation("PrimaryBookingService")
-  bookings        Booking[] @relation("BookingToServices")
+  isActive        Boolean                  @default(true)
+  primaryBookings Booking[]                @relation("PrimaryBookingService")
+  bookings        Booking[]                @relation("BookingToServices")
+  vehicleOptions  ServiceVehicleCategory[]
+  addOnOptions    ServiceAddOn[]
 }
 
 model VehicleCategory {
-  id            String    @id @default(uuid())
-  name          String    
-  priceModifier Float     
-  bookings      Booking[]
+  id             String                   @id @default(uuid())
+  name           String    
+  priceModifier  Float     
+  imageUrl       String?
+  isActive       Boolean                  @default(true)
+  bookings       Booking[]
+  serviceOptions ServiceVehicleCategory[]
 }
 
 model AddOn {
-  id                 String    @id @default(uuid())
+  id                 String         @id @default(uuid())
   name               String    
   price              Float     
   additionalDuration Int       
-  bookings           Booking[] @relation("BookingToAddOns")
+  isActive           Boolean        @default(true)
+  bookings           Booking[]      @relation("BookingToAddOns")
+  serviceOptions     ServiceAddOn[]
+}
+
+model ServiceVehicleCategory {
+  id                String          @id @default(uuid())
+  serviceId         String
+  service           Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  vehicleCategoryId String
+  vehicleCategory   VehicleCategory @relation(fields: [vehicleCategoryId], references: [id], onDelete: Cascade)
+  priceModifier     Float
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([serviceId, vehicleCategoryId])
+  @@index([vehicleCategoryId])
+}
+
+model ServiceAddOn {
+  id                 String   @id @default(uuid())
+  serviceId          String
+  service            Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  addOnId            String
+  addOn              AddOn    @relation(fields: [addOnId], references: [id], onDelete: Cascade)
+  price              Float
+  additionalDuration Int
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([serviceId, addOnId])
+  @@index([addOnId])
 }
 
 model Booking {

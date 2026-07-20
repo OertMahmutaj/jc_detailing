@@ -26,8 +26,22 @@ import { localeHome } from "../i18n";
 import { usePublicLocale } from "./usePublicLocale";
 
 type Service = { id: string; name: string; basePrice: number; durationMinutes: number };
-type Category = { id: string; name: string; priceModifier: number };
-type AddOn = { id: string; name: string; price: number; additionalDuration: number };
+type Category = {
+  id: string;
+  imageUrl?: string | null;
+  isActive?: boolean;
+  name: string;
+  priceModifier: number;
+  serviceOptions?: Array<{ isActive: boolean; priceModifier: number; serviceId: string }>;
+};
+type AddOn = {
+  id: string;
+  isActive?: boolean;
+  name: string;
+  price: number;
+  additionalDuration: number;
+  serviceOptions?: Array<{ additionalDuration: number; isActive: boolean; price: number; serviceId: string }>;
+};
 type Status = "idle" | "loading" | "success" | "error";
 
 type ServiceDetail = {
@@ -73,17 +87,6 @@ const addOnDescriptions: Record<string, string> = {
   "Kofferraum Deep Clean": "Gründliche Reinigung des Kofferraums.",
 };
 
-const serviceAddOns: Record<string, string[]> = {
-  "Komplette Innenreinigung": ["Tierhaarentfernung"],
-  "Pflegeerhaltung Innenreinigung": [
-    "Tierhaarentfernung",
-    "Sitze Tiefenreinigung",
-    "Fussmatten intensiv",
-    "Kofferraum Deep Clean",
-  ],
-  "Komplette Premium Paket": ["Tierhaarentfernung"],
-};
-
 const vehicleDetails: Record<string, { title: string; description: string; image: string }> = {
   "City Car": {
     title: "City Car",
@@ -111,6 +114,46 @@ const vehicleDetails: Record<string, { title: string; description: string; image
     image: "/van.webp",
   },
 };
+
+function categoryOptionFor(category: Category, serviceId: string) {
+  return category.serviceOptions?.find((option) => option.serviceId === serviceId && option.isActive);
+}
+
+function categoryAvailableForServices(category: Category, services: Service[]) {
+  if (category.isActive === false) return false;
+  if (services.length === 0) return true;
+
+  return services.every((service) => categoryOptionFor(category, service.id));
+}
+
+function categoryWithServicePrice(category: Category, services: Service[]) {
+  if (services.length === 0) return category;
+
+  const priceModifier = services.reduce(
+    (sum, service) => sum + (categoryOptionFor(category, service.id)?.priceModifier ?? 0),
+    0,
+  );
+
+  return { ...category, priceModifier };
+}
+
+function addOnOptionFor(addOn: AddOn, services: Service[]) {
+  for (const service of services) {
+    const option = addOn.serviceOptions?.find((item) => item.serviceId === service.id && item.isActive);
+
+    if (option) return option;
+  }
+
+  return null;
+}
+
+function addOnWithServicePrice(addOn: AddOn, services: Service[]) {
+  const option = addOnOptionFor(addOn, services);
+
+  return option
+    ? { ...addOn, additionalDuration: option.additionalDuration, price: option.price }
+    : addOn;
+}
 
 const serviceDetails: Record<string, ServiceDetail> = {
   "Komplette Innenreinigung": {
@@ -460,10 +503,20 @@ export function BookingForm() {
     }
   }
 
-  const availableAddOns = useMemo(() => {
-    const allowedNames = new Set(selectedServices.flatMap((service) => serviceAddOns[service.name] ?? []));
+  const availableCategories = useMemo(
+    () =>
+      dbData.categories
+        .filter((category) => categoryAvailableForServices(category, selectedServices))
+        .map((category) => categoryWithServicePrice(category, selectedServices)),
+    [dbData.categories, selectedServices],
+  );
 
-    return dbData.addOns.filter((addOn) => allowedNames.has(addOn.name));
+  const availableAddOns = useMemo(() => {
+    if (selectedServices.length === 0) return [];
+
+    return dbData.addOns
+      .filter((addOn) => addOn.isActive !== false && Boolean(addOnOptionFor(addOn, selectedServices)))
+      .map((addOn) => addOnWithServicePrice(addOn, selectedServices));
   }, [dbData.addOns, selectedServices]);
 
   const visibleServices = useMemo(() => {
@@ -503,7 +556,6 @@ export function BookingForm() {
         const res = await fetch("/api/booking-data");
         const data = await res.json();
         setDbData(data);
-        if (data.categories.length > 0) setSelectedCategory(data.categories[0]);
       } catch (err) {
         console.error("Buchungsdaten konnten nicht geladen werden:", err);
       } finally {
@@ -517,6 +569,18 @@ export function BookingForm() {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    setSelectedCategory((current) => {
+      if (availableCategories.length === 0) return null;
+
+      const updatedCurrent = current
+        ? availableCategories.find((category) => category.id === current.id)
+        : null;
+
+      return updatedCurrent ?? availableCategories[0];
+    });
+  }, [availableCategories]);
 
   useEffect(() => {
     if (totalDuration <= 0) {
@@ -647,11 +711,13 @@ export function BookingForm() {
 
   useEffect(() => {
     setSelectedAddOns((current) =>
-      current.filter((addOn) =>
-        availableAddOns.some(
-          (availableAddOn) => availableAddOn.id === addOn.id,
-        ),
-      ),
+      current
+        .map((addOn) =>
+          availableAddOns.find(
+            (availableAddOn) => availableAddOn.id === addOn.id,
+          ),
+        )
+        .filter((addOn): addOn is AddOn => Boolean(addOn)),
     );
   }, [availableAddOns]);
 
@@ -660,12 +726,6 @@ export function BookingForm() {
       setSelectedTime("");
     }
   }, [blockedSlots, selectedTime]);
-
-  useEffect(() => {
-    setSelectedAddOns((current) =>
-      current.filter((addOn) => availableAddOns.some((availableAddOn) => availableAddOn.id === addOn.id))
-    );
-  }, [availableAddOns]);
 
   useEffect(() => {
     if (step !== 4) {
@@ -999,7 +1059,7 @@ export function BookingForm() {
           <div className="booking-field booking-field-wide">
             <label>{copy.selectVehicle}</label>
             <div className="booking-vehicle-list">
-              {dbData.categories.map((category) => (
+              {availableCategories.map((category) => (
                 <button
                   className={selectedCategory?.id === category.id ? "is-selected" : ""}
                   key={category.id}
@@ -1011,7 +1071,9 @@ export function BookingForm() {
                 >
                   <span
                     className="booking-vehicle-image"
-                    style={{ backgroundImage: `url(${vehicleDetails[category.name]?.image ?? "/IMG_4623.webp"})` }}
+                    style={{
+                      backgroundImage: `url(${category.imageUrl ?? vehicleDetails[category.name]?.image ?? "/IMG_4623.webp"})`,
+                    }}
                   />
                   <span className="booking-vehicle-copy">
                     <strong>{displayVehicle(category.name)?.title ?? category.name}</strong>

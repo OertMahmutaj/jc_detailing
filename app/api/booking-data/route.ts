@@ -65,28 +65,42 @@ async function loadBookingCatalogData() {
 
     prisma.vehicleCategory.findMany({
       where: {
-        name: {
-          in: categoryOrder,
-        },
+        isActive: true,
       },
       select: {
+        imageUrl: true,
         id: true,
+        isActive: true,
         name: true,
         priceModifier: true,
+        serviceOptions: {
+          select: {
+            isActive: true,
+            priceModifier: true,
+            serviceId: true,
+          },
+        },
       },
     }),
 
     prisma.addOn.findMany({
       where: {
-        name: {
-          in: addOnOrder,
-        },
+        isActive: true,
       },
       select: {
+        additionalDuration: true,
         id: true,
+        isActive: true,
         name: true,
         price: true,
-        additionalDuration: true,
+        serviceOptions: {
+          select: {
+            additionalDuration: true,
+            isActive: true,
+            price: true,
+            serviceId: true,
+          },
+        },
       },
     }),
   ]);

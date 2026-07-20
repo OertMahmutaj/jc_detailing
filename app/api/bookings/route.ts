@@ -13,16 +13,6 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const rateLimitWindowMs = 15 * 60 * 1000;
 const maxRequestsPerWindow = 5;
 const bookingRateLimit = new Map<string, { count: number; resetAt: number }>();
-const allowedAddOnsByService: Record<string, string[]> = {
-  "Komplette Innenreinigung": ["Tierhaarentfernung"],
-  "Pflegeerhaltung Innenreinigung": [
-    "Tierhaarentfernung",
-    "Sitze Tiefenreinigung",
-    "Fussmatten intensiv",
-    "Kofferraum Deep Clean",
-  ],
-  "Komplette Premium Paket": ["Tierhaarentfernung"],
-};
 
 type BookingPayload = {
   name?: unknown;
@@ -838,10 +828,36 @@ export async function POST(request: Request) {
     const uniqueServiceIds = [...new Set(serviceIds)];
     const uniqueAddOnIds = [...new Set(addOnIds)];
     const [dbServices, dbCategory, dbAddOns] = await Promise.all([
-      prisma.service.findMany({ where: { id: { in: uniqueServiceIds } } }),
-      prisma.vehicleCategory.findUnique({ where: { id: vehicleCategoryId } }),
+      prisma.service.findMany({
+        where: { id: { in: uniqueServiceIds }, isActive: true },
+        include: {
+          vehicleOptions: {
+            where: { isActive: true, vehicleCategoryId },
+            select: {
+              priceModifier: true,
+              serviceId: true,
+              vehicleCategoryId: true,
+            },
+          },
+        },
+      }),
+      prisma.vehicleCategory.findFirst({
+        where: { id: vehicleCategoryId, isActive: true },
+      }),
       uniqueAddOnIds.length
-        ? prisma.addOn.findMany({ where: { id: { in: uniqueAddOnIds } } })
+        ? prisma.addOn.findMany({
+            where: { id: { in: uniqueAddOnIds }, isActive: true },
+            include: {
+              serviceOptions: {
+                where: { isActive: true, serviceId: { in: uniqueServiceIds } },
+                select: {
+                  additionalDuration: true,
+                  price: true,
+                  serviceId: true,
+                },
+              },
+            },
+          })
         : Promise.resolve([]),
     ]);
 
@@ -871,14 +887,39 @@ export async function POST(request: Request) {
       .filter((service): service is (typeof dbServices)[number] =>
         Boolean(service),
       );
-    const allowedAddOnNames = new Set(
-      servicesByRequestOrder.flatMap(
-        (service) => allowedAddOnsByService[service.name] ?? [],
-      ),
+    const hasInvalidVehicleOption = servicesByRequestOrder.some(
+      (service) => service.vehicleOptions.length === 0,
     );
-    const hasInvalidAddOn = dbAddOns.some(
-      (addOn) => !allowedAddOnNames.has(addOn.name),
-    );
+
+    if (hasInvalidVehicleOption) {
+      return Response.json(
+        { message: bookingApiMessage(language, "vehicleNotFound") },
+        { status: 400 },
+      );
+    }
+
+    const addOnPricingById = new Map<
+      string,
+      { additionalDuration: number; price: number }
+    >();
+    const hasInvalidAddOn = dbAddOns.some((addOn) => {
+      for (const service of servicesByRequestOrder) {
+        const option = addOn.serviceOptions.find(
+          (serviceOption) => serviceOption.serviceId === service.id,
+        );
+
+        if (option) {
+          addOnPricingById.set(addOn.id, {
+            additionalDuration: option.additionalDuration,
+            price: option.price,
+          });
+
+          return false;
+        }
+      }
+
+      return true;
+    });
 
     if (hasInvalidAddOn) {
       return Response.json(
@@ -891,8 +932,8 @@ export async function POST(request: Request) {
       (sum, service) => sum + service.durationMinutes,
       0,
     );
-    const addOnsDuration = dbAddOns.reduce(
-      (sum, item) => sum + item.additionalDuration,
+    const addOnsDuration = uniqueAddOnIds.reduce(
+      (sum, id) => sum + (addOnPricingById.get(id)?.additionalDuration ?? 0),
       0,
     );
     const totalDuration = baseDuration + addOnsDuration;
@@ -961,8 +1002,14 @@ export async function POST(request: Request) {
         (sum, service) => sum + service.basePrice,
         0,
       ) +
-      dbCategory.priceModifier +
-      dbAddOns.reduce((sum, addOn) => sum + addOn.price, 0),
+      servicesByRequestOrder.reduce(
+        (sum, service) => sum + (service.vehicleOptions[0]?.priceModifier ?? 0),
+        0,
+      ) +
+      uniqueAddOnIds.reduce(
+        (sum, id) => sum + (addOnPricingById.get(id)?.price ?? 0),
+        0,
+      ),
     );
     let appliedPromoCode = "";
     let promoDiscountPercent = 0;

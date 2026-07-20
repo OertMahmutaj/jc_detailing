@@ -1,6 +1,7 @@
 "use client";
 
-import { Plus, Save, Search, Trash2, X } from "lucide-react";
+import Link from "next/link";
+import { Plus, Save, Search, Settings2, Trash2, X } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
@@ -298,22 +299,32 @@ export default function ServicesClient({ services }: { services: ServiceRow[] })
                     <span>{service.bookingUsage} Buchungen</span>
                   </p>
 
-                  <button
-                    className="admin-danger-button"
-                    disabled={cannotDelete || savingId === service.id}
-                    onClick={() => deleteService(service)}
-                    title={
-                      cannotDelete
-                        ? "Mindestens eine sichtbare Leistung muss bestehen bleiben."
-                        : service.bookingUsage > 0
-                          ? "Diese Leistung wird aus dem Buchungsformular ausgeblendet."
-                          : undefined
-                    }
-                    type="button"
-                  >
-                    <Trash2 size={16} />
-                    {service.bookingUsage > 0 ? "Ausblenden" : "Entfernen"}
-                  </button>
+                  <div className="admin-service-card-actions">
+                    <Link
+                      className="admin-secondary-button"
+                      href={`/admin/services/${service.id}`}
+                    >
+                      <Settings2 size={16} />
+                      Optionen bearbeiten
+                    </Link>
+
+                    <button
+                      className="admin-danger-button"
+                      disabled={cannotDelete || savingId === service.id}
+                      onClick={() => deleteService(service)}
+                      title={
+                        cannotDelete
+                          ? "Mindestens eine sichtbare Leistung muss bestehen bleiben."
+                          : service.bookingUsage > 0
+                            ? "Diese Leistung wird aus dem Buchungsformular ausgeblendet."
+                            : undefined
+                      }
+                      type="button"
+                    >
+                      <Trash2 size={16} />
+                      {service.bookingUsage > 0 ? "Ausblenden" : "Entfernen"}
+                    </button>
+                  </div>
                 </div>
               </article>
             );

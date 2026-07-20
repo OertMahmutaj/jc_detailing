@@ -52,11 +52,11 @@ export const serviceCatalog = [
 ] as const;
 
 export const vehicleCategoryCatalog = [
-  { name: "City Car", priceModifier: 0 },
-  { name: "Sedan", priceModifier: 20 },
-  { name: "Sports Car", priceModifier: 20 },
-  { name: "SUV", priceModifier: 20 },
-  { name: "Van", priceModifier: 100 },
+  { name: "City Car", priceModifier: 0, imageUrl: "/city_car.webp" },
+  { name: "Sedan", priceModifier: 20, imageUrl: "/sedan.webp" },
+  { name: "Sports Car", priceModifier: 20, imageUrl: "/sports_car.webp" },
+  { name: "SUV", priceModifier: 20, imageUrl: "/suv.webp" },
+  { name: "Van", priceModifier: 100, imageUrl: "/van.webp" },
 ] as const;
 
 export const addOnCatalog = [
@@ -69,6 +69,17 @@ export const addOnCatalog = [
 export const serviceOrder = serviceCatalog.map((service) => service.name);
 export const categoryOrder = vehicleCategoryCatalog.map((category) => category.name);
 export const addOnOrder = addOnCatalog.map((addOn) => addOn.name);
+
+export const defaultAddOnsByService: Record<string, string[]> = {
+  "Komplette Innenreinigung": ["Tierhaarentfernung"],
+  "Pflegeerhaltung Innenreinigung": [
+    "Tierhaarentfernung",
+    "Sitze Tiefenreinigung",
+    "Fussmatten intensiv",
+    "Kofferraum Deep Clean",
+  ],
+  "Komplette Premium Paket": ["Tierhaarentfernung"],
+};
 
 export async function ensureBookingCatalog(
   prisma: PrismaClient,
@@ -90,8 +101,6 @@ export async function ensureBookingCatalog(
         await prisma.service.update({
           where: { id: existingService.id },
           data: {
-            basePrice: service.basePrice,
-            durationMinutes: service.durationMinutes,
             isActive: true,
             name: service.name,
           },
@@ -118,10 +127,20 @@ export async function ensureBookingCatalog(
     if (existingCategory) {
       await prisma.vehicleCategory.update({
         where: { id: existingCategory.id },
-        data: { priceModifier: category.priceModifier },
+        data: {
+          imageUrl: category.imageUrl,
+          isActive: true,
+        },
       });
     } else {
-      await prisma.vehicleCategory.create({ data: category });
+      await prisma.vehicleCategory.create({
+        data: {
+          imageUrl: category.imageUrl,
+          isActive: true,
+          name: category.name,
+          priceModifier: category.priceModifier,
+        },
+      });
     }
   }
 
@@ -135,12 +154,71 @@ export async function ensureBookingCatalog(
       await prisma.addOn.update({
         where: { id: existingAddOn.id },
         data: {
-          price: addOn.price,
-          additionalDuration: addOn.additionalDuration,
+          isActive: true,
         },
       });
     } else {
-      await prisma.addOn.create({ data: addOn });
+      await prisma.addOn.create({
+        data: {
+          additionalDuration: addOn.additionalDuration,
+          isActive: true,
+          name: addOn.name,
+          price: addOn.price,
+        },
+      });
+    }
+  }
+
+  const [services, categories, addOns] = await Promise.all([
+    prisma.service.findMany({
+      select: { id: true, name: true },
+    }),
+    prisma.vehicleCategory.findMany({
+      select: { id: true, name: true, priceModifier: true },
+    }),
+    prisma.addOn.findMany({
+      select: { additionalDuration: true, id: true, name: true, price: true },
+    }),
+  ]);
+
+  for (const service of services) {
+    for (const category of categories) {
+      await prisma.serviceVehicleCategory.upsert({
+        where: {
+          serviceId_vehicleCategoryId: {
+            serviceId: service.id,
+            vehicleCategoryId: category.id,
+          },
+        },
+        update: {},
+        create: {
+          isActive: true,
+          priceModifier: category.priceModifier,
+          serviceId: service.id,
+          vehicleCategoryId: category.id,
+        },
+      });
+    }
+
+    const defaultAddOnNames = defaultAddOnsByService[service.name] ?? [];
+
+    for (const addOn of addOns.filter((item) => defaultAddOnNames.includes(item.name))) {
+      await prisma.serviceAddOn.upsert({
+        where: {
+          serviceId_addOnId: {
+            addOnId: addOn.id,
+            serviceId: service.id,
+          },
+        },
+        update: {},
+        create: {
+          addOnId: addOn.id,
+          additionalDuration: addOn.additionalDuration,
+          isActive: true,
+          price: addOn.price,
+          serviceId: service.id,
+        },
+      });
     }
   }
 }
