@@ -212,6 +212,16 @@ export function Footer() {
       </div>
 
       <div className="footer-bottom">
+        <p className="footer-credit">
+          Website by{" "}
+          <a
+            href="https://www.midnight-coffee.agency/"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Midnight
+          </a>
+        </p>
         <p>© 2026 JC Detailing. {copy.rights}</p>
         <p>{copy.locationLine}</p>
       </div>

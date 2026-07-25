@@ -1212,6 +1212,17 @@ body::selection {
   margin: 0;
 }
 
+.footer-credit a {
+  color: rgba(255, 255, 255, 0.88);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.footer-credit a:hover,
+.footer-credit a:focus-visible {
+  color: var(--public-orange);
+}
+
 .back-to-top {
   background: rgba(7, 12, 19, 0.9);
   border: 1px solid var(--public-line-strong);
