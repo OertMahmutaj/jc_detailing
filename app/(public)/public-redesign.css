@@ -78,6 +78,39 @@ body::selection {
   padding-right: 0;
 }
 
+.whatsapp-nav-link {
+  align-items: center;
+  color: var(--public-text);
+  display: inline-flex;
+  height: 42px;
+  justify-content: center;
+  line-height: 1;
+  min-height: 42px;
+  text-decoration: none;
+  transition: color 180ms ease, transform 180ms ease;
+  width: 54px;
+}
+
+.whatsapp-nav-link .whatsapp-icon,
+.whatsapp-nav-link .svg-inline--fa.whatsapp-icon {
+  height: 32px !important;
+  width: 32px !important;
+}
+
+.whatsapp-nav-link:hover,
+.whatsapp-nav-link:focus-visible {
+  color: var(--public-orange);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.whatsapp-icon {
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 1.15em;
+  width: 1.15em;
+}
+
 .language-selector {
   position: relative;
 }
@@ -279,9 +312,9 @@ body::selection {
   width: 100%;
 }
 
-.public-home .video-background video {
+/* .public-home .video-background video {
   filter: contrast(1.08) saturate(0.78);
-}
+} */
 
 .public-home .hero-overlay {
   background:
@@ -523,7 +556,7 @@ body::selection {
 }
 
 .public-home .service-image img {
-  filter: contrast(1.05) saturate(0.82);
+  /* filter: contrast(1.05) saturate(0.82); */
   object-fit: cover;
   transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -708,6 +741,7 @@ body::selection {
 .public-home .about-image {
   border: 1px solid var(--public-line);
   border-radius: var(--public-radius);
+  filter: none !important;
   min-height: 520px;
   overflow: hidden;
   padding: 0;
@@ -715,8 +749,9 @@ body::selection {
 }
 
 .public-home .about-image img {
-  filter: contrast(1.04) saturate(0.78);
+  filter: none !important;
   object-fit: cover;
+  object-position: center center;
 }
 
 .public-home .about-proof {
@@ -780,9 +815,9 @@ body::selection {
   min-height: 0;
 }
 
-.public-home .before-after-image {
+/* .public-home .before-after-image {
   filter: contrast(1.04) saturate(0.82);
-}
+} */
 
 .public-home .before-after-label {
   background: rgba(4, 8, 13, 0.84);
@@ -1422,6 +1457,20 @@ body::selection {
 }
 
 @media (min-width: 1181px) and (max-width: 1380px) {
+  .header-actions {
+    gap: 10px;
+  }
+
+  .whatsapp-nav-link {
+    width: 48px;
+  }
+
+  .whatsapp-nav-link .whatsapp-icon,
+  .whatsapp-nav-link .svg-inline--fa.whatsapp-icon {
+    height: 30px !important;
+    width: 30px !important;
+  }
+
   .footer-top {
     grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
   }

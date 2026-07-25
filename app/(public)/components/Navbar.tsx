@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSquareWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { CalendarCheck, ChevronDown, Languages } from "lucide-react";
 import {
   localeHome,
@@ -17,6 +19,7 @@ import {
 import { usePublicLocale } from "./usePublicLocale";
 
 const menuEase = [0.22, 1, 0.36, 1] as const;
+const whatsappUrl = "https://wa.me/41772683388";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -263,6 +266,17 @@ export function Navbar() {
         </nav>
 
         <div className="header-actions">
+          <a
+            aria-label="WhatsApp Chat öffnen"
+            className="whatsapp-nav-link"
+            href={whatsappUrl}
+            rel="noopener noreferrer"
+            target="_blank"
+            title="WhatsApp"
+          >
+            <FontAwesomeIcon className="whatsapp-icon" icon={faSquareWhatsapp} />
+          </a>
+
           <Link className="ghost-button" href={bookingUrl} onClick={(event) => handleNavClick(bookingUrl, event)}>
             <CalendarCheck size={15} />
             {copy.nav.booking}

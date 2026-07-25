@@ -5,12 +5,13 @@ import {
   ArrowRight,
   CalendarCheck,
   Check,
-  MessageCircle,
   MapPin,
   ShieldCheck,
   Sparkles,
   Star,
 } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSquareWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { BeforeAfterSlider } from "./components/BeforeAfterSlider";
 import { GoogleReviewWidget } from "./components/GoogleReviewWidget";
 import { HeroBackgroundVideo } from "./components/HeroBackgroundVideo";
@@ -352,7 +353,8 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
                 alt="Juljan Cela von JC Detailing in Wauwil"
                 fill
                 sizes="(max-width: 900px) 100vw, 40vw"
-                src="/Juljan.avif"
+                src="/Juljan.webp"
+                unoptimized
               />
             </LightItem>
 
@@ -449,7 +451,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                <MessageCircle size={18} />
+                <FontAwesomeIcon className="whatsapp-icon" icon={faSquareWhatsapp} />
                 {copy.contact.message}
               </a>
             </div>

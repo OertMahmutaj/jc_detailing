@@ -3,11 +3,12 @@
 import { LanguageAwareBookingLink } from "./LanguageAwareBookingLink";
 import { LocalizedPublicLink } from "./LocalizedPublicLink";
 import { usePublicLocale } from "./usePublicLocale";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSquareWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import {
   Instagram,
   Mail,
   MapPin,
-  MessageCircle,
   Music2,
   Navigation,
   Phone,
@@ -158,7 +159,7 @@ export function Footer() {
               rel="noopener noreferrer"
               target="_blank"
             >
-              <MessageCircle size={16} />
+              <FontAwesomeIcon className="whatsapp-icon" icon={faSquareWhatsapp} />
               WhatsApp
             </a>
 

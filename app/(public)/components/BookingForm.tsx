@@ -12,6 +12,8 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSquareWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
@@ -977,7 +979,10 @@ export function BookingForm() {
 
         <div className="booking-confirmation-footer">
           <a href={localeHome(currentLanguage)}>{copy.home}</a>
-          <a href="https://wa.me/41772683388">{copy.whatsapp}</a>
+          <a href="https://wa.me/41772683388">
+            <FontAwesomeIcon className="whatsapp-icon" icon={faSquareWhatsapp} />
+            {copy.whatsapp}
+          </a>
         </div>
       </section>
     );
