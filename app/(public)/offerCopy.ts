@@ -1,137 +1,361 @@
-import { germanOffers } from "../data/site";
 import type { PublicLocale } from "./i18n";
 
 export type LocalizedOffer = {
   title: string;
   price: string;
   text: string;
-  details: readonly string[];
+  details: string[];
 };
 
-const translatedOffers: Record<Exclude<PublicLocale, "de">, LocalizedOffer[]> = {
+const offersByLocale: Record<PublicLocale, LocalizedOffer[]> = {
+  de: [
+    {
+      title: "Komplette Innenreinigung",
+      price: "ab 209 CHF",
+      text: "Gründliche Reinigung und Pflege des gesamten Innenraums.",
+      details: [
+        "Staubsaugung des gesamten Innenraums inklusive Fussraum, Sitze und Kofferraum.",
+        "Reinigung und Pflege aller Kunststoffoberflächen mit schützendem Finish.",
+        "Türfalze, Einstiegsbereiche, Sitze, Teppiche und Scheiben werden gründlich gereinigt.",
+        "Dampfreinigung zur hygienischen Desinfektion des Innenraums.",
+        "Schonende Pflege von Leder- und Alcantaraflächen.",
+      ],
+    },
+    {
+      title: "Komplette Aussenreinigung",
+      price: "ab 109 CHF",
+      text: "Schonende Handwäsche, Felgenreinigung und gepflegtes Finish.",
+      details: [
+        "Vorwäsche mit Snow Foam zur schonenden Schmutzlösung.",
+        "Sorgfältige Handwäsche mit hochwertigen Reinigungsmitteln.",
+        "Felgenreinigung inklusive Entfernung von Bremsstaub.",
+        "Insektenentfernung, Türfalze, Scheibenreinigung und Reifenpflege.",
+        "Detailreinigung von Emblemen, Kühlergrill und schwer zugänglichen Bereichen.",
+      ],
+    },
+    {
+      title: "Komplette Aufbereitung",
+      price: "auf Anfrage",
+      text: "Innen und aussen kombiniert für ein frisches Gesamtbild.",
+      details: [
+        "Kombination aus Innenreinigung und Aussenreinigung.",
+        "Individuelle Kontrolle von Lack, Innenraum und Fahrzeugzustand.",
+        "Empfohlen für Fahrzeuge, die umfassend aufgefrischt werden sollen.",
+        "Der genaue Umfang wird nach Begutachtung abgestimmt.",
+      ],
+    },
+    {
+      title: "Add-ons",
+      price: "ab 30 CHF",
+      text: "Optionale Zusatzleistungen nach Bedarf.",
+      details: [
+        "Tierhaarentfernung ab 50 CHF.",
+        "Kofferraum Deep Clean ab 40 CHF.",
+        "Sitze Tiefenreinigung ab 80 CHF.",
+        "Dachhimmel Reinigung ab 50 CHF.",
+        "Fussmatten intensiv ab 30 CHF.",
+      ],
+    },
+    {
+      title: "Politur",
+      price: "ab 399 CHF",
+      text: "Lackkorrektur, Hochglanz-Finish und sichtbar mehr Farbtiefe.",
+      details: [
+        "Polish Paket 1-Step ab 399 CHF für Glanz, leichte Kratzerentfernung und reduzierte Swirls.",
+        "Polish Paket 2-Step ab 599 CHF mit Cut und Finish für deutlich verbesserte Lackoptik.",
+        "Der Lack wird gereinigt, vorbereitet und passend zum Zustand kontrolliert poliert.",
+        "Ziel ist eine sichere, materialschonende Aufbereitung mit sichtbarer Klarheit und Tiefe.",
+        "Der finale Arbeitsumfang und Preis werden nach professioneller Begutachtung festgelegt.",
+      ],
+    },
+    {
+      title: "Keramikversiegelung",
+      price: "ab 1090 CHF",
+      text: "Mehrschichtiger Langzeitschutz mit hydrophobem Effekt und hochwertigem Glanz.",
+      details: [
+        "Keramikversiegelung ab 1090 CHF inklusive Lackwäsche, Vorbereitung, Entfettung und Politur.",
+        "Die Keramikbeschichtung wird kontrolliert aufgetragen, ausgehärtet und final geprüft.",
+        "Vorteile: tiefer Glanz, hydrophober Effekt, UV- und Umweltschutz.",
+        "Haltbarkeit je nach Pflege und Nutzung etwa 12 bis 36 Monate.",
+        "Der finale Arbeitsumfang und Preis werden nach professioneller Begutachtung festgelegt.",
+      ],
+    },
+  ],
   en: [
     {
       title: "Complete interior detail",
       price: "from CHF 209",
-      text: "Thorough cleaning and care for the entire interior.",
-      details: ["Vacuuming of the footwells, seats and boot", "Deep cleaning and protective care for plastic surfaces", "Seat shampoo and stain treatment", "Deep carpet cleaning and streak-free interior windows", "Steam cleaning for a hygienic interior", "Careful cleaning of leather and Alcantara"],
+      text: "Thorough cleaning and care of the complete cabin.",
+      details: [
+        "Vacuuming of the complete interior including footwells, seats and boot.",
+        "Cleaning and care of all plastic surfaces with a protective finish.",
+        "Door shuts, entry areas, seats, carpets and windows are cleaned thoroughly.",
+        "Steam cleaning for hygienic interior disinfection.",
+        "Gentle care for leather and Alcantara surfaces.",
+      ],
     },
     {
       title: "Complete exterior detail",
       price: "from CHF 109",
-      text: "Careful hand wash, wheel cleaning and a refined finish.",
-      details: ["Snow-foam pre-wash to loosen dirt safely", "Careful hand wash with high-quality products", "Gentle drying of the complete vehicle", "Intensive wheel cleaning and brake-dust removal", "Removal of insect residue from the front and mirrors", "Cleaning of door shuts, emblems and hard-to-reach details"],
+      text: "Gentle hand wash, wheel cleaning and a cared-for finish.",
+      details: [
+        "Snow foam pre-wash to safely loosen dirt.",
+        "Careful hand wash with high-quality cleaning products.",
+        "Wheel cleaning including brake dust removal.",
+        "Bug removal, door shuts, exterior glass and tyre care.",
+        "Detail cleaning of emblems, grille and hard-to-reach areas.",
+      ],
     },
     {
-      title: "Complete vehicle detail",
+      title: "Complete detail",
       price: "on request",
-      text: "Interior and exterior combined for a complete refresh.",
-      details: ["Interior and exterior detailing combined in one package", "Ideal for visibly refreshing and caring for the full vehicle", "Material-safe cleaning with a premium finish", "Final inspection before handover", "The exact scope depends on vehicle size and condition"],
-    },
-    {
-      title: "Maintenance care",
-      price: "from CHF 69",
-      text: "Regular care for vehicles already detailed or kept in good condition.",
-      details: ["Available for vehicles previously detailed by JC Detailing or already in good condition", "Interior maintenance from CHF 129", "Cleaning of dashboard, centre console, plastics and door shuts", "Exterior maintenance from CHF 69 with Snow Foam, hand wash and wheel cleaning", "Ideal for preserving a premium condition"],
+      text: "Interior and exterior combined for a refreshed full vehicle finish.",
+      details: [
+        "Combination of interior and exterior detailing.",
+        "Individual inspection of paint, cabin and vehicle condition.",
+        "Recommended for vehicles that need a full refresh.",
+        "The final scope is agreed after inspection.",
+      ],
     },
     {
       title: "Add-ons",
       price: "from CHF 30",
-      text: "Additional services such as pet-hair removal, boot deep clean and seat cleaning.",
-      details: ["Pet-hair removal from CHF 50", "Boot deep clean from CHF 40", "Deep seat cleaning from CHF 80", "Headliner cleaning from CHF 50", "Intensive floor-mat cleaning from CHF 30"],
+      text: "Optional extras depending on what the vehicle needs.",
+      details: [
+        "Pet hair removal from CHF 50.",
+        "Boot deep clean from CHF 40.",
+        "Seat deep cleaning from CHF 80.",
+        "Headliner cleaning from CHF 50.",
+        "Intensive floor mat cleaning from CHF 30.",
+      ],
     },
     {
-      title: "Polishing & ceramic coating",
+      title: "Polishing",
       price: "from CHF 399",
-      text: "Paint correction, high-gloss finish and long-term ceramic protection.",
-      details: ["1-step polish from CHF 399 for gloss and light defect removal", "2-step polish from CHF 599 with cut and finish", "Ceramic package from CHF 1090 including preparation, polishing and coating", "Deep gloss, hydrophobic effect and environmental protection", "Final scope and price are confirmed after a professional inspection"],
+      text: "Paint correction, high-gloss finish and visibly more colour depth.",
+      details: [
+        "1-step polish from CHF 399 for gloss, light scratch removal and reduced swirls.",
+        "2-step polish from CHF 599 with cut and finish for a visibly improved paint finish.",
+        "The paint is cleaned, prepared and polished according to its condition.",
+        "The goal is safe paint correction with more clarity, depth and gloss.",
+        "Final scope and price are confirmed after a professional inspection.",
+      ],
+    },
+    {
+      title: "Ceramic coating",
+      price: "from CHF 1090",
+      text: "Long-term hydrophobic protection with a premium gloss finish.",
+      details: [
+        "Ceramic coating from CHF 1090 including washing, preparation, degreasing and polishing.",
+        "The coating is applied in a controlled process, cured and finally inspected.",
+        "Benefits: deep gloss, hydrophobic effect, UV and environmental protection.",
+        "Durability depends on care and use, usually around 12 to 36 months.",
+        "Final scope and price are confirmed after a professional inspection.",
+      ],
     },
   ],
   fr: [
     {
       title: "Nettoyage intérieur complet",
       price: "dès CHF 209",
-      text: "Nettoyage et entretien approfondis de tout l’habitacle.",
-      details: ["Aspiration des sols, sièges et coffre", "Nettoyage profond et protection des surfaces en plastique", "Shampoing des sièges et traitement des taches", "Nettoyage profond des tapis et vitres intérieures sans traces", "Nettoyage vapeur pour une hygiène optimale", "Nettoyage soigneux du cuir et de l’Alcantara"],
+      text: "Nettoyage et soin approfondis de tout l'habitacle.",
+      details: [
+        "Aspiration complète de l'habitacle, y compris planchers, sièges et coffre.",
+        "Nettoyage et soin des surfaces plastiques avec finition protectrice.",
+        "Nettoyage des seuils, zones d'accès, sièges, tapis et vitres.",
+        "Nettoyage vapeur pour une désinfection hygiénique de l'intérieur.",
+        "Soin doux du cuir et de l'Alcantara.",
+      ],
     },
     {
       title: "Nettoyage extérieur complet",
       price: "dès CHF 109",
-      text: "Lavage à la main, nettoyage des jantes et finition soignée.",
-      details: ["Prélavage Snow Foam pour dissoudre la saleté en douceur", "Lavage à la main avec des produits de qualité", "Séchage délicat de tout le véhicule", "Nettoyage intensif des jantes et retrait de la poussière de frein", "Retrait des insectes à l’avant et sur les rétroviseurs", "Nettoyage des seuils, emblèmes et zones difficiles d’accès"],
+      text: "Lavage à la main, soin des jantes et finition soignée.",
+      details: [
+        "Prélavage Snow Foam pour détacher la saleté en douceur.",
+        "Lavage manuel avec produits de qualité.",
+        "Nettoyage des jantes avec élimination de la poussière de frein.",
+        "Retrait des insectes, nettoyage des seuils, vitres extérieures et pneus.",
+        "Nettoyage détaillé des emblèmes, calandre et zones difficiles d'accès.",
+      ],
     },
     {
       title: "Préparation complète",
       price: "sur demande",
-      text: "Intérieur et extérieur réunis pour un résultat complet.",
-      details: ["Nettoyage intérieur et extérieur dans une même formule", "Idéal pour rafraîchir visiblement tout le véhicule", "Nettoyage respectueux des matériaux et finition premium", "Contrôle final avant la remise", "L’étendue exacte dépend de la taille et de l’état du véhicule"],
+      text: "Intérieur et extérieur réunis pour un véhicule entièrement rafraîchi.",
+      details: [
+        "Combinaison du nettoyage intérieur et extérieur.",
+        "Contrôle individuel de la peinture, de l'habitacle et de l'état du véhicule.",
+        "Recommandé pour les véhicules qui nécessitent une remise en état complète.",
+        "Le détail exact est défini après inspection.",
+      ],
     },
     {
-      title: "Entretien régulier",
-      price: "dès CHF 69",
-      text: "Entretien régulier des véhicules déjà préparés ou bien conservés.",
-      details: ["Pour les véhicules déjà préparés par JC Detailing ou en bon état", "Entretien intérieur dès CHF 129", "Tableau de bord, console, plastiques et seuils", "Entretien extérieur dès CHF 69 avec Snow Foam, lavage à la main et jantes", "Idéal pour conserver un état haut de gamme"],
-    },
-    {
-      title: "Options supplémentaires",
+      title: "Options",
       price: "dès CHF 30",
-      text: "Retrait des poils, nettoyage profond du coffre et nettoyage des sièges.",
-      details: ["Retrait des poils d’animaux dès CHF 50", "Nettoyage profond du coffre dès CHF 40", "Nettoyage profond des sièges dès CHF 80", "Nettoyage du ciel de toit dès CHF 50", "Nettoyage intensif des tapis dès CHF 30"],
+      text: "Prestations supplémentaires selon les besoins du véhicule.",
+      details: [
+        "Élimination des poils d'animaux dès CHF 50.",
+        "Nettoyage en profondeur du coffre dès CHF 40.",
+        "Nettoyage profond des sièges dès CHF 80.",
+        "Nettoyage du ciel de toit dès CHF 50.",
+        "Nettoyage intensif des tapis dès CHF 30.",
+      ],
     },
     {
-      title: "Polissage & céramique",
+      title: "Polissage",
       price: "dès CHF 399",
-      text: "Correction de peinture, finition brillante et protection céramique durable.",
-      details: ["Polissage 1 étape dès CHF 399", "Polissage 2 étapes dès CHF 599 avec correction et finition", "Formule céramique dès CHF 1090 avec préparation et polissage", "Brillance profonde, effet hydrophobe et protection environnementale", "L’étendue et le prix sont confirmés après inspection"],
+      text: "Correction de peinture, finition brillante et profondeur visible.",
+      details: [
+        "Polissage 1 étape dès CHF 399 pour plus de brillance et une réduction des défauts légers.",
+        "Polissage 2 étapes dès CHF 599 avec correction et finition pour un résultat plus net.",
+        "La peinture est nettoyée, préparée et polie selon son état.",
+        "L'objectif est une correction sûre avec plus de clarté, de profondeur et de brillance.",
+        "Le prix et l'étendue finale sont confirmés après inspection professionnelle.",
+      ],
+    },
+    {
+      title: "Protection céramique",
+      price: "dès CHF 1090",
+      text: "Protection longue durée hydrophobe avec finition premium.",
+      details: [
+        "Protection céramique dès CHF 1090 incluant lavage, préparation, dégraissage et polissage.",
+        "La protection est appliquée de façon contrôlée, durcie puis vérifiée.",
+        "Avantages: brillance profonde, effet hydrophobe, protection UV et environnementale.",
+        "La durabilité dépend de l'entretien et de l'utilisation, généralement 12 à 36 mois.",
+        "Le prix et l'étendue finale sont confirmés après inspection professionnelle.",
+      ],
     },
   ],
   it: [
     {
       title: "Pulizia interna completa",
       price: "da CHF 209",
-      text: "Pulizia e cura approfondite di tutto l’abitacolo.",
-      details: ["Aspirazione di pavimento, sedili e bagagliaio", "Pulizia profonda e protezione delle superfici in plastica", "Shampoo dei sedili e trattamento delle macchie", "Pulizia profonda di tappeti e vetri interni", "Pulizia a vapore per un abitacolo igienizzato", "Pulizia accurata di pelle e Alcantara"],
+      text: "Pulizia e cura approfondita dell'intero abitacolo.",
+      details: [
+        "Aspirazione completa degli interni, inclusi zona piedi, sedili e bagagliaio.",
+        "Pulizia e cura delle superfici in plastica con finitura protettiva.",
+        "Pulizia di battute porta, ingressi, sedili, tappeti e vetri.",
+        "Pulizia a vapore per una sanificazione igienica degli interni.",
+        "Cura delicata di pelle e Alcantara.",
+      ],
     },
     {
       title: "Pulizia esterna completa",
       price: "da CHF 109",
-      text: "Lavaggio a mano, pulizia dei cerchi e finitura curata.",
-      details: ["Prelavaggio Snow Foam per sciogliere lo sporco", "Lavaggio a mano con prodotti di qualità", "Asciugatura delicata del veicolo", "Pulizia intensiva dei cerchi e rimozione della polvere dei freni", "Rimozione degli insetti da frontale e specchietti", "Pulizia di battute porte, emblemi e dettagli difficili"],
+      text: "Lavaggio a mano delicato, cura cerchi e finitura pulita.",
+      details: [
+        "Prelavaggio con Snow Foam per sciogliere lo sporco in modo delicato.",
+        "Lavaggio a mano con prodotti di alta qualità.",
+        "Pulizia dei cerchi con rimozione della polvere dei freni.",
+        "Rimozione insetti, battute porta, vetri esterni e cura pneumatici.",
+        "Pulizia dettagliata di emblemi, griglia e zone difficili da raggiungere.",
+      ],
     },
     {
-      title: "Detailing completo",
+      title: "Preparazione completa",
       price: "su richiesta",
-      text: "Interni ed esterni combinati per un risultato completo.",
-      details: ["Pulizia interna ed esterna in un unico pacchetto", "Ideale per rinnovare visibilmente l’intero veicolo", "Pulizia rispettosa dei materiali con finitura premium", "Controllo finale prima della consegna", "L’estensione esatta dipende da dimensioni e condizioni"],
+      text: "Interni ed esterni insieme per un risultato completo e fresco.",
+      details: [
+        "Combinazione di pulizia interna ed esterna.",
+        "Controllo individuale di vernice, abitacolo e stato del veicolo.",
+        "Consigliato per veicoli che necessitano di una rinfrescata completa.",
+        "Il lavoro esatto viene definito dopo l'ispezione.",
+      ],
     },
     {
-      title: "Cura di mantenimento",
-      price: "da CHF 69",
-      text: "Cura regolare per veicoli già trattati o ben mantenuti.",
-      details: ["Per veicoli già trattati da JC Detailing o in buone condizioni", "Mantenimento interno da CHF 129", "Cruscotto, console, plastiche e battute porte", "Mantenimento esterno da CHF 69 con Snow Foam, lavaggio a mano e cerchi", "Ideale per conservare un aspetto premium"],
-    },
-    {
-      title: "Servizi aggiuntivi",
+      title: "Add-on",
       price: "da CHF 30",
-      text: "Rimozione peli, pulizia profonda del bagagliaio e dei sedili.",
-      details: ["Rimozione peli di animali da CHF 50", "Pulizia profonda del bagagliaio da CHF 40", "Pulizia profonda dei sedili da CHF 80", "Pulizia del cielo interno da CHF 50", "Pulizia intensiva dei tappetini da CHF 30"],
+      text: "Servizi opzionali in base alle esigenze del veicolo.",
+      details: [
+        "Rimozione peli animali da CHF 50.",
+        "Pulizia profonda del bagagliaio da CHF 40.",
+        "Pulizia profonda dei sedili da CHF 80.",
+        "Pulizia del cielo interno da CHF 50.",
+        "Pulizia intensiva tappetini da CHF 30.",
+      ],
     },
     {
-      title: "Lucidatura & ceramica",
+      title: "Lucidatura",
       price: "da CHF 399",
-      text: "Correzione della vernice, finitura lucida e protezione ceramica duratura.",
-      details: ["Lucidatura 1-step da CHF 399", "Lucidatura 2-step da CHF 599 con taglio e finitura", "Pacchetto ceramico da CHF 1090 con preparazione e lucidatura", "Brillantezza profonda, effetto idrofobico e protezione ambientale", "Estensione e prezzo vengono confermati dopo l’ispezione"],
+      text: "Correzione della vernice, finitura lucida e maggiore profondità.",
+      details: [
+        "Lucidatura 1-step da CHF 399 per gloss, difetti leggeri e riduzione degli swirl.",
+        "Lucidatura 2-step da CHF 599 con taglio e finitura per una vernice visibilmente migliore.",
+        "La vernice viene pulita, preparata e lucidata in base al suo stato.",
+        "L'obiettivo è una correzione sicura con più chiarezza, profondità e gloss.",
+        "L'intervento finale e il prezzo sono confermati dopo un'ispezione professionale.",
+      ],
+    },
+    {
+      title: "Rivestimento ceramico",
+      price: "da CHF 1090",
+      text: "Protezione idrofobica a lungo termine con finitura premium.",
+      details: [
+        "Rivestimento ceramico da CHF 1090 con lavaggio, preparazione, sgrassaggio e lucidatura.",
+        "Il rivestimento viene applicato in modo controllato, indurito e controllato alla fine.",
+        "Vantaggi: gloss profondo, effetto idrofobico, protezione UV e ambientale.",
+        "La durata dipende dalla cura e dall'utilizzo, solitamente circa 12-36 mesi.",
+        "L'intervento finale e il prezzo sono confermati dopo un'ispezione professionale.",
+      ],
     },
   ],
 };
 
 export function getLocalizedOffers(locale: PublicLocale): LocalizedOffer[] {
-  return locale === "de" ? germanOffers.map((offer) => ({ ...offer, details: offer.details ?? [] })) : translatedOffers[locale];
+  return offersByLocale[locale];
 }
 
 export const offersPageCopy = {
-  de: { eyebrow: "Angebote", title: "Pakete & Preise", intro: "Klare Einstiegspreise. Der finale Preis hängt von Fahrzeuggrösse und Zustand ab.", more: "Mehr erfahren", close: "Schliessen", offer: "Angebot", closeLabel: "Angebot schliessen" },
-  en: { eyebrow: "Packages", title: "Packages & pricing", intro: "Clear starting prices. Final pricing depends on vehicle size and condition.", more: "Learn more", close: "Close", offer: "Package", closeLabel: "Close package" },
-  fr: { eyebrow: "Offres", title: "Formules & prix", intro: "Des prix de départ clairs. Le prix final dépend de la taille et de l’état du véhicule.", more: "En savoir plus", close: "Fermer", offer: "Offre", closeLabel: "Fermer l’offre" },
-  it: { eyebrow: "Offerte", title: "Pacchetti & prezzi", intro: "Prezzi iniziali chiari. Il prezzo finale dipende dalle dimensioni e dalle condizioni del veicolo.", more: "Scopri di più", close: "Chiudi", offer: "Offerta", closeLabel: "Chiudi offerta" },
-} satisfies Record<PublicLocale, Record<string, string>>;
+  de: {
+    eyebrow: "Angebote",
+    title: "Angebote",
+    intro:
+      "Klare Einstiegspreise. Der finale Preis hängt von Fahrzeuggrösse und Zustand ab.",
+    detailLabel: "Mehr erfahren",
+    closeLabel: "Schliessen",
+    allLabel: "Alle Angebote",
+    bookLabel: "Termin buchen",
+  },
+  en: {
+    eyebrow: "Offers",
+    title: "Offers",
+    intro:
+      "Clear starting prices. The final price depends on vehicle size and condition.",
+    detailLabel: "Read more",
+    closeLabel: "Close",
+    allLabel: "All offers",
+    bookLabel: "Book appointment",
+  },
+  fr: {
+    eyebrow: "Offres",
+    title: "Offres",
+    intro:
+      "Prix de départ transparents. Le prix final dépend de la taille et de l'état du véhicule.",
+    detailLabel: "En savoir plus",
+    closeLabel: "Fermer",
+    allLabel: "Toutes les offres",
+    bookLabel: "Réserver",
+  },
+  it: {
+    eyebrow: "Offerte",
+    title: "Offerte",
+    intro:
+      "Prezzi di partenza chiari. Il prezzo finale dipende dalle dimensioni e dallo stato del veicolo.",
+    detailLabel: "Scopri di più",
+    closeLabel: "Chiudi",
+    allLabel: "Tutte le offerte",
+    bookLabel: "Prenota",
+  },
+} satisfies Record<
+  PublicLocale,
+  {
+    eyebrow: string;
+    title: string;
+    intro: string;
+    detailLabel: string;
+    closeLabel: string;
+    allLabel: string;
+    bookLabel: string;
+  }
+>;

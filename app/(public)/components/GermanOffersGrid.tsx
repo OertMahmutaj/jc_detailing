@@ -53,7 +53,7 @@ export function GermanOffersGrid({ locale = "de" }: { locale?: PublicLocale }) {
                   type="button"
                   onClick={() => openOffer(offer)}
                 >
-                  {copy.more}
+                  {copy.detailLabel}
                   <ArrowRight size={16} />
                 </button>
               </article>
@@ -64,7 +64,7 @@ export function GermanOffersGrid({ locale = "de" }: { locale?: PublicLocale }) {
         {selectedOffer && (
           <section className="offer-detail-panel" ref={panelRef}>
             <div>
-              <p className="mini-title">{copy.offer}</p>
+              <p className="mini-title">{copy.eyebrow}</p>
               <h2>{selectedOffer.title}</h2>
               <strong>{selectedOffer.price}</strong>
               <p>{selectedOffer.text}</p>
@@ -78,7 +78,7 @@ export function GermanOffersGrid({ locale = "de" }: { locale?: PublicLocale }) {
 
             <div className="offer-detail-actions">
               <button className="offer-close" type="button" onClick={closeOffer} aria-label={copy.closeLabel}>
-                <span>{copy.close}</span>
+                <span>{copy.closeLabel}</span>
                 <X size={16} />
               </button>
 

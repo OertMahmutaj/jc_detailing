@@ -10,7 +10,55 @@ type ServiceText = {
   outcome: string;
 };
 
-export type LocalizedService = Omit<Service, "title" | "eyebrow" | "short" | "includes" | "process" | "outcome"> & ServiceText;
+const ceramicServiceCopy: Record<Exclude<PublicLocale, "de">, Pick<ServiceText, "includes" | "process">> = {
+  en: {
+    includes: [
+      "Thorough paint washing",
+      "Paint preparation",
+      "Surface degreasing",
+      "Polishing",
+      "Ceramic coating application",
+      "Hydrophobic protection",
+      "Gloss and finish inspection",
+    ],
+    process:
+      "A ceramic coating requires a clean foundation: the paint is washed, prepared, degreased and polished. The coating is then applied evenly, levelled and carefully inspected so that protection and appearance are both consistent.",
+  },
+  fr: {
+    includes: [
+      "Lavage complet de la peinture",
+      "Préparation de la peinture",
+      "Dégraissage de la surface",
+      "Polissage",
+      "Application de la protection céramique",
+      "Protection hydrophobe",
+      "Contrôle de la brillance et de la finition",
+    ],
+    process:
+      "Une protection céramique exige une base parfaitement propre: la peinture est lavée, préparée, dégraissée et polie. Le revêtement est ensuite appliqué, nivelé et contrôlé avec soin pour garantir une protection et un rendu homogènes.",
+  },
+  it: {
+    includes: [
+      "Lavaggio completo della vernice",
+      "Preparazione della vernice",
+      "Sgrassaggio della superficie",
+      "Lucidatura",
+      "Applicazione del rivestimento ceramico",
+      "Protezione idrofobica",
+      "Controllo di brillantezza e finitura",
+    ],
+    process:
+      "Il rivestimento ceramico richiede una base perfettamente pulita: la vernice viene lavata, preparata, sgrassata e lucidata. Il prodotto viene poi applicato, livellato e controllato con cura per ottenere protezione e aspetto uniformi.",
+  },
+};
+
+type LocalizedServiceFor<TService extends Service> = Omit<
+  TService,
+  "title" | "eyebrow" | "includes" | "process" | "outcome"
+> &
+  ServiceText;
+
+export type LocalizedService = LocalizedServiceFor<Service>;
 
 const translatedServices: Record<Exclude<PublicLocale, "de">, Record<Service["id"], ServiceText>> = {
   en: {
@@ -42,8 +90,8 @@ const translatedServices: Record<Exclude<PublicLocale, "de">, Record<Service["id
       title: "Ceramic coating",
       eyebrow: "Ceramic coating",
       short: "Hydrophobic paint protection with a high-quality gloss finish.",
-      includes: ["Thorough paint preparation", "Surface degreasing", "Ceramic coating application", "Hydrophobic protection", "Gloss and finish inspection", "Polishing"],
-      process: "A ceramic coating requires a clean foundation: the paint is washed, prepared and degreased. The coating is then applied evenly, levelled and carefully inspected so that protection and appearance are both consistent.",
+      includes: ["Thorough paint washing", "Paint preparation", "Surface degreasing", "Polishing", "Ceramic coating application", "Hydrophobic protection", "Gloss and finish inspection"],
+      process: "A ceramic coating requires a clean foundation: the paint is washed, prepared, degreased and polished. The coating is then applied evenly, levelled and carefully inspected so that protection and appearance are both consistent.",
       outcome: "The surface receives a glossy, hydrophobic protective layer. Water beads more easily, dirt adheres less strongly and routine maintenance becomes simpler.",
     },
   },
@@ -76,8 +124,8 @@ const translatedServices: Record<Exclude<PublicLocale, "de">, Record<Service["id
       title: "Protection céramique",
       eyebrow: "Protection céramique",
       short: "Protection hydrophobe de la peinture avec une finition brillante premium.",
-      includes: ["Préparation complète de la peinture", "Dégraissage de la surface", "Application de la protection céramique", "Protection hydrophobe", "Contrôle de la brillance et de la finition", "Polissage"],
-      process: "Une protection céramique exige une base parfaitement propre: la peinture est lavée, préparée et dégraissée. Le revêtement est ensuite appliqué, nivelé et contrôlé avec soin pour garantir une protection et un rendu homogènes.",
+      includes: ["Lavage complet de la peinture", "Préparation de la peinture", "Dégraissage de la surface", "Polissage", "Application de la protection céramique", "Protection hydrophobe", "Contrôle de la brillance et de la finition"],
+      process: "Une protection céramique exige une base parfaitement propre: la peinture est lavée, préparée, dégraissée et polie. Le revêtement est ensuite appliqué, nivelé et contrôlé avec soin pour garantir une protection et un rendu homogènes.",
       outcome: "La surface reçoit une couche protectrice brillante et hydrophobe. L’eau perle plus facilement, la saleté adhère moins et l’entretien quotidien devient plus simple.",
     },
   },
@@ -110,19 +158,37 @@ const translatedServices: Record<Exclude<PublicLocale, "de">, Record<Service["id
       title: "Rivestimento ceramico",
       eyebrow: "Rivestimento ceramico",
       short: "Protezione idrofobica della vernice con finitura lucida premium.",
-      includes: ["Preparazione accurata della vernice", "Sgrassaggio della superficie", "Applicazione del rivestimento ceramico", "Protezione idrofobica", "Controllo di brillantezza e finitura", "Lucidatura"],
-      process: "Il rivestimento ceramico richiede una base perfettamente pulita: la vernice viene lavata, preparata e sgrassata. Il prodotto viene poi applicato, livellato e controllato con cura per ottenere protezione e aspetto uniformi.",
+      includes: ["Lavaggio completo della vernice", "Preparazione della vernice", "Sgrassaggio della superficie", "Lucidatura", "Applicazione del rivestimento ceramico", "Protezione idrofobica", "Controllo di brillantezza e finitura"],
+      process: "Il rivestimento ceramico richiede una base perfettamente pulita: la vernice viene lavata, preparata, sgrassata e lucidata. Il prodotto viene poi applicato, livellato e controllato con cura per ottenere protezione e aspetto uniformi.",
       outcome: "La superficie riceve uno strato protettivo lucido e idrofobico. L’acqua scivola più facilmente, lo sporco aderisce meno e la manutenzione quotidiana diventa più semplice.",
     },
   },
 };
 
-export function getLocalizedService(service: Service, locale: PublicLocale): LocalizedService {
+function getGermanServiceCopy<TService extends Service>(
+  service: TService,
+): LocalizedServiceFor<TService> {
+  return {
+    ...service,
+    short: service.summary,
+  };
+}
+
+export function getLocalizedService<TService extends Service>(
+  service: TService,
+  locale: PublicLocale,
+): LocalizedServiceFor<TService> {
   if (locale === "de") {
-    return service as LocalizedService;
+    return getGermanServiceCopy(service);
   }
 
-  return { ...service, ...translatedServices[locale][service.id] };
+  const translatedService = translatedServices[locale][service.id];
+
+  if (service.id === "keramikversiegelung") {
+    return { ...service, ...translatedService, ...ceramicServiceCopy[locale] };
+  }
+
+  return { ...service, ...translatedService };
 }
 
 export function getLocalizedServices(services: readonly Service[], locale: PublicLocale) {

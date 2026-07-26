@@ -117,12 +117,12 @@ export const publicPageSeo = {
     de: {
       title: "Pakete & Preise für Autoaufbereitung",
       description:
-        "Pakete und Preise von JC Detailing in Wauwil, Luzern. Innenreinigung, Aussenreinigung, Erhaltungspflege, Politur und Keramikversiegelung.",
+        "Pakete und Preise von JC Detailing in Wauwil, Luzern. Innenreinigung, Aussenreinigung, Add-ons, Politur und Keramikversiegelung.",
     },
     en: {
       title: "Car detailing packages & prices",
       description:
-        "Explore JC Detailing packages and prices in Wauwil, Lucerne for interior and exterior detailing, maintenance care, paint polishing and ceramic coating.",
+        "Explore JC Detailing packages and prices in Wauwil, Lucerne for interior and exterior detailing, add-ons, paint polishing and ceramic coating.",
     },
     fr: {
       title: "Forfaits et prix de detailing automobile",

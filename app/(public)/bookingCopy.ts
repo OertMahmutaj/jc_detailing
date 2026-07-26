@@ -353,7 +353,7 @@ const nonGermanDetails: Record<Exclude<PublicLocale, "de">, Record<string, Booki
     "Pflegeerhaltung Aussenreinigung": maintenanceDetail("Exterior maintenance", "Exterior maintenance care", "CHF 69.00 - CHF 109.00", ["Snow-foam pre-wash", "Hand wash and gentle drying", "Wheel cleaning and insect removal"]),
     "Polish Paket (1-Step)": polishDetail("Paint correction", "Polish package (1-step)", "CHF 399.00 - CHF 549.00", ["Paint wash, cleaning and degreasing", "One-step polish for gloss and light defect removal", "Reduction of light swirl marks", "High-gloss finish"]),
     "Polish Paket (2-Step)": polishDetail("Paint correction", "Polish package (2-step)", "CHF 599.00 - CHF 769.00", ["Intensive wash and paint preparation", "Two-step cut and finish polish", "Significant reduction of scratches and swirl marks", "Deep-gloss finish"]),
-    "Keramik Versiegelung": detail("Ceramic coating", "Ceramic coating", "CHF 1090.00 - CHF 1690.00", ["Intensive wash and paint preparation", "Polishing for a clean foundation", "Degreasing and professional preparation", "Ceramic coating, curing and final inspection"]),
+    "Keramik Versiegelung": detail("Ceramic coating", "Ceramic coating", "CHF 1090.00 - CHF 1690.00", ["Intensive wash and paint preparation", "Degreasing and professional preparation", "Polishing for a clean foundation", "Ceramic coating, curing and final inspection"]),
     "Komplette Premium Paket": detail("Package", "Complete premium package", "CHF 299.00 - CHF 349.00", ["Detailed interior vacuuming, deep cleaning and surface care", "Seat, carpet, leather and Alcantara care", "Careful hand wash and wheel cleaning", "Paint cleaning, gloss finish and spray protection", "Tyre and exterior-plastic care"]),
   },
   fr: {
@@ -363,7 +363,7 @@ const nonGermanDetails: Record<Exclude<PublicLocale, "de">, Record<string, Booki
     "Pflegeerhaltung Aussenreinigung": maintenanceDetail("Entretien extérieur", "Entretien extérieur", "CHF 69.00 - CHF 109.00", ["Prélavage Snow Foam", "Lavage à la main et séchage délicat", "Nettoyage des jantes et retrait des insectes"]),
     "Polish Paket (1-Step)": polishDetail("Correction de peinture", "Polissage 1 étape", "CHF 399.00 - CHF 549.00", ["Lavage, nettoyage et dégraissage de la peinture", "Polissage en une étape pour la brillance et les défauts légers", "Réduction des micro-rayures légères", "Finition brillante"]),
     "Polish Paket (2-Step)": polishDetail("Correction de peinture", "Polissage 2 étapes", "CHF 599.00 - CHF 769.00", ["Lavage intensif et préparation de la peinture", "Polissage en deux étapes: correction et finition", "Réduction importante des rayures et micro-rayures", "Finition brillante en profondeur"]),
-    "Keramik Versiegelung": detail("Protection céramique", "Protection céramique", "CHF 1090.00 - CHF 1690.00", ["Lavage intensif et préparation de la peinture", "Polissage pour une base parfaite", "Dégraissage et préparation professionnelle", "Protection céramique, durcissement et contrôle final"]),
+    "Keramik Versiegelung": detail("Protection céramique", "Protection céramique", "CHF 1090.00 - CHF 1690.00", ["Lavage intensif et préparation de la peinture", "Dégraissage et préparation professionnelle", "Polissage pour une base parfaite", "Protection céramique, durcissement et contrôle final"]),
     "Komplette Premium Paket": detail("Forfait", "Forfait premium complet", "CHF 299.00 - CHF 349.00", ["Aspiration, nettoyage profond et entretien de l'habitacle", "Entretien des sièges, tapis, cuirs et Alcantara", "Lavage à la main et nettoyage des jantes", "Nettoyage de la peinture, finition brillante et protection", "Entretien des pneus et plastiques extérieurs"]),
   },
   it: {
@@ -373,9 +373,30 @@ const nonGermanDetails: Record<Exclude<PublicLocale, "de">, Record<string, Booki
     "Pflegeerhaltung Aussenreinigung": maintenanceDetail("Manutenzione esterna", "Manutenzione esterna", "CHF 69.00 - CHF 109.00", ["Prelavaggio Snow Foam", "Lavaggio a mano e asciugatura delicata", "Pulizia cerchi e rimozione insetti"]),
     "Polish Paket (1-Step)": polishDetail("Correzione vernice", "Pacchetto lucidatura 1-step", "CHF 399.00 - CHF 549.00", ["Lavaggio, pulizia e sgrassaggio della vernice", "Lucidatura a uno step per brillantezza e difetti leggeri", "Riduzione dei segni circolari leggeri", "Finitura ad alta brillantezza"]),
     "Polish Paket (2-Step)": polishDetail("Correzione vernice", "Pacchetto lucidatura 2-step", "CHF 599.00 - CHF 769.00", ["Lavaggio intensivo e preparazione della vernice", "Lucidatura in due step: taglio e finitura", "Riduzione significativa di graffi e segni circolari", "Finitura profonda e brillante"]),
-    "Keramik Versiegelung": detail("Rivestimento ceramico", "Rivestimento ceramico", "CHF 1090.00 - CHF 1690.00", ["Lavaggio intensivo e preparazione della vernice", "Lucidatura per una base perfetta", "Sgrassaggio e preparazione professionale", "Rivestimento ceramico, indurimento e controllo finale"]),
+    "Keramik Versiegelung": detail("Rivestimento ceramico", "Rivestimento ceramico", "CHF 1090.00 - CHF 1690.00", ["Lavaggio intensivo e preparazione della vernice", "Sgrassaggio e preparazione professionale", "Lucidatura per una base perfetta", "Rivestimento ceramico, indurimento e controllo finale"]),
     "Komplette Premium Paket": detail("Pacchetto", "Pacchetto premium completo", "CHF 299.00 - CHF 349.00", ["Aspirazione, pulizia profonda e cura dell'abitacolo", "Cura di sedili, tappeti, pelle e Alcantara", "Lavaggio a mano e pulizia dei cerchi", "Pulizia vernice, finitura lucida e protezione spray", "Cura di pneumatici e plastiche esterne"]),
   },
+};
+
+const ceramicBookingDetails: Record<Exclude<PublicLocale, "de">, string[]> = {
+  en: [
+    "Intensive wash and paint preparation",
+    "Degreasing and professional preparation",
+    "Polishing for a clean foundation",
+    "Ceramic coating, curing and final inspection",
+  ],
+  fr: [
+    "Lavage intensif et préparation de la peinture",
+    "Dégraissage et préparation professionnelle",
+    "Polissage pour une base parfaite",
+    "Protection céramique, durcissement et contrôle final",
+  ],
+  it: [
+    "Lavaggio intensivo e preparazione della vernice",
+    "Sgrassaggio e preparazione professionale",
+    "Lucidatura per una base perfetta",
+    "Rivestimento ceramico, indurimento e controllo finale",
+  ],
 };
 
 export function getBookingServiceDetail(locale: PublicLocale, name: string, fallback?: BookingServiceDetailCopy) {
@@ -383,6 +404,15 @@ export function getBookingServiceDetail(locale: PublicLocale, name: string, fall
 
   const value = nonGermanDetails[locale][name];
   if (!value) return fallback;
+  const normalizedValue =
+    name === "Keramik Versiegelung"
+      ? {
+          ...value,
+          sections: value.sections.map((section) =>
+            section.title === "Services" ? { ...section, items: ceramicBookingDetails[locale] } : section,
+          ),
+        }
+      : value;
 
   const sectionTitles = {
     en: { Services: "Services", Requirement: "Requirement", Important: "Important" },
@@ -405,8 +435,8 @@ export function getBookingServiceDetail(locale: PublicLocale, name: string, fall
   }[locale];
 
   return {
-    ...value,
-    sections: value.sections.map((section) => ({
+    ...normalizedValue,
+    sections: normalizedValue.sections.map((section) => ({
       ...section,
       title: sectionTitles[section.title as keyof typeof sectionTitles] ?? section.title,
       items: section.items.map((item) => {
