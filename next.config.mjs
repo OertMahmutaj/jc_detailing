@@ -124,7 +124,7 @@ const nextConfig = {
       2048,
       3840,
     ],
-    qualities: [60, 70, 75, 85],
+    qualities: [60, 70, 75, 85, 95],
   },
 
   async headers() {

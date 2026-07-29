@@ -354,7 +354,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
                 fill
                 sizes="(max-width: 900px) 100vw, 40vw"
                 src="/Juljan.webp"
-                unoptimized
+                quality={95}
               />
             </LightItem>
 
