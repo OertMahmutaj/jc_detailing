@@ -13,7 +13,8 @@ const contentSecurityPolicy = `
     'unsafe-inline'
     ${isDevelopment ? "'unsafe-eval'" : ""}
     https://maps.googleapis.com
-    https://maps.gstatic.com;
+    https://maps.gstatic.com
+    https://www.googletagmanager.com;
 
   style-src
     'self'
@@ -27,6 +28,8 @@ const contentSecurityPolicy = `
     https://maps.googleapis.com
     https://maps.gstatic.com
     https://www.google.com
+    https://www.google-analytics.com
+    https://www.googletagmanager.com
     https://lh3.googleusercontent.com
     https://lh4.googleusercontent.com
     https://lh5.googleusercontent.com;
@@ -45,11 +48,15 @@ const contentSecurityPolicy = `
     ${supabaseOrigin}
     https://maps.googleapis.com
     https://maps.gstatic.com
-    https://www.google.com;
+    https://www.google.com
+    https://www.google-analytics.com
+    https://*.google-analytics.com
+    https://www.googletagmanager.com;
 
   frame-src
     https://www.google.com
-    https://maps.google.com;
+    https://maps.google.com
+    https://www.googletagmanager.com;
 
   object-src
     'none';

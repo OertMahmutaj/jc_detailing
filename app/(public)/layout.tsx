@@ -9,6 +9,7 @@ import "./public-pages.css";
 
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
+import { GoogleTagManager } from "./components/GoogleTagManager";
 import { PublicLocaleEffects } from "./components/PublicLocaleEffects";
 
 const siteUrl =
@@ -68,6 +69,8 @@ export default function PublicLayout({
 }) {
   return (
     <div className="public-site-shell">
+      <GoogleTagManager />
+
       <Suspense fallback={null}>
         <Navbar />
       </Suspense>
