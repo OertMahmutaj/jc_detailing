@@ -4,11 +4,15 @@ import { ArrowRight, CalendarCheck, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { LightGroup, LightItem } from "./StudioMotion";
 import { sharedCopy, type PublicLocale } from "../i18n";
-import { getLocalizedOffers, offersPageCopy, type LocalizedOffer } from "../offerCopy";
+import { offersPageCopy, type LocalizedOffer } from "../offerCopy";
 import { LanguageAwareBookingLink } from "./LanguageAwareBookingLink";
 
-export function GermanOffersGrid({ locale = "de" }: { locale?: PublicLocale }) {
-  const offers = getLocalizedOffers(locale);
+type GermanOffersGridProps = {
+  locale?: PublicLocale;
+  offers: LocalizedOffer[];
+};
+
+export function GermanOffersGrid({ locale = "de", offers }: GermanOffersGridProps) {
   const copy = offersPageCopy[locale];
   const bookingLabel = sharedCopy[locale].nav.booking;
   const [selectedOffer, setSelectedOffer] = useState<LocalizedOffer | null>(null);

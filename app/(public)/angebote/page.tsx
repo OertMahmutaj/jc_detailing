@@ -4,7 +4,8 @@ import type { Metadata } from "next";
 import { GermanOffersGrid } from "../components/GermanOffersGrid";
 import { HeroIntro, HeroItem, PageEntry } from "../components/StudioMotion";
 import { intlLocales, normalizeLocale, type PublicLocale } from "../i18n";
-import { offersPageCopy } from "../offerCopy";
+import { getLocalizedOffers, offersPageCopy } from "../offerCopy";
+import { getPublicPricing } from "../publicPricing";
 import { buildPublicMetadata, publicPageSeo } from "../seo";
 
 type AngebotePageProps = {
@@ -22,8 +23,9 @@ export async function generateMetadata({
   });
 }
 
-export function OffersPageContent({ locale }: { locale: PublicLocale }) {
+export async function OffersPageContent({ locale }: { locale: PublicLocale }) {
   const copy = offersPageCopy[locale];
+  const offers = getLocalizedOffers(locale, await getPublicPricing());
 
   return (
     <PageEntry className="page-shell" id="top" lang={intlLocales[locale]}>
@@ -41,12 +43,12 @@ export function OffersPageContent({ locale }: { locale: PublicLocale }) {
         </HeroIntro>
       </section>
 
-      <GermanOffersGrid locale={locale} />
+      <GermanOffersGrid locale={locale} offers={offers} />
     </PageEntry>
   );
 }
 
 export default async function AngebotePage({ searchParams }: AngebotePageProps) {
   const locale = normalizeLocale((await searchParams)?.lang);
-  return <OffersPageContent locale={locale} />;
+  return await OffersPageContent({ locale });
 }

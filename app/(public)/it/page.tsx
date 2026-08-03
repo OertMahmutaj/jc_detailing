@@ -7,6 +7,6 @@ export const metadata: Metadata = buildPublicMetadata("it", {
   ...homeSeo.it,
 });
 
-export default function ItalianHomePage() {
-  return <HomePage locale="it" />;
+export default async function ItalianHomePage() {
+  return await HomePage({ locale: "it" });
 }

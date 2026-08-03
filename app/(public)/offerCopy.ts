@@ -1,4 +1,10 @@
 import type { PublicLocale } from "./i18n";
+import {
+  fallbackPublicPricing,
+  formatChfAmount,
+  formatStartingPrice,
+  type PublicPricing,
+} from "./pricing";
 
 export type LocalizedOffer = {
   title: string;
@@ -302,8 +308,61 @@ const offersByLocale: Record<PublicLocale, LocalizedOffer[]> = {
   ],
 };
 
-export function getLocalizedOffers(locale: PublicLocale): LocalizedOffer[] {
-  return offersByLocale[locale];
+function replaceAmount(text: string, original: number, current: number) {
+  return text.replace(
+    new RegExp(`\\b${original}\\b`, "g"),
+    formatChfAmount(current),
+  );
+}
+
+export function getLocalizedOffers(
+  locale: PublicLocale,
+  pricing: PublicPricing = fallbackPublicPricing,
+): LocalizedOffer[] {
+  const prices = [
+    pricing.interior,
+    pricing.exterior,
+    pricing.premium,
+    pricing.addOns,
+    pricing.polishOneStep,
+    pricing.ceramic,
+  ];
+
+  const offers = offersByLocale[locale].map((offer, index) => ({
+    ...offer,
+    details: [...offer.details],
+    price: formatStartingPrice(locale, prices[index]),
+  }));
+
+  const addOnAmounts = [
+    pricing.addOnPrices.petHair,
+    pricing.addOnPrices.trunk,
+    pricing.addOnPrices.seats,
+    pricing.addOnPrices.headliner,
+    pricing.addOnPrices.mats,
+  ];
+  const originalAddOnAmounts = [50, 40, 80, 50, 30];
+
+  offers[3].details = offers[3].details.map((detail, index) =>
+    replaceAmount(detail, originalAddOnAmounts[index], addOnAmounts[index]),
+  );
+  offers[4].details[0] = replaceAmount(
+    offers[4].details[0],
+    399,
+    pricing.polishOneStep,
+  );
+  offers[4].details[1] = replaceAmount(
+    offers[4].details[1],
+    599,
+    pricing.polishTwoStep,
+  );
+  offers[5].details[0] = replaceAmount(
+    offers[5].details[0],
+    1090,
+    pricing.ceramic,
+  );
+
+  return offers;
 }
 
 export const offersPageCopy = {

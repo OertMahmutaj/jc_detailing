@@ -25,6 +25,7 @@ import {
 } from "../bookingCopy";
 import { intlLocales } from "../i18n";
 import { localeHome } from "../i18n";
+import { formatStartingPrice } from "../pricing";
 import { usePublicLocale } from "./usePublicLocale";
 
 type Service = { id: string; name: string; basePrice: number; durationMinutes: number };
@@ -1386,7 +1387,7 @@ export function BookingForm() {
             </div>
 
             <div className="service-detail-footer">
-              <strong>{localizedDetail(detailService.name)?.priceRange ?? `${copy.from} CHF ${detailService.basePrice.toFixed(2)}`}</strong>
+              <strong>{formatStartingPrice(currentLanguage, detailService.basePrice)}</strong>
               <button
                 className="service-detail-select"
                 type="button"

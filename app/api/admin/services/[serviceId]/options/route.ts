@@ -77,6 +77,14 @@ function revalidateServiceOptions(serviceId: string) {
   revalidatePath("/admin/calendar");
   revalidatePath("/admin/clients");
   revalidatePath("/buchen");
+  revalidatePath("/");
+  revalidatePath("/de");
+  revalidatePath("/en");
+  revalidatePath("/fr");
+  revalidatePath("/it");
+  revalidatePath("/angebote");
+  revalidatePath("/angebote/de");
+  revalidatePath("/angebote/en");
   revalidatePath("/api/booking-data");
 }
 

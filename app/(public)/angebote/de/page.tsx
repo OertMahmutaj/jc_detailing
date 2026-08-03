@@ -9,6 +9,6 @@ export const metadata: Metadata = buildPublicMetadata("de", {
   ...publicPageSeo.offers.de,
 });
 
-export default function GermanOffersPage() {
-  return <OffersPageContent locale="de" />;
+export default async function GermanOffersPage() {
+  return await OffersPageContent({ locale: "de" });
 }

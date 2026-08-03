@@ -28,6 +28,8 @@ import {
 import { serviceItems } from "../data/site";
 import { homeCopy } from "./homeCopy";
 import { intlLocales, localeHome, sharedCopy, type PublicLocale } from "./i18n";
+import { formatChfAmount, formatStartingPrice } from "./pricing";
+import { getPublicPricing } from "./publicPricing";
 import { buildPublicMetadata, homeSeo } from "./seo";
 
 const siteUrl =
@@ -48,10 +50,16 @@ const galleryComparisons = [
 
 const languages = ["DEU", "ENG", "FRA", "ITA", "ALB"];
 
-export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
+export async function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
   const copy = homeCopy[locale];
   const serviceCopy = sharedCopy[locale].serviceNav;
   const faqs = copy.faq.items;
+  const pricing = await getPublicPricing();
+  const packagePrices = [pricing.interior, pricing.polishOneStep, pricing.ceramic];
+  const packageCards = copy.packageCards.map((offer, index) => ({
+    ...offer,
+    price: formatStartingPrice(locale, packagePrices[index] ?? pricing.interior),
+  }));
   const localBusinessJsonLd = {
     "@context": "https://schema.org",
     "@type": "AutoWash",
@@ -108,7 +116,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
         name: "Zentralschweiz",
       },
     ],
-    priceRange: "CHF 69–1090",
+    priceRange: `CHF ${formatChfAmount(pricing.minServicePrice)}–${formatChfAmount(pricing.maxServicePrice)}`,
     makesOffer: Object.values(serviceCopy).map(([name]) => ({
       "@type": "Offer",
       itemOffered: {
@@ -285,7 +293,7 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
           </LightReveal>
 
           <LightGroup className="package-grid">
-            {copy.packageCards.map((offer) => (
+            {packageCards.map((offer) => (
               <LightItem key={offer.title}>
                 <article className="package-card">
                   <div className="package-top">
@@ -464,6 +472,6 @@ export function HomePage({ locale = "de" }: { locale?: PublicLocale }) {
   );
 }
 
-export default function Home() {
-  return <HomePage locale="de" />;
+export default async function Home() {
+  return await HomePage({ locale: "de" });
 }
