@@ -1,7 +1,7 @@
 import Script from "next/script";
 
 const googleTagManagerId =
-  process.env.NEXT_PUBLIC_GTM_ID?.trim() || "GTM-WNVB4CBB";
+  process.env.NEXT_PUBLIC_GTM_ID?.trim() || "GTM-WWVB4CBB";
 
 export function GoogleTagManager() {
   return (
