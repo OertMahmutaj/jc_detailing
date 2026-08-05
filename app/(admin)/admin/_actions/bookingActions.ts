@@ -842,7 +842,7 @@ export async function createAdminBooking(formData: FormData): Promise<{
       return {
         success: false,
         error:
-          "Die gewﾃ､hlte Fahrzeugklasse ist fﾃｼr diese Leistung nicht verfﾃｼgbar.",
+        "Die gewählte Fahrzeugklasse ist für diese Leistung nicht verfügbar.",
       };
     }
 
@@ -1190,7 +1190,7 @@ export async function updateAdminBooking(
 
     if (allSelectedServices.some((service) => !service.vehicleOptions.length)) {
       return failure(
-        "Die gewﾃ､hlte Fahrzeugkategorie ist nicht fﾃｼr alle Leistungen verfﾃｼgbar.",
+      "Die gewählte Fahrzeugkategorie ist nicht für alle Leistungen verfügbar.",
       );
     }
 

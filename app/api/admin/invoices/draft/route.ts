@@ -99,7 +99,7 @@ export async function POST(request: Request) {
       Number.isNaN(serviceDate.getTime())
     ) {
       return NextResponse.json(
-        { error: "Entwurfdaten sind unvollstﾃ､ndig." },
+      { error: "Entwurfdaten sind unvollständig." },
         { status: 400 },
       );
     }

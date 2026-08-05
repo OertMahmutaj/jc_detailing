@@ -38,7 +38,7 @@ export function StandaloneInvoiceCreator({ action }: { action: (formData: FormDa
                 <input name="clientAddress" required type="text" />
               </label>
               <label>
-                Geschﾃ､ftsadresse
+              Geschäftsadresse
                 <input
                   defaultValue="Sternmatt 4, 6242 Wauwil"
                   name="businessAddress"

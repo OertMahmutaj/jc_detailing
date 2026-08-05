@@ -56,21 +56,21 @@ const BOOKING_API_MESSAGES: Record<
 > = {
   de: {
     addOnNotFound: "Eine Zusatzleistung wurde nicht gefunden.",
-    invalidAddOn: "Eine Zusatzleistung passt nicht zu den ausgewﾃ､hlten Leistungen.",
-    invalidContact: "Bitte prﾃｼfe Name, E-Mail, Telefon, Adresse und Fahrzeugmodell.",
-    invalidDate: "Bitte wﾃ､hle einen gﾃｼltigen Termin in der Zukunft.",
-    invalidTime: "Bitte wﾃ､hle eine Uhrzeit zwischen 08:00 und 13:30.",
-    missingChoice: "Bitte wﾃ､hle mindestens eine Leistung und eine Fahrzeuggrﾃｶsse.",
-    promoInvalid: "Dieser Promo-Code ist ungﾃｼltig oder abgelaufen.",
+    invalidAddOn: "Eine Zusatzleistung passt nicht zu den ausgewählten Leistungen.",
+    invalidContact: "Bitte prüfe Name, E-Mail, Telefon, Adresse und Fahrzeugmodell.",
+    invalidDate: "Bitte wähle einen gültigen Termin in der Zukunft.",
+    invalidTime: "Bitte wähle eine Uhrzeit zwischen 08:00 und 13:30.",
+    missingChoice: "Bitte wähle mindestens eine Leistung und eine Fahrzeuggrösse.",
+    promoInvalid: "Dieser Promo-Code ist ungültig oder abgelaufen.",
     promoPerClient: "Du hast diesen Promo-Code bereits maximal oft verwendet.",
     promoRetry: "Der Promo-Code oder Termin wurde gleichzeitig verwendet. Bitte versuche es erneut.",
-    promoUsedUp: "Dieser Promo-Code wurde bereits vollstﾃ､ndig eingelﾃｶst.",
+    promoUsedUp: "Dieser Promo-Code wurde bereits vollständig eingelöst.",
     rateLimited: "Zu viele Anfragen. Bitte versuche es in einigen Minuten erneut.",
     requestFailed: "Fehler beim Verarbeiten der Anfrage.",
     requestSent: "Anfrage gesendet.",
-    serviceNotFound: "Eine ausgewﾃ､hlte Leistung wurde nicht gefunden.",
-    slotTaken: "Dieser Termin ist leider gerade vergeben worden. Bitte wﾃ､hle eine andere Zeit.",
-    vehicleNotFound: "Die Fahrzeuggrﾃｶsse wurde nicht gefunden.",
+    serviceNotFound: "Eine ausgewählte Leistung wurde nicht gefunden.",
+    slotTaken: "Dieser Termin ist leider gerade vergeben worden. Bitte wähle eine andere Zeit.",
+    vehicleNotFound: "Die Fahrzeuggrösse wurde nicht gefunden.",
   },
   en: {
     addOnNotFound: "One selected add-on could not be found.",
@@ -91,40 +91,40 @@ const BOOKING_API_MESSAGES: Record<
     vehicleNotFound: "The vehicle size could not be found.",
   },
   fr: {
-    addOnNotFound: "Une option sﾃｩlectionnﾃｩe est introuvable.",
-    invalidAddOn: "Une option sﾃｩlectionnﾃｩe ne correspond pas aux services choisis.",
-    invalidContact: "Veuillez vﾃｩrifier le nom, l'e-mail, le tﾃｩlﾃｩphone, l'adresse et le modﾃｨle du vﾃｩhicule.",
+    addOnNotFound: "Une option sélectionnée est introuvable.",
+    invalidAddOn: "Une option sélectionnée ne correspond pas aux services choisis.",
+    invalidContact: "Veuillez vérifier le nom, l'e-mail, le téléphone, l'adresse et le modèle du véhicule.",
     invalidDate: "Veuillez choisir un rendez-vous valide dans le futur.",
     invalidTime: "Veuillez choisir une heure entre 08:00 et 13:30.",
-    missingChoice: "Veuillez choisir au moins un service et une taille de vﾃｩhicule.",
-    promoInvalid: "Ce code promo est invalide ou a expirﾃｩ.",
-    promoPerClient: "Vous avez dﾃｩjﾃ utilisﾃｩ ce code promo le nombre maximal de fois.",
-    promoRetry: "Le code promo ou le rendez-vous a ﾃｩtﾃｩ utilisﾃｩ en mﾃｪme temps. Veuillez rﾃｩessayer.",
-    promoUsedUp: "Ce code promo a dﾃｩjﾃ ﾃｩtﾃｩ entiﾃｨrement utilisﾃｩ.",
-    rateLimited: "Trop de demandes. Veuillez rﾃｩessayer dans quelques minutes.",
-    requestFailed: "La demande n'a pas pu ﾃｪtre traitﾃｩe.",
-    requestSent: "Demande envoyﾃｩe.",
-    serviceNotFound: "Un service sﾃｩlectionnﾃｩ est introuvable.",
-    slotTaken: "Ce rendez-vous vient d'ﾃｪtre rﾃｩservﾃｩ. Veuillez choisir une autre heure.",
-    vehicleNotFound: "La taille du vﾃｩhicule est introuvable.",
+    missingChoice: "Veuillez choisir au moins un service et une taille de véhicule.",
+    promoInvalid: "Ce code promo est invalide ou a expiré.",
+    promoPerClient: "Vous avez déjà utilisé ce code promo le nombre maximal de fois.",
+    promoRetry: "Le code promo ou le rendez-vous a été utilisé en même temps. Veuillez réessayer.",
+    promoUsedUp: "Ce code promo a déjà été entièrement utilisé.",
+    rateLimited: "Trop de demandes. Veuillez réessayer dans quelques minutes.",
+    requestFailed: "La demande n'a pas pu être traitée.",
+    requestSent: "Demande envoyée.",
+    serviceNotFound: "Un service sélectionné est introuvable.",
+    slotTaken: "Ce rendez-vous vient d'être réservé. Veuillez choisir une autre heure.",
+    vehicleNotFound: "La taille du véhicule est introuvable.",
   },
   it: {
-    addOnNotFound: "Un extra selezionato non ﾃｨ stato trovato.",
+    addOnNotFound: "Un extra selezionato non è stato trovato.",
     invalidAddOn: "Un extra selezionato non corrisponde ai servizi scelti.",
     invalidContact: "Controlla nome, e-mail, telefono, indirizzo e modello del veicolo.",
     invalidDate: "Scegli un appuntamento valido nel futuro.",
     invalidTime: "Scegli un orario tra le 08:00 e le 13:30.",
     missingChoice: "Scegli almeno un servizio e una dimensione del veicolo.",
-    promoInvalid: "Questo codice promo non ﾃｨ valido o ﾃｨ scaduto.",
-    promoPerClient: "Hai giﾃ usato questo codice promo il numero massimo di volte.",
-    promoRetry: "Il codice promo o l'appuntamento ﾃｨ stato usato nello stesso momento. Riprova.",
-    promoUsedUp: "Questo codice promo ﾃｨ giﾃ stato utilizzato completamente.",
+    promoInvalid: "Questo codice promo non è valido o è scaduto.",
+    promoPerClient: "Hai già usato questo codice promo il numero massimo di volte.",
+    promoRetry: "Il codice promo o l'appuntamento è stato usato nello stesso momento. Riprova.",
+    promoUsedUp: "Questo codice promo è già stato utilizzato completamente.",
     rateLimited: "Troppe richieste. Riprova tra qualche minuto.",
-    requestFailed: "La richiesta non puﾃｲ essere elaborata.",
+    requestFailed: "La richiesta non può essere elaborata.",
     requestSent: "Richiesta inviata.",
-    serviceNotFound: "Un servizio selezionato non ﾃｨ stato trovato.",
-    slotTaken: "Questo appuntamento ﾃｨ appena stato prenotato. Scegli un altro orario.",
-    vehicleNotFound: "La dimensione del veicolo non ﾃｨ stata trovata.",
+    serviceNotFound: "Un servizio selezionato non è stato trovato.",
+    slotTaken: "Questo appuntamento è appena stato prenotato. Scegli un altro orario.",
+    vehicleNotFound: "La dimensione del veicolo non è stata trovata.",
   },
 };
 
@@ -278,7 +278,7 @@ function formatEmailTimeRange(
   start: Date,
   end: Date,
 ) {
-  const range = `${formatEmailTime(start)}窶・{formatEmailTime(end)}`;
+  const range = `${formatEmailTime(start)}–${formatEmailTime(end)}`;
 
   return language === "de" ? `${range} Uhr` : range;
 }
@@ -299,25 +299,25 @@ function bookingRequestCopy(language: InvoiceLanguage) {
       badge: "Terminanfrage erhalten",
       subject: "JC Detailing - Terminanfrage erhalten",
       intro:
-        "Danke fﾃｼr deine Anfrage bei JC Detailing. Deine Terminanfrage ist bei uns eingegangen.",
+      "Danke für deine Anfrage bei JC Detailing. Deine Terminanfrage ist bei uns eingegangen.",
       notice:
-        "Wichtig: Der Termin ist noch nicht bestﾃ､tigt. Wir prﾃｼfen deine Anfrage und senden dir so schnell wie mﾃｶglich eine separate Terminbestﾃ､tigung per E-Mail.",
+      "Wichtig: Der Termin ist noch nicht bestätigt. Wir prüfen deine Anfrage und senden dir so schnell wie möglich eine separate Terminbestätigung per E-Mail.",
       labels: {
         date: "Datum",
         time: "Uhrzeit",
         services: "Leistung",
         vehicle: "Fahrzeug",
-        category: "Fahrzeuggrﾃｶsse",
+      category: "Fahrzeuggrösse",
         addOns: "Zusatzleistungen",
-        duration: "Geschﾃ､tzte Dauer",
+      duration: "Geschätzte Dauer",
         name: "Name",
         email: "E-Mail",
         phone: "Telefon",
         notes: "Hinweise",
       },
-      greeting: "Freundliche Grﾃｼsse",
+      greeting: "Freundliche Grüsse",
       question:
-        "Bei Fragen oder ﾃ・derungen erreichst du uns per Telefon, WhatsApp oder E-Mail.",
+        "Bei Fragen oder Änderungen erreichst du uns per Telefon, WhatsApp oder E-Mail.",
     },
     en: {
       badge: "Request received",
@@ -344,28 +344,28 @@ function bookingRequestCopy(language: InvoiceLanguage) {
         "For questions or changes, you can reach us by phone, WhatsApp or email.",
     },
     fr: {
-      badge: "Demande reﾃｧue",
-      subject: "JC Detailing - Demande de rendez-vous reﾃｧue",
+      badge: "Demande reçue",
+      subject: "JC Detailing - Demande de rendez-vous reçue",
       intro:
-        "Merci pour votre demande chez JC Detailing. Nous avons bien reﾃｧu votre demande de rendez-vous.",
+        "Merci pour votre demande chez JC Detailing. Nous avons bien reçu votre demande de rendez-vous.",
       notice:
-        "Important : le rendez-vous n窶册st pas encore confirmﾃｩ. Nous vﾃｩrifions votre demande et vous enverrons une confirmation sﾃｩparﾃｩe par e-mail dﾃｨs que possible.",
+        "Important : le rendez-vous n'est pas encore confirmé. Nous vérifions votre demande et vous enverrons une confirmation séparée par e-mail dès que possible.",
       labels: {
         date: "Date",
         time: "Heure",
         services: "Service",
-        vehicle: "Vﾃｩhicule",
-        category: "Taille du vﾃｩhicule",
-        addOns: "Services supplﾃｩmentaires",
-        duration: "Durﾃｩe estimﾃｩe",
+      vehicle: "Véhicule",
+      category: "Taille du véhicule",
+      addOns: "Services supplémentaires",
+      duration: "Durée estimée",
         name: "Nom",
         email: "E-mail",
-        phone: "Tﾃｩlﾃｩphone",
+      phone: "Téléphone",
         notes: "Remarques",
       },
       greeting: "Meilleures salutations",
       question:
-        "Pour toute question ou modification, vous pouvez nous contacter par tﾃｩlﾃｩphone, WhatsApp ou e-mail.",
+        "Pour toute question ou modification, vous pouvez nous contacter par téléphone, WhatsApp ou e-mail.",
     },
     it: {
       badge: "Richiesta ricevuta",
@@ -373,7 +373,7 @@ function bookingRequestCopy(language: InvoiceLanguage) {
       intro:
         "Grazie per la tua richiesta presso JC Detailing. Abbiamo ricevuto la tua richiesta di appuntamento.",
       notice:
-        "Importante: l窶兮ppuntamento non ﾃｨ ancora confermato. Controlleremo la tua richiesta e ti invieremo una conferma separata via e-mail il prima possibile.",
+        "Importante: l'appuntamento non è ancora confermato. Controlleremo la tua richiesta e ti invieremo una conferma separata via e-mail il prima possibile.",
       labels: {
         date: "Data",
         time: "Orario",
@@ -486,7 +486,7 @@ function bookingRequestReceivedEmail(
                     </div>
 
                     <div style="margin-top:4px;font-size:12px;color:#6b6256;">
-                      Luzern ﾂｷ Wauwil ﾂｷ Switzerland
+            Luzern &middot; Wauwil &middot; Switzerland
                     </div>
 
                     <div style="display:inline-block;margin-top:20px;padding:7px 12px;border-radius:999px;background:#f1d675;color:#111111;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">
@@ -530,7 +530,7 @@ function bookingRequestReceivedEmail(
 
                 <tr>
                   <td style="padding:18px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;line-height:1.7;text-align:center;">
-                    JC Detailing ﾂｷ Sternmatt 4, 6242 Wauwil ﾂｷ +41 77 268 33 88 ﾂｷ jcdetailinglucerne@gmail.com
+          JC Detailing &middot; Sternmatt 4, 6242 Wauwil &middot; +41 77 268 33 88 &middot; jcdetailinglucerne@gmail.com
                   </td>
                 </tr>
               </table>
@@ -575,12 +575,12 @@ function adminBookingEmail({
     ["E-Mail", clientEmail],
     ["Telefon", clientPhone],
     ["Datum", formatEmailDate(dateTime)],
-    ["Uhrzeit", `${formatEmailTime(dateTime)}窶・{formatEmailTime(endTime)} Uhr`],
+    ["Uhrzeit", `${formatEmailTime(dateTime)}–${formatEmailTime(endTime)} Uhr`],
     ["Leistung", services],
     ["Fahrzeug", vehicleModel],
-    ["Fahrzeuggrﾃｶsse", vehicleCategory],
+    ["Fahrzeuggrösse", vehicleCategory],
     ["Zusatzleistungen", addOns],
-    ["Geschﾃ､tzte Dauer", formatEmailDuration(durationMinutes)],
+    ["Geschätzte Dauer", formatEmailDuration(durationMinutes)],
   ];
 
   if (notes?.trim()) {
@@ -611,9 +611,9 @@ function adminBookingEmail({
   const text =
     `${subject}\n\n` +
     `${detailsText}\n\n` +
-    `Buchung ﾃｶffnen: ${bookingUrl}\n` +
-    `Bestﾃ､tigen: ${confirmUrl}\n` +
-    `Termin ﾃ､ndern: ${rescheduleUrl}\n` +
+    `Buchung öffnen: ${bookingUrl}\n` +
+    `Bestätigen: ${confirmUrl}\n` +
+    `Termin ändern: ${rescheduleUrl}\n` +
     `Stornieren: ${cancelUrl}`;
 
   const buttonStyle =
@@ -642,7 +642,7 @@ function adminBookingEmail({
                     </h1>
 
                     <p style="margin:0 auto;max-width:460px;color:#4b5563;font-size:15px;line-height:1.7;">
-                      Eine neue Terminanfrage wurde ﾃｼber die Website eingereicht.
+            Eine neue Terminanfrage wurde über die Website eingereicht.
                     </p>
                   </td>
                 </tr>
@@ -653,12 +653,12 @@ function adminBookingEmail({
                       <tr>
                         <td style="padding:0 6px 10px 0;width:50%;">
                           <a href="${bookingUrl}" style="${buttonStyle}background:#f15a24;color:#ffffff;">
-                            Buchung ﾃｶffnen
+              Buchung öffnen
                           </a>
                         </td>
                         <td style="padding:0 0 10px 6px;width:50%;">
                           <a href="${confirmUrl}" style="${buttonStyle}background:#dcfce7;color:#166534;border:1px solid #86efac;">
-                            Bestﾃ､tigen
+              Bestätigen
                           </a>
                         </td>
                       </tr>
@@ -666,7 +666,7 @@ function adminBookingEmail({
                       <tr>
                         <td style="padding:0 6px 0 0;width:50%;">
                           <a href="${rescheduleUrl}" style="${buttonStyle}background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;">
-                            Termin ﾃ､ndern
+              Termin ändern
                           </a>
                         </td>
                         <td style="padding:0 0 0 6px;width:50%;">
@@ -679,7 +679,7 @@ function adminBookingEmail({
 
                     <div style="margin:0 0 24px;padding:16px;border-radius:12px;background:#fff8db;border:1px solid #f1d675;">
                       <p style="margin:0;color:#3f3520;font-size:14px;line-height:1.7;">
-                        Die Buttons ﾃｶffnen die Admin-Seite. Die Buchung wird nicht direkt aus der E-Mail geﾃ､ndert.
+            Die Buttons öffnen die Admin-Seite. Die Buchung wird nicht direkt aus der E-Mail geändert.
                       </p>
                     </div>
 
@@ -691,7 +691,7 @@ function adminBookingEmail({
 
                 <tr>
                   <td style="padding:18px 24px;background:#f9fafb;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;line-height:1.7;text-align:center;">
-                    JC Detailing Admin ﾂｷ ${escapeHtml(bookingId)}
+          JC Detailing Admin &middot; ${escapeHtml(bookingId)}
                   </td>
                 </tr>
               </table>
@@ -990,7 +990,7 @@ export async function POST(request: Request) {
     const internalNotes = [
       notes,
       servicesByRequestOrder.length > 1
-        ? `Ausgewﾃ､hlte Leistungen: ${serviceNames}`
+        ? `Ausgewählte Leistungen: ${serviceNames}`
         : "",
     ]
       .filter(Boolean)
@@ -1184,15 +1184,15 @@ export async function POST(request: Request) {
       `Telefon: ${phone}`,
       `Adresse: ${address}`,
       `Leistungen: ${serviceNames}`,
-      `Fahrzeuggrﾃｶsse: ${dbCategory.name}`,
+        `Fahrzeuggrösse: ${dbCategory.name}`,
       `Zusatzleistungen: ${addOnNames}`,
       `Fahrzeugmodell: ${vehicleModel}`,
-      `Geschﾃ､tzte Dauer: ${totalDuration} Minuten`,
+        `Geschätzte Dauer: ${totalDuration} Minuten`,
       `Zwischensumme: CHF ${estimatedSubtotal.toFixed(2)}`,
       ...(appliedPromoCode
         ? [`Promo-Code: ${appliedPromoCode} (${promoDiscountPercent}%, -CHF ${promoDiscountAmount.toFixed(2)})`]
         : []),
-      `Geschﾃ､tzter Gesamtpreis: CHF ${roundCurrency(estimatedSubtotal - promoDiscountAmount).toFixed(2)}`,
+        `Geschätzter Gesamtpreis: CHF ${roundCurrency(estimatedSubtotal - promoDiscountAmount).toFixed(2)}`,
       `Termin Start: ${startBookingDate.toLocaleString("de-CH", { timeZone: "Europe/Zurich" })}`,
       `Termin Ende: ${endBookingDate.toLocaleString("de-CH", { timeZone: "Europe/Zurich" })}`,
       `Hinweise/Nachricht: ${notes || "-"}`,
