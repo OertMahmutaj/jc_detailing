@@ -97,7 +97,10 @@ export async function ensureBookingCatalog(
     for (const service of serviceCatalog) {
       const acceptedNames = [service.name, ...service.aliases];
       const existingServices = await prisma.service.findMany({
-        where: { name: { in: acceptedNames } },
+        where: {
+          audience: "PRIVATE",
+          name: { in: acceptedNames },
+        },
         select: { id: true, name: true },
       });
       const existingService =
@@ -114,6 +117,7 @@ export async function ensureBookingCatalog(
       } else {
         await prisma.service.create({
           data: {
+            audience: "PRIVATE",
             basePrice: service.basePrice,
             durationMinutes: service.durationMinutes,
             isActive: true,
@@ -172,7 +176,7 @@ export async function ensureBookingCatalog(
   const [services, categories, addOns, vehicleOptionCount, addOnOptionCount] = await Promise.all([
     prisma.service.findMany({
       select: { id: true, name: true },
-      where: { isActive: true },
+      where: { audience: "PRIVATE", isActive: true },
     }),
     prisma.vehicleCategory.findMany({
       select: { id: true, name: true, priceModifier: true },
@@ -182,8 +186,12 @@ export async function ensureBookingCatalog(
       select: { additionalDuration: true, id: true, name: true, price: true },
       where: { isActive: true },
     }),
-    prisma.serviceVehicleCategory.count(),
-    prisma.serviceAddOn.count(),
+    prisma.serviceVehicleCategory.count({
+      where: { service: { audience: "PRIVATE" } },
+    }),
+    prisma.serviceAddOn.count({
+      where: { service: { audience: "PRIVATE" } },
+    }),
   ]);
 
   if (vehicleOptionCount === 0) {

@@ -21,6 +21,21 @@ enum InvoiceStatus {
   PAID
 }
 
+enum BillingDocumentType {
+  INVOICE
+  RECEIPT
+}
+
+enum ClientType {
+  PRIVATE
+  COMPANY
+}
+
+enum ServiceAudience {
+  PRIVATE
+  COMPANY
+}
+
 enum BookingPhotoCategory {
   BEFORE
   AFTER
@@ -58,9 +73,12 @@ model Client {
   email     String    @unique
   phone     String
   address   String?
+  type      ClientType @default(PRIVATE)
   bookings  Booking[]
   promoCodeUsages PromoCodeUsage[]
   createdAt DateTime  @default(now())
+
+  @@index([type])
 }
 
 model PromoCode {
@@ -100,10 +118,13 @@ model Service {
   basePrice       Float     
   durationMinutes Int       
   isActive        Boolean                  @default(true)
+  audience        ServiceAudience          @default(PRIVATE)
   primaryBookings Booking[]                @relation("PrimaryBookingService")
   bookings        Booking[]                @relation("BookingToServices")
   vehicleOptions  ServiceVehicleCategory[]
   addOnOptions    ServiceAddOn[]
+
+  @@index([audience])
 }
 
 model VehicleCategory {
@@ -181,7 +202,8 @@ model Booking {
   vehicleCategory   VehicleCategory @relation(fields: [vehicleCategoryId], references: [id])
 
   addOns            AddOn[]         @relation("BookingToAddOns")
-  invoice           Invoice?
+  invoice           Invoice?        @relation("BookingInvoice")
+  receipt           Invoice?        @relation("BookingReceipt")
 
   promoCodeId            String?
   promoCode              PromoCode?      @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
@@ -198,6 +220,8 @@ model Booking {
 model Invoice {
   id            String        @id @default(uuid())
   invoiceNumber String        @unique 
+  documentType  BillingDocumentType @default(INVOICE)
+  customerType  ClientType    @default(PRIVATE)
   issuedAt      DateTime      @default(now())
   dueDate       DateTime
   totalAmount   Float         
@@ -221,10 +245,14 @@ model Invoice {
   companyUid    String?       @default("CHE-122.222.222") // The UID shown in your invoice mock
 
   bookingId     String?       @unique
-  booking       Booking?      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking       Booking?      @relation("BookingInvoice", fields: [bookingId], references: [id], onDelete: Cascade)
+  receiptBookingId String?    @unique
+  receiptBooking Booking?     @relation("BookingReceipt", fields: [receiptBookingId], references: [id], onDelete: Cascade)
   items         InvoiceItem[]
 
   updatedAt     DateTime      @updatedAt
+
+  @@index([documentType, customerType])
 }
 
 model InvoiceItem {

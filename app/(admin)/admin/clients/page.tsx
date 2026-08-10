@@ -1,6 +1,8 @@
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../_lib/prisma";
 import { AdminSearchForm } from "../_components/AdminSearchForm";
+import CompanyClientCreator from "./CompanyClientCreator";
 
 const PAGE_SIZE = 5;
 
@@ -14,10 +16,11 @@ function formatDate(value?: Date) {
   return `${day}.${month}.${year}`;
 }
 
-function pageHref(page: number, query: string) {
+function pageHref(page: number, query: string, isCompanyView: boolean) {
   const params = new URLSearchParams();
   params.set("page", String(page));
   if (query) params.set("q", query);
+  if (isCompanyView) params.set("clientType", "company");
 
   return `/admin/clients?${params.toString()}`;
 }
@@ -25,14 +28,18 @@ function pageHref(page: number, query: string) {
 export default async function AdminClientsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ page?: string; q?: string }>;
+  searchParams?: Promise<{ clientType?: string; page?: string; q?: string }>;
 }) {
   const params = (await searchParams) ?? {};
+  const clientType = params.clientType === "company" ? "COMPANY" : "PRIVATE";
+  const isCompanyView = clientType === "COMPANY";
   const query = String(params.q ?? "").trim();
   const page = Math.max(1, Number(params.page ?? "1") || 1);
   const skip = (page - 1) * PAGE_SIZE;
-  const where = query
-    ? {
+  const where: Prisma.ClientWhereInput = {
+    type: clientType,
+    ...(query
+      ? {
       OR: [
         { name: { contains: query, mode: "insensitive" as const } },
         { email: { contains: query, mode: "insensitive" as const } },
@@ -40,8 +47,9 @@ export default async function AdminClientsPage({
         { bookings: { some: { vehicleModel: { contains: query, mode: "insensitive" as const } } } },
         { bookings: { some: { service: { name: { contains: query, mode: "insensitive" as const } } } } },
       ],
-    }
-    : {};
+        }
+      : {}),
+  };
 
   const [clients, totalClients] = await Promise.all([
     prisma.client.findMany({
@@ -66,12 +74,13 @@ export default async function AdminClientsPage({
     <div className="admin-page">
       <header className="admin-page-header">
         {/* <p>Kunden</p> */}
-        <h1>Clients</h1>
+        <h1>{isCompanyView ? "Firmenkunden" : "Clients"}</h1>
+        {isCompanyView && <CompanyClientCreator />}
       </header>
 
       <section className="admin-panel">
         <div className="admin-panel-head">
-          <h2>Alle Kunden</h2>
+          <h2>{isCompanyView ? "Alle Firmenkunden" : "Alle Kunden"}</h2>
           <AdminSearchForm defaultValue={query} placeholder="Name, E-Mail, Telefon..." />
         </div>
 
@@ -130,13 +139,23 @@ export default async function AdminClientsPage({
         </div>
 
         <div className="admin-pagination">
-          <Link aria-disabled={page <= 1} href={pageHref(Math.max(1, page - 1), query)}>
+          <Link
+            aria-disabled={page <= 1}
+            href={pageHref(Math.max(1, page - 1), query, isCompanyView)}
+          >
             Zurück
           </Link>
           <span>
             Seite {page} von {totalPages}
           </span>
-          <Link aria-disabled={page >= totalPages} href={pageHref(Math.min(totalPages, page + 1), query)}>
+          <Link
+            aria-disabled={page >= totalPages}
+            href={pageHref(
+              Math.min(totalPages, page + 1),
+              query,
+              isCompanyView,
+            )}
+          >
             Weiter
           </Link>
         </div>

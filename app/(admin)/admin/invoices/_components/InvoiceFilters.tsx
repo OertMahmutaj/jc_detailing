@@ -12,12 +12,14 @@ type InvoiceSort =
   | "amount-asc";
 
 type InvoiceFiltersProps = {
+  documentKind: "invoice" | "receipt";
   query: string;
   sort: InvoiceSort;
   status: InvoiceStatusFilter;
 };
 
 export function InvoiceFilters({
+  documentKind,
   query,
   sort,
   status,
@@ -28,6 +30,7 @@ export function InvoiceFilters({
 
   const [searchValue, setSearchValue] = useState(query);
   const [, startTransition] = useTransition();
+  const isReceipt = documentKind === "receipt";
 
   function updateUrl(nextValues: {
     q?: string;
@@ -97,15 +100,19 @@ export function InvoiceFilters({
   return (
     <div className="admin-filter-form">
       <input
-        aria-label="Rechnungen suchen"
-        placeholder="Kunde, E-Mail, Rechnung..."
+        aria-label={isReceipt ? "Quittungen suchen" : "Rechnungen suchen"}
+        placeholder={
+          isReceipt ? "Kunde, E-Mail, Quittung..." : "Kunde, E-Mail, Rechnung..."
+        }
         type="search"
         value={searchValue}
         onChange={(event) => setSearchValue(event.target.value)}
       />
 
       <select
-        aria-label="Rechnungsstatus filtern"
+        aria-label={
+          isReceipt ? "Quittungsstatus filtern" : "Rechnungsstatus filtern"
+        }
         value={status}
         onChange={(event) =>
           updateUrl({
@@ -114,14 +121,16 @@ export function InvoiceFilters({
         }
       >
         <option value="all">Alle Status</option>
-        <option value="missing">Keine Rechnung</option>
+        <option value="missing">
+          {isReceipt ? "Keine Quittung" : "Keine Rechnung"}
+        </option>
         <option value="sent">Gesendet</option>
         <option value="paid">Bezahlt</option>
         <option value="overdue">Überfällig</option>
       </select>
 
       <select
-        aria-label="Rechnungen sortieren"
+        aria-label={isReceipt ? "Quittungen sortieren" : "Rechnungen sortieren"}
         value={sort}
         onChange={(event) =>
           updateUrl({

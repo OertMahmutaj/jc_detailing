@@ -1,6 +1,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "../_lib/prisma";
-import { getAdminBookingCatalog } from "../_lib/bookingCatalog";
+import {
+  getAdminBookingCatalog,
+  getAdminCompanyClients,
+} from "../_lib/bookingCatalog";
 import { AdminCalendarClient } from "./AdminCalendarClient";
 import { createAdminBooking } from "../_actions/bookingActions";
 
@@ -183,7 +186,12 @@ export default async function AdminCalendarPage({
     },
   });
 
-  const { addOns, categories, services } = await getAdminBookingCatalog();
+  const [catalog, companyCatalog, companyClients] = await Promise.all([
+    getAdminBookingCatalog(),
+    getAdminBookingCatalog("COMPANY"),
+    getAdminCompanyClients(),
+  ]);
+  const { addOns, categories, services } = catalog;
 
   return (
     <div className="admin-page">
@@ -232,6 +240,7 @@ export default async function AdminCalendarPage({
             clientPhone: booking.client.phone,
             endTime: booking.endTime.toISOString(),
             id: booking.id,
+            notes: booking.notes,
             serviceName: selectedServices
               .map((service) => service.name)
               .join(", "),
@@ -246,6 +255,10 @@ export default async function AdminCalendarPage({
         deleteBlockAction={deleteAvailabilityBlock}
         addOns={addOns}
         categories={categories}
+        companyAddOns={companyCatalog.addOns}
+        companyCategories={companyCatalog.categories}
+        companyClients={companyClients}
+        companyServices={companyCatalog.services}
         services={services}
       />
     </div>

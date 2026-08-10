@@ -22,7 +22,7 @@ export async function getPublicPricing(): Promise<PublicPricing> {
 
   try {
     const services = await prisma.service.findMany({
-      where: { isActive: true },
+      where: { audience: "PRIVATE", isActive: true },
       select: {
         addOnOptions: {
           where: {

@@ -29,7 +29,9 @@ export function AdminBookingCreator({
   addOns,
   categories,
   client,
+  companyClients = [],
   defaultDate,
+  mode = "PRIVATE",
   services,
 }: {
   action: (formData: FormData) => Promise<{
@@ -39,7 +41,9 @@ export function AdminBookingCreator({
   addOns: Option[];
   categories: Option[];
   client?: ExistingClient;
+  companyClients?: ExistingClient[];
   defaultDate?: string;
+  mode?: "PRIVATE" | "COMPANY";
   services: Option[];
 }) {
   const [open, setOpen] = useState(false);
@@ -49,7 +53,9 @@ export function AdminBookingCreator({
   const router = useRouter();
   const { showNotification } = useAdminNotification();
 
+  const isCompanyBooking = mode === "COMPANY";
   const isExistingClientBooking = Boolean(client);
+  const hasCompanyClients = companyClients.length > 0;
   const filteredCategories = selectedServiceId
     ? categories.filter((category) =>
         category.serviceOptions?.some(
@@ -139,16 +145,18 @@ export function AdminBookingCreator({
         type="button"
       >
         <CalendarPlus size={16} />
-        {isExistingClientBooking
-          ? "Neue Buchung für diesen Kunden"
-          : "Neue Buchung"}
+        {isCompanyBooking
+          ? "Neue Firmenbuchung"
+          : isExistingClientBooking
+            ? "Neue Buchung für diesen Kunden"
+            : "Neue Buchung"}
       </button>
 
       {open && (
         <div
           className="admin-modal-backdrop"
           role="dialog"
-          aria-label="Neue Buchung"
+          aria-label={isCompanyBooking ? "Neue Firmenbuchung" : "Neue Buchung"}
           aria-modal="true"
         >
           <form
@@ -164,17 +172,39 @@ export function AdminBookingCreator({
               <X size={22} />
             </button>
 
+            <input name="bookingMode" type="hidden" value={mode} />
             {client && <input name="clientId" type="hidden" value={client.id} />}
 
             <div className="admin-panel-head">
               <div>
                 <span>Buchung</span>
-                <h2>Neue Buchung erstellen</h2>
+                <h2>
+                  {isCompanyBooking
+                    ? "Neue Firmenbuchung erstellen"
+                    : "Neue Buchung erstellen"}
+                </h2>
               </div>
             </div>
 
             <div className="admin-form-grid">
-              {client ? (
+              {isCompanyBooking ? (
+                <label className="admin-form-wide">
+                  Firma
+                  <select defaultValue="" name="clientId" required>
+                    <option disabled value="">
+                      {hasCompanyClients
+                        ? "Firmenkunde wählen"
+                        : "Keine Firmenkunden vorhanden"}
+                    </option>
+
+                    {companyClients.map((company) => (
+                      <option key={company.id} value={company.id}>
+                        {company.name} ({company.email})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : client ? (
                 <>
                   <label>
                     Name
@@ -318,6 +348,15 @@ export function AdminBookingCreator({
                   defaultValue="10:00"
                 />
               </label>
+
+              <label className="admin-form-wide admin-textarea-label">
+                Notizen
+                <textarea
+                  name="notes"
+                  placeholder="Interne Notizen zur Buchung..."
+                  rows={4}
+                />
+              </label>
             </div>
 
             {filteredAddOns.length > 0 && (
@@ -342,7 +381,7 @@ export function AdminBookingCreator({
 
             <button
               className="admin-submit-button"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (isCompanyBooking && !hasCompanyClients)}
               type="submit"
             >
               {isSubmitting

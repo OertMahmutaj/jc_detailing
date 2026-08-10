@@ -11,8 +11,7 @@ export default async function AdminBookingDetailPage({
 }) {
     const { bookingId } = await params;
 
-    const [booking, catalog] = await Promise.all([
-        prisma.booking.findUnique({
+    const booking = await prisma.booking.findUnique({
             where: {
                 id: bookingId,
             },
@@ -43,14 +42,14 @@ export default async function AdminBookingDetailPage({
                     take: 1,
                 },
             },
-        }),
-        getAdminBookingCatalog(),
-    ]);
-    const { addOns, categories: vehicleCategories, services } = catalog;
+        });
 
     if (!booking) {
         notFound();
     }
+
+    const catalog = await getAdminBookingCatalog(booking.client.type);
+    const { addOns, categories: vehicleCategories, services } = catalog;
 
     return (
         <div className="admin-page">

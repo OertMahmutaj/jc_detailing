@@ -17,6 +17,8 @@ interface Item {
 }
 
 interface InvoiceEditorProps {
+  customerType: "PRIVATE" | "COMPANY";
+  documentKind: "invoice" | "receipt";
   initialData: {
     basePrice: number;
     bookingId?: string | null;
@@ -84,10 +86,13 @@ function formatSwissDate(value?: Date | string | null) {
 }
 
 export default function InvoiceEditor({
+  customerType,
+  documentKind,
   initialData,
   onSaved,
 }: InvoiceEditorProps) {
   const { showNotification } = useAdminNotification();
+  const isReceipt = documentKind === "receipt";
   const initialLanguage = normalizeInvoiceLanguage(initialData.language);
 
   const [invoiceNumber, setInvoiceNumber] = useState(initialData.invoiceNumber);
@@ -179,7 +184,12 @@ export default function InvoiceEditor({
     if (isSending) return;
 
     if (!invoiceNumber.trim()) {
-      showNotification("Bitte gib eine Rechnungsnummer ein.", "error");
+      showNotification(
+        isReceipt
+          ? "Bitte gib eine Quittungsnummer ein."
+          : "Bitte gib eine Rechnungsnummer ein.",
+        "error",
+      );
       return;
     }
 
@@ -212,6 +222,8 @@ export default function InvoiceEditor({
           bookingId: initialData.bookingId || null,
           businessAddress,
           clientAddress,
+          customerType,
+          documentType: isReceipt ? "RECEIPT" : "INVOICE",
           invoiceId: initialData.invoiceId || null,
           invoiceNumber,
           items,
@@ -233,17 +245,30 @@ export default function InvoiceEditor({
 
       if (!response.ok) {
         showNotification(
-          data?.error || "Rechnung konnte nicht gesendet werden.",
+          data?.error ||
+            (isReceipt
+              ? "Quittung konnte nicht gesendet werden."
+              : "Rechnung konnte nicht gesendet werden."),
           "error",
         );
         return;
       }
 
-      showNotification("Rechnung wurde erfolgreich gesendet.", "success");
+      showNotification(
+        isReceipt
+          ? "Quittung wurde erfolgreich gesendet."
+          : "Rechnung wurde erfolgreich gesendet.",
+        "success",
+      );
       onSaved?.();
     } catch (error) {
       console.error("Invoice sending failed:", error);
-      showNotification("Rechnung konnte nicht gesendet werden.", "error");
+      showNotification(
+        isReceipt
+          ? "Quittung konnte nicht gesendet werden."
+          : "Rechnung konnte nicht gesendet werden.",
+        "error",
+      );
     } finally {
       setIsSending(false);
     }
@@ -252,14 +277,14 @@ export default function InvoiceEditor({
   return (
     <div className="admin-panel admin-invoice-editor">
       <div className="admin-panel-head">
-        <h2>Rechnung bearbeiten</h2>
+        <h2>{isReceipt ? "Quittung bearbeiten" : "Rechnung bearbeiten"}</h2>
       </div>
 
       <div className="admin-invoice-editor-grid">
         <div>
           <div className="admin-form-grid">
             <label>
-              Rechnungsnummer
+              {isReceipt ? "Quittungsnummer" : "Rechnungsnummer"}
               <input
                 value={invoiceNumber}
                 onChange={(event) => setInvoiceNumber(event.target.value)}
@@ -292,7 +317,7 @@ export default function InvoiceEditor({
             </label>
 
             <label>
-              Rechnungsdatum
+              {isReceipt ? "Quittungsdatum" : "Rechnungsdatum"}
               <input readOnly value={toDateInputValue(initialData.issuedAt)} />
             </label>
 
@@ -452,7 +477,9 @@ export default function InvoiceEditor({
               <Mail size={16} />{" "}
               {isSending
                 ? "Wird verarbeitet..."
-                : "Rechnung per E-Mail senden"}
+                : isReceipt
+                  ? "Quittung per E-Mail senden"
+                  : "Rechnung per E-Mail senden"}
             </button>
           </div>
         </div>
@@ -465,13 +492,15 @@ export default function InvoiceEditor({
                 <span>{businessAddress}</span>
               </div>
               <div>
-                <span>Rechnung</span>
+                <span>{isReceipt ? "Quittung" : "Rechnung"}</span>
                 <strong>{invoiceNumber}</strong>
               </div>
             </header>
 
             <div className="admin-pdf-meta">
-              <span>Rechnungsdatum: {formatSwissDate(initialData.issuedAt)}</span>
+              <span>
+                {isReceipt ? "Quittungsdatum" : "Rechnungsdatum"}: {formatSwissDate(initialData.issuedAt)}
+              </span>
               <span>Leistungsdatum: {formatSwissDate(serviceDate)}</span>
             </div>
 

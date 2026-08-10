@@ -11,7 +11,10 @@ import {
   BarChart3,
 } from "lucide-react";
 import { prisma } from "../_lib/prisma";
-import { getAdminBookingCatalog } from "../_lib/bookingCatalog";
+import {
+  getAdminBookingCatalog,
+  getAdminCompanyClients,
+} from "../_lib/bookingCatalog";
 import { AdminBookingCreator } from "../_components/AdminBookingCreator";
 import { createAdminBooking } from "../_actions/bookingActions";
 
@@ -202,9 +205,12 @@ export default async function AdminDashboardPage() {
     overdueInvoices,
     nextSevenDaysBookings,
     catalog,
+    companyCatalog,
+    companyClients,
   ] = await Promise.all([
     prisma.booking.findMany({
       where: {
+        client: { type: "PRIVATE" },
         dateTime: {
           gte: today,
           lt: tomorrow,
@@ -225,6 +231,7 @@ export default async function AdminDashboardPage() {
 
     prisma.booking.count({
       where: {
+        client: { type: "PRIVATE" },
         dateTime: {
           gte: weekStart,
         },
@@ -236,6 +243,7 @@ export default async function AdminDashboardPage() {
 
     prisma.booking.findMany({
       where: {
+        client: { type: "PRIVATE" },
         dateTime: {
           gte: monthStart,
         },
@@ -289,14 +297,16 @@ export default async function AdminDashboardPage() {
 
     prisma.booking.count({
       where: {
+        client: { type: "PRIVATE" },
         status: "PENDING",
       },
     }),
 
-    prisma.client.count(),
+    prisma.client.count({ where: { type: "PRIVATE" } }),
 
     prisma.booking.findMany({
       where: {
+        client: { type: "PRIVATE" },
         dateTime: {
           gte: now,
         },
@@ -317,6 +327,8 @@ export default async function AdminDashboardPage() {
 
     prisma.invoice.findMany({
       where: {
+        customerType: "PRIVATE",
+        documentType: "INVOICE",
         status: "SENT",
         dueDate: {
           gte: now,
@@ -337,6 +349,8 @@ export default async function AdminDashboardPage() {
 
     prisma.invoice.findMany({
       where: {
+        customerType: "PRIVATE",
+        documentType: "INVOICE",
         status: "SENT",
         dueDate: {
           lt: now,
@@ -357,6 +371,7 @@ export default async function AdminDashboardPage() {
 
     prisma.booking.findMany({
       where: {
+        client: { type: "PRIVATE" },
         dateTime: {
           gte: today,
           lt: sixDaysEnd,
@@ -413,6 +428,8 @@ export default async function AdminDashboardPage() {
     }),
 
     getAdminBookingCatalog(),
+    getAdminBookingCatalog("COMPANY"),
+    getAdminCompanyClients(),
   ]);
   const { addOns, categories, services } = catalog;
 
@@ -533,13 +550,22 @@ export default async function AdminDashboardPage() {
         </div>
 
         <div className="admin-dashboard-header-actions">
-          <AdminBookingCreator
-            action={createAdminBooking}
-            addOns={addOns}
-            categories={categories}
-            services={services}
-          />
-
+          <div className="admin-booking-create-actions">
+            <AdminBookingCreator
+              action={createAdminBooking}
+              addOns={addOns}
+              categories={categories}
+              services={services}
+            />
+            <AdminBookingCreator
+              action={createAdminBooking}
+              addOns={companyCatalog.addOns}
+              categories={companyCatalog.categories}
+              companyClients={companyClients}
+              mode="COMPANY"
+              services={companyCatalog.services}
+            />
+          </div>
         </div>
       </header>
 

@@ -1552,6 +1552,13 @@ html[data-admin-theme="light"] .admin-client-summary-card {
   gap: 16px;
 }
 
+.admin-booking-create-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .admin-dashboard-tabs {
   align-items: center;
   display: flex;
@@ -2788,6 +2795,23 @@ html[data-admin-theme="light"] .admin-smart-action-menu button:hover {
   margin: 0 0 3px;
 }
 
+.admin-calendar-booking-notes {
+  border-top: 1px solid var(--admin-line);
+  display: grid;
+  gap: 5px;
+  margin-top: 6px;
+  padding-top: 10px;
+}
+
+.admin-calendar-booking-notes strong {
+  color: var(--admin-text);
+  font-size: 11px;
+}
+
+.admin-calendar-booking-notes span {
+  white-space: pre-wrap;
+}
+
 .admin-booking-schedule-modal-content {
   display: grid;
   gap: 16px;
@@ -3713,6 +3737,17 @@ html[data-admin-theme="light"] .admin-bookings-table tbody td {
 
   .admin-dashboard-header-actions {
     justify-content: space-between;
+  }
+
+  .admin-booking-create-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .admin-booking-create-actions .admin-create-booking-button {
+    flex: 1 1 100%;
+    justify-content: center;
+    width: 100%;
   }
 
   .admin-month-stat-grid,

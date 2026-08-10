@@ -51,8 +51,7 @@ export default async function AdminClientDetailPage({
 }) {
   const { clientId } = await params;
 
-  const [client, catalog] = await Promise.all([
-    prisma.client.findUnique({
+  const client = await prisma.client.findUnique({
       where: {
         id: clientId,
       },
@@ -70,14 +69,18 @@ export default async function AdminClientDetailPage({
           },
         },
       },
-    }),
-    getAdminBookingCatalog(),
-  ]);
-  const { addOns, categories: vehicleCategories, services } = catalog;
+    });
 
   if (!client) {
     notFound();
   }
+
+  const catalog = await getAdminBookingCatalog(client.type);
+  const { addOns, categories: vehicleCategories, services } = catalog;
+  const clientListHref =
+    client.type === "COMPANY"
+      ? "/admin/clients?clientType=company"
+      : "/admin/clients";
 
   const now = new Date();
 
@@ -110,7 +113,7 @@ export default async function AdminClientDetailPage({
     <div className="admin-page">
       <header className="admin-page-header">
         <div>
-          <Link href="/admin/clients" className="admin-back-link">
+          <Link href={clientListHref} className="admin-back-link">
             ← Zurück zu Kunden
           </Link>
 

@@ -55,7 +55,13 @@ async function readResponseMessage(response: Response, fallback: string) {
   }
 }
 
-export default function ServicesClient({ services }: { services: ServiceRow[] }) {
+export default function ServicesClient({
+  audience,
+  services,
+}: {
+  audience: "PRIVATE" | "COMPANY";
+  services: ServiceRow[];
+}) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [message, setMessage] = useState("");
@@ -87,6 +93,7 @@ export default function ServicesClient({ services }: { services: ServiceRow[] })
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          audience,
           basePrice: formData.get("basePrice"),
           durationMinutes,
           isActive: formData.get("isActive") === "on",
@@ -302,7 +309,9 @@ export default function ServicesClient({ services }: { services: ServiceRow[] })
                   <div className="admin-service-card-actions">
                     <Link
                       className="admin-secondary-button"
-                      href={`/admin/services/${service.id}`}
+                      href={`/admin/services/${service.id}${
+                        audience === "COMPANY" ? "?audience=company" : ""
+                      }`}
                     >
                       <Settings2 size={16} />
                       Optionen bearbeiten

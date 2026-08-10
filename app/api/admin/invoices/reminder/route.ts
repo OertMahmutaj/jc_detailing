@@ -4,7 +4,11 @@ import { cookies } from "next/headers";
 import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/app/lib/adminSession";
 import { sendResendEmail } from "@/app/lib/resendEmail";
 
-async function getPdfAttachment(pdfUrl?: string | null, invoiceNumber?: string) {
+async function getPdfAttachment(
+  pdfUrl?: string | null,
+  invoiceNumber?: string,
+  documentType: "INVOICE" | "RECEIPT" = "INVOICE",
+) {
   if (!pdfUrl || !invoiceNumber) return [];
 
   try {
@@ -16,7 +20,7 @@ async function getPdfAttachment(pdfUrl?: string | null, invoiceNumber?: string) 
     return [
       {
         content: Buffer.from(arrayBuffer).toString("base64"),
-        filename: `Rechnung_${invoiceNumber}.pdf`,
+        filename: `${documentType === "RECEIPT" ? "Quittung" : "Rechnung"}_${invoiceNumber}.pdf`,
       },
     ];
   } catch {
@@ -48,6 +52,11 @@ export async function POST(request: Request) {
             client: true,
           },
         },
+        receiptBooking: {
+          include: {
+            client: true,
+          },
+        },
       },
     });
 
@@ -63,7 +72,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Diese Rechnung ist noch nicht faellig." }, { status: 400 });
     }
 
-    const targetEmail = invoice.emailOverride || invoice.booking?.client.email;
+    const isReceipt = invoice.documentType === "RECEIPT";
+    const linkedBooking = isReceipt
+      ? invoice.receiptBooking
+      : invoice.booking;
+    const targetEmail = invoice.emailOverride || linkedBooking?.client.email;
 
     if (!targetEmail) {
       return NextResponse.json(
@@ -72,10 +85,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const recipientName = invoice.recipientName || invoice.booking?.client.name || "Kunde";
+    const recipientName = invoice.recipientName || linkedBooking?.client.name || "Kunde";
     const dueDate = invoice.dueDate.toLocaleDateString("de-CH");
     const amount = invoice.totalAmount.toFixed(2);
-    const text = `Guten Tag ${recipientName},
+    const text = isReceipt
+      ? `Guten Tag ${recipientName},
+
+anbei senden wir Ihnen die Quittung ${invoice.invoiceNumber} erneut.
+
+Betrag: CHF ${amount}
+
+Vielen Dank und freundliche Gruesse
+JC Detailing`
+      : `Guten Tag ${recipientName},
 
 wir moechten Sie freundlich daran erinnern, dass die Rechnung ${invoice.invoiceNumber} noch offen ist.
 
@@ -86,9 +108,15 @@ Vielen Dank und freundliche Gruesse
 JC Detailing`;
 
     await sendResendEmail({
-      attachments: await getPdfAttachment(invoice.pdfUrl, invoice.invoiceNumber),
+      attachments: await getPdfAttachment(
+        invoice.pdfUrl,
+        invoice.invoiceNumber,
+        invoice.documentType,
+      ),
       html: text.replace(/\n/g, "<br />"),
-      subject: `Freundliche Erinnerung: Rechnung ${invoice.invoiceNumber}`,
+      subject: isReceipt
+        ? `Quittung ${invoice.invoiceNumber}`
+        : `Freundliche Erinnerung: Rechnung ${invoice.invoiceNumber}`,
       text,
       to: targetEmail,
     });

@@ -678,6 +678,7 @@ export async function createAdminBooking(formData: FormData): Promise<{
   error?: string;
 }> {
   try {
+    const bookingMode = String(formData.get("bookingMode") ?? "PRIVATE");
     const clientId = String(formData.get("clientId") ?? "").trim();
     const name = String(formData.get("name") ?? "").trim();
     const email = String(formData.get("email") ?? "")
@@ -693,10 +694,10 @@ export async function createAdminBooking(formData: FormData): Promise<{
     const end = String(formData.get("end") ?? "");
     const language = cleanLanguage(formData.get("language"));
     const addOnIds = formData.getAll("addOnIds").map(String).filter(Boolean);
+    const notes = String(formData.get("notes") ?? "").trim();
 
     if (
-      !address ||
-      (!clientId && (!name || !email || !phone)) ||
+      (!clientId && (!name || !email || !phone || !address)) ||
       !vehicleModel ||
       !serviceId ||
       !vehicleCategoryId ||
@@ -767,7 +768,39 @@ export async function createAdminBooking(formData: FormData): Promise<{
       };
     }
 
-    const [service, category, addOns, selectedClient] = await Promise.all([
+    const selectedClient = clientId
+      ? await prisma.client.findUnique({ where: { id: clientId } })
+      : null;
+
+    if (clientId && !selectedClient) {
+      return {
+        success: false,
+        error: "Der ausgewﾃ､hlte Kunde wurde nicht gefunden.",
+      };
+    }
+
+    if (bookingMode === "COMPANY" && selectedClient?.type !== "COMPANY") {
+      return {
+        success: false,
+        error: "Bitte wähle einen registrierten Firmenkunden aus.",
+      };
+    }
+
+    const existingEmailClient = selectedClient
+      ? null
+      : await prisma.client.findUnique({ where: { email } });
+
+    if (existingEmailClient?.type === "COMPANY") {
+      return {
+        success: false,
+        error: "Diese E-Mail-Adresse gehﾃｶrt zu einem Firmenkunden.",
+      };
+    }
+
+    const serviceAudience =
+      selectedClient?.type === "COMPANY" ? "COMPANY" : "PRIVATE";
+
+    const [service, category, addOns] = await Promise.all([
       prisma.service.findFirst({
         include: {
           vehicleOptions: {
@@ -783,6 +816,7 @@ export async function createAdminBooking(formData: FormData): Promise<{
         where: {
           id: serviceId,
           isActive: true,
+          audience: serviceAudience,
         },
       }),
       prisma.vehicleCategory.findFirst({
@@ -823,11 +857,6 @@ export async function createAdminBooking(formData: FormData): Promise<{
           },
         },
       }),
-      clientId
-        ? prisma.client.findUnique({
-            where: { id: clientId },
-          })
-        : Promise.resolve(null),
     ]);
 
     if (!service || !category) {
@@ -860,7 +889,7 @@ export async function createAdminBooking(formData: FormData): Promise<{
       };
     }
 
-    const bookingClient = selectedClient ?? {
+    const bookingClient = selectedClient ?? existingEmailClient ?? {
       address,
       name,
       email,
@@ -874,24 +903,21 @@ export async function createAdminBooking(formData: FormData): Promise<{
         imageUrls: [],
         status: "CONFIRMED",
         language,
+        notes: notes || null,
         vehicleModel,
-        client: selectedClient
+        client: selectedClient || existingEmailClient
           ? {
               connect: {
-                id: selectedClient.id,
+                id: (selectedClient ?? existingEmailClient)!.id,
               },
             }
           : {
-              connectOrCreate: {
-                create: {
-                  address,
-                  email,
-                  name,
-                  phone,
-                },
-                where: {
-                  email,
-                },
+              create: {
+                address,
+                email,
+                name,
+                phone,
+                type: "PRIVATE",
               },
             },
         service: {
@@ -919,10 +945,12 @@ export async function createAdminBooking(formData: FormData): Promise<{
       },
     });
 
-    await prisma.client.update({
-      where: { id: booking.clientId },
-      data: { address },
-    });
+    if (address) {
+      await prisma.client.update({
+        where: { id: booking.clientId },
+        data: { address },
+      });
+    }
 
     const totalAmount =
       service.basePrice +
@@ -1168,6 +1196,9 @@ export async function updateAdminBooking(
       return failure("Die Buchung wurde nicht gefunden.");
     }
 
+    const expectedAudience =
+      currentBooking.client.type === "COMPANY" ? "COMPANY" : "PRIVATE";
+
     if (!primaryService) {
       return failure("Die gewählte Hauptleistung wurde nicht gefunden.");
     }
@@ -1184,6 +1215,15 @@ export async function updateAdminBooking(
 
     if (addOns.length !== addOnIds.length) {
       return failure("Ein oder mehrere Add-ons wurden nicht gefunden.");
+    }
+
+    if (
+      primaryService.audience !== expectedAudience ||
+      additionalServices.some(
+        (service) => service.audience !== expectedAudience,
+      )
+    ) {
+      return failure("Die gewählte Leistung gehört nicht zu diesem Kundentyp.");
     }
 
     const allSelectedServices = [primaryService, ...additionalServices];

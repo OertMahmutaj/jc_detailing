@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { BillingDocumentType } from "@prisma/client";
 import { prisma } from "@/app/(admin)/admin/_lib/prisma";
 import {
   ADMIN_SESSION_COOKIE,
@@ -50,6 +51,11 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json()) as Record<string, unknown>;
+    const documentType: BillingDocumentType =
+      body.documentType === "RECEIPT"
+        ? BillingDocumentType.RECEIPT
+        : BillingDocumentType.INVOICE;
+    const isReceipt = documentType === "RECEIPT";
     const bookingId = cleanText(body.bookingId, 80) || null;
     const invoiceId = cleanText(body.invoiceId, 80) || null;
     const invoiceNumber = cleanText(body.invoiceNumber, 80);
@@ -108,13 +114,15 @@ export async function POST(request: Request) {
       bookingId
         ? prisma.booking.findUnique({
             where: { id: bookingId },
-            include: { promoCode: true },
+            include: { client: true, promoCode: true },
           })
         : Promise.resolve(null),
       invoiceId
         ? prisma.invoice.findUnique({ where: { id: invoiceId } })
         : bookingId
-          ? prisma.invoice.findUnique({ where: { bookingId } })
+          ? isReceipt
+            ? prisma.invoice.findUnique({ where: { receiptBookingId: bookingId } })
+            : prisma.invoice.findUnique({ where: { bookingId } })
           : Promise.resolve(null),
     ]);
 
@@ -125,7 +133,18 @@ export async function POST(request: Request) {
       );
     }
 
+    if (existingInvoice && existingInvoice.documentType !== documentType) {
+      return NextResponse.json(
+        { error: "Dokumenttyp stimmt nicht ueberein." },
+        { status: 400 },
+      );
+    }
+
     const promoCode = booking?.promoCode?.code || existingInvoice?.promoCode || null;
+    const customerType =
+      booking?.client.type ??
+      existingInvoice?.customerType ??
+      (body.customerType === "COMPANY" ? "COMPANY" : "PRIVATE");
     const language =
       requestedLanguage ||
       cleanLanguage(booking?.language) ||
@@ -154,6 +173,8 @@ export async function POST(request: Request) {
     const invoiceData = {
       businessAddress,
       clientAddress,
+      customerType,
+      documentType,
       emailOverride: targetEmail,
       invoiceNumber,
       language,
@@ -175,7 +196,8 @@ export async function POST(request: Request) {
       : await prisma.invoice.create({
           data: {
             ...invoiceData,
-            bookingId,
+            bookingId: isReceipt ? null : bookingId,
+            receiptBookingId: isReceipt ? bookingId : null,
             dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           },
         });

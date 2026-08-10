@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { BillingDocumentType } from "@prisma/client";
 import { prisma } from "@/app/(admin)/admin/_lib/prisma";
 import { cookies } from "next/headers";
 import fs from "fs/promises";
@@ -50,6 +51,7 @@ type InvoiceSendRequest = {
   bookingId?: string | null;
   businessAddress: string;
   clientAddress: string;
+  documentType?: "INVOICE" | "RECEIPT";
   invoiceId?: string | null;
   invoiceNumber: string;
   recipientName: string;
@@ -58,6 +60,7 @@ type InvoiceSendRequest = {
   vatRate: number;
   items: InvoiceItemInput[];
   language?: InvoiceLanguage;
+  customerType?: "PRIVATE" | "COMPANY";
 };
 
 function roundCurrency(value: number) {
@@ -80,7 +83,11 @@ function cleanText(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
 
-async function archiveInvoicePdf(pdfBuffer: Buffer, invoiceNumber: string) {
+async function archiveInvoicePdf(
+  pdfBuffer: Buffer,
+  invoiceNumber: string,
+  documentType: "INVOICE" | "RECEIPT",
+) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const bucket = process.env.SUPABASE_INVOICE_BUCKET || "invoices";
@@ -90,7 +97,8 @@ async function archiveInvoicePdf(pdfBuffer: Buffer, invoiceNumber: string) {
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
-  const filePath = `invoices/${invoiceNumber}-${Date.now()}.pdf`;
+  const directory = documentType === "RECEIPT" ? "receipts" : "invoices";
+  const filePath = `${directory}/${invoiceNumber}-${Date.now()}.pdf`;
 
   const { error } = await supabase.storage
     .from(bucket)
@@ -205,6 +213,32 @@ function invoicePdfLabels(language: InvoiceLanguage) {
   return labels[language];
 }
 
+function receiptPdfLabels(language: InvoiceLanguage) {
+  const labels = {
+    de: {
+      invoiceNumber: "Quittungsnummer",
+      invoiceDate: "Quittungsdatum",
+    },
+    en: {
+      invoiceNumber: "Receipt number",
+      invoiceDate: "Receipt date",
+    },
+    fr: {
+      invoiceNumber: "Numéro du reçu",
+      invoiceDate: "Date du reçu",
+    },
+    it: {
+      invoiceNumber: "Numero ricevuta",
+      invoiceDate: "Data ricevuta",
+    },
+  } as const;
+
+  return {
+    ...invoicePdfLabels(language),
+    ...labels[language],
+  };
+}
+
 function invoiceMailCopy(language: InvoiceLanguage, invoiceNumber: string) {
   const copy = {
     de: {
@@ -268,12 +302,83 @@ function invoiceMailCopy(language: InvoiceLanguage, invoiceNumber: string) {
 
   return copy[language];
 }
+
+function receiptMailCopy(language: InvoiceLanguage, invoiceNumber: string) {
+  const copy = {
+    de: {
+      badge: "Quittung",
+      subject: `Ihre Quittung ${invoiceNumber} von JC Detailing`,
+      intro: "Im Anhang finden Sie Ihre Quittung im PDF-Format.",
+      invoiceNumberLabel: "Quittungsnummer",
+      amountLabel: "Betrag",
+      attachmentNote: "Die Quittung befindet sich als PDF im Anhang dieser E-Mail.",
+      greeting: "Freundliche Grüsse",
+      text:
+        `Guten Tag,\n\n` +
+        `im Anhang finden Sie Ihre Quittung ${invoiceNumber} im PDF-Format.\n\n` +
+        `Freundliche Grüsse\nJC Detailing\nSternmatt 4, 6242 Wauwil\n+41 77 268 33 88`,
+    },
+    en: {
+      badge: "Receipt",
+      subject: `Your receipt ${invoiceNumber} from JC Detailing`,
+      intro: "Please find your receipt attached as a PDF.",
+      invoiceNumberLabel: "Receipt number",
+      amountLabel: "Amount",
+      attachmentNote: "The receipt is attached to this email as a PDF.",
+      greeting: "Kind regards",
+      text:
+        `Hello,\n\n` +
+        `Please find your receipt ${invoiceNumber} attached as a PDF.\n\n` +
+        `Kind regards\nJC Detailing\nSternmatt 4, 6242 Wauwil\n+41 77 268 33 88`,
+    },
+    fr: {
+      badge: "Reçu",
+      subject: `Votre reçu ${invoiceNumber} de JC Detailing`,
+      intro: "Vous trouverez votre reçu en pièce jointe au format PDF.",
+      invoiceNumberLabel: "Numéro du reçu",
+      amountLabel: "Montant",
+      attachmentNote: "Le reçu est joint à cet e-mail au format PDF.",
+      greeting: "Meilleures salutations",
+      text:
+        `Bonjour,\n\n` +
+        `Vous trouverez votre reçu ${invoiceNumber} en pièce jointe au format PDF.\n\n` +
+        `Meilleures salutations\nJC Detailing\nSternmatt 4, 6242 Wauwil\n+41 77 268 33 88`,
+    },
+    it: {
+      badge: "Ricevuta",
+      subject: `La tua ricevuta ${invoiceNumber} da JC Detailing`,
+      intro: "In allegato trovi la tua ricevuta in formato PDF.",
+      invoiceNumberLabel: "Numero ricevuta",
+      amountLabel: "Importo",
+      attachmentNote: "La ricevuta è allegata a questa e-mail in formato PDF.",
+      greeting: "Cordiali saluti",
+      text:
+        `Buongiorno,\n\n` +
+        `In allegato trovi la tua ricevuta ${invoiceNumber} in formato PDF.\n\n` +
+        `Cordiali saluti\nJC Detailing\nSternmatt 4, 6242 Wauwil\n+41 77 268 33 88`,
+    },
+  } as const;
+
+  return copy[language];
+}
+
 function invoicePdfFilename(language: InvoiceLanguage, invoiceNumber: string) {
   const prefixes = {
     de: "Rechnung",
     en: "Invoice",
     fr: "Facture",
     it: "Fattura",
+  } as const;
+
+  return `${prefixes[language]}_${invoiceNumber}.pdf`;
+}
+
+function receiptPdfFilename(language: InvoiceLanguage, invoiceNumber: string) {
+  const prefixes = {
+    de: "Quittung",
+    en: "Receipt",
+    fr: "Recu",
+    it: "Ricevuta",
   } as const;
 
   return `${prefixes[language]}_${invoiceNumber}.pdf`;
@@ -532,6 +637,11 @@ export async function POST(req: Request) {
       vatRate,
       language: rawLanguage,
     } = body as InvoiceSendRequest;
+    const documentType: BillingDocumentType =
+      body.documentType === "RECEIPT"
+        ? BillingDocumentType.RECEIPT
+        : BillingDocumentType.INVOICE;
+    const isReceipt = documentType === "RECEIPT";
 
     const invoiceNumber = cleanText(body.invoiceNumber, 80);
     const targetEmail = cleanText(body.targetEmail, 160).toLowerCase();
@@ -546,7 +656,7 @@ export async function POST(req: Request) {
       unit: cleanText(item.unit, 30) || "Stk.",
     }));
 
-    const payment = getPaymentDetails();
+    const payment = isReceipt ? null : getPaymentDetails();
 
     const [booking, existingInvoice] = await Promise.all([
       bookingId
@@ -558,7 +668,9 @@ export async function POST(req: Request) {
       invoiceId
         ? prisma.invoice.findUnique({ where: { id: invoiceId } })
         : bookingId
-          ? prisma.invoice.findUnique({ where: { bookingId } })
+          ? isReceipt
+            ? prisma.invoice.findUnique({ where: { receiptBookingId: bookingId } })
+            : prisma.invoice.findUnique({ where: { bookingId } })
           : Promise.resolve(null),
     ]);
 
@@ -570,13 +682,23 @@ export async function POST(req: Request) {
       throw new Error("Die Rechnung wurde nicht gefunden.");
     }
 
+    if (existingInvoice && existingInvoice.documentType !== documentType) {
+      throw new Error("Der Dokumenttyp stimmt nicht überein.");
+    }
+
     const promoCode = booking?.promoCode?.code || existingInvoice?.promoCode || null;
+    const customerType =
+      booking?.client.type ??
+      existingInvoice?.customerType ??
+      (body.customerType === "COMPANY" ? "COMPANY" : "PRIVATE");
     const language =
       cleanLanguage(rawLanguage) ||
       cleanLanguage(booking?.language) ||
       cleanLanguage(existingInvoice?.language) ||
       "de";
-    const t = invoicePdfLabels(language);
+    const t = isReceipt
+      ? receiptPdfLabels(language)
+      : invoicePdfLabels(language);
     const localizedItems = translateInvoiceItems(items, language);
     const promoDiscountPercent =
       booking?.promoDiscountPercent ??
@@ -603,6 +725,8 @@ export async function POST(req: Request) {
     const invoiceData = {
       businessAddress,
       clientAddress,
+      customerType,
+      documentType,
       dueDate,
       emailOverride: targetEmail,
       invoiceNumber,
@@ -624,7 +748,8 @@ export async function POST(req: Request) {
       : await prisma.invoice.create({
           data: {
             ...invoiceData,
-            bookingId: bookingId || null,
+            bookingId: isReceipt ? null : bookingId || null,
+            receiptBookingId: isReceipt ? bookingId || null : null,
           },
         });
 
@@ -644,7 +769,7 @@ export async function POST(req: Request) {
       })),
     });
 
-    const qrCodeDataUrl = await getInvoiceQrDataUrl();
+    const qrCodeDataUrl = isReceipt ? null : await getInvoiceQrDataUrl();
 
     const tableBody: any[][] = [
       [
@@ -821,59 +946,63 @@ export async function POST(req: Request) {
           layout: "noBorders",
           margin: [0, 0, 0, 60],
         },
-        {
-          canvas: [
-            {
-              type: "line",
-              x1: 0,
-              y1: 0,
-              x2: 515,
-              y2: 0,
-              lineWidth: 1,
-              dash: {
-                length: 4,
-                space: 4,
+        ...(isReceipt
+          ? []
+          : [
+              {
+                canvas: [
+                  {
+                    type: "line",
+                    x1: 0,
+                    y1: 0,
+                    x2: 515,
+                    y2: 0,
+                    lineWidth: 1,
+                    dash: {
+                      length: 4,
+                      space: 4,
+                    },
+                  },
+                ],
+                margin: [0, 0, 0, 15],
               },
-            },
-          ],
-          margin: [0, 0, 0, 15],
-        },
-        {
-          columns: [
-            {
-              image: qrCodeDataUrl,
-              width: 120,
-            },
-            {
-              stack: [
-                {
-                  text: t.paymentPart,
-                  font: "CustomRegular",
-                  fontSize: 9,
-                  bold: true,
-                },
-                {
-                  text: `${t.payableTo}:\n${payment.iban}\n${payment.name}\n${payment.street}\n${payment.postCode} ${payment.city}`,
-                  font: "CustomRegular",
-                  fontSize: 8,
-                  margin: [0, 4, 0, 8],
-                },
-                {
-                  text: `${t.payableBy}:\n${recipientName}\n${clientAddress}\n${targetEmail}`,
-                  font: "CustomRegular",
-                  fontSize: 8,
-                  margin: [0, 0, 0, 8],
-                },
-                {
-                  text: `${t.amount}: CHF ${totalAmount.toFixed(2)}`,
-                  font: "CustomBold",
-                  fontSize: 10,
-                },
-              ],
-              margin: [20, 0, 0, 0],
-            },
-          ],
-        },
+              {
+                columns: [
+                  {
+                    image: qrCodeDataUrl,
+                    width: 120,
+                  },
+                  {
+                    stack: [
+                      {
+                        text: t.paymentPart,
+                        font: "CustomRegular",
+                        fontSize: 9,
+                        bold: true,
+                      },
+                      {
+                        text: `${t.payableTo}:\n${payment?.iban}\n${payment?.name}\n${payment?.street}\n${payment?.postCode} ${payment?.city}`,
+                        font: "CustomRegular",
+                        fontSize: 8,
+                        margin: [0, 4, 0, 8],
+                      },
+                      {
+                        text: `${t.payableBy}:\n${recipientName}\n${clientAddress}\n${targetEmail}`,
+                        font: "CustomRegular",
+                        fontSize: 8,
+                        margin: [0, 0, 0, 8],
+                      },
+                      {
+                        text: `${t.amount}: CHF ${totalAmount.toFixed(2)}`,
+                        font: "CustomBold",
+                        fontSize: 10,
+                      },
+                    ],
+                    margin: [20, 0, 0, 0],
+                  },
+                ],
+              },
+            ]),
       ],
       defaultStyle: {
         font: "CustomRegular",
@@ -884,10 +1013,18 @@ export async function POST(req: Request) {
       .createPdf(docDefinition)
       .getBuffer();
 
-    const archivedPdfUrl = await archiveInvoicePdf(pdfBuffer, invoiceNumber);
+    const archivedPdfUrl = await archiveInvoicePdf(
+      pdfBuffer,
+      invoiceNumber,
+      documentType,
+    );
 
-    const localizedMail = invoiceMailCopy(language, invoiceNumber);
-    const filename = invoicePdfFilename(language, invoiceNumber);
+    const localizedMail = isReceipt
+      ? receiptMailCopy(language, invoiceNumber)
+      : invoiceMailCopy(language, invoiceNumber);
+    const filename = isReceipt
+      ? receiptPdfFilename(language, invoiceNumber)
+      : invoicePdfFilename(language, invoiceNumber);
 
     await sendInvoiceEmail({
       to: targetEmail,

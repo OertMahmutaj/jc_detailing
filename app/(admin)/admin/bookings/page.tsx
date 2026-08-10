@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../_lib/prisma";
-import { getAdminBookingCatalog } from "../_lib/bookingCatalog";
+import {
+  getAdminBookingCatalog,
+  getAdminCompanyClients,
+} from "../_lib/bookingCatalog";
 import { AdminSearchForm } from "../_components/AdminSearchForm";
 import { AdminBookingCreator } from "../_components/AdminBookingCreator";
 import { createAdminBooking } from "../_actions/bookingActions";
@@ -245,7 +248,8 @@ export default async function AdminBookingsPage({
     }
     : {};
 
-  const [bookings, totalBookings, catalog] = await Promise.all([
+  const [bookings, totalBookings, catalog, companyCatalog, companyClients] =
+    await Promise.all([
     prisma.booking.findMany({
       include: {
         addOns: true,
@@ -260,8 +264,10 @@ export default async function AdminBookingsPage({
       where,
     }),
     prisma.booking.count({ where }),
-    getAdminBookingCatalog(),
-  ]);
+      getAdminBookingCatalog(),
+      getAdminBookingCatalog("COMPANY"),
+      getAdminCompanyClients(),
+    ]);
   const { addOns, categories, services } = catalog;
   const totalPages = Math.max(1, Math.ceil(totalBookings / PAGE_SIZE));
 
@@ -270,7 +276,17 @@ export default async function AdminBookingsPage({
       <header className="admin-page-header">
         {/* <p>Termine</p> */}
         <h1>Buchungen</h1>
-        <AdminBookingCreator action={createAdminBooking} addOns={addOns} categories={categories} services={services} />
+        <div className="admin-booking-create-actions">
+          <AdminBookingCreator action={createAdminBooking} addOns={addOns} categories={categories} services={services} />
+          <AdminBookingCreator
+            action={createAdminBooking}
+            addOns={companyCatalog.addOns}
+            categories={companyCatalog.categories}
+            companyClients={companyClients}
+            mode="COMPANY"
+            services={companyCatalog.services}
+          />
+        </div>
       </header>
 
       <section className="admin-panel">

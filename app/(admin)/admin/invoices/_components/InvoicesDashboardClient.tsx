@@ -102,13 +102,18 @@ function getRowKey(booking: InvoiceBooking) {
 
 export default function InvoicesDashboardClient({
   bookings,
+  customerType,
+  documentKind,
   metrics,
 }: {
   bookings: InvoiceBooking[];
+  customerType: "PRIVATE" | "COMPANY";
+  documentKind: "invoice" | "receipt";
   metrics: InvoiceMetrics;
 }) {
   const router = useRouter();
   const { showNotification } = useAdminNotification();
+  const isReceipt = documentKind === "receipt";
 
   const [selectedBooking, setSelectedBooking] =
     useState<InvoiceBooking | null>(null);
@@ -165,7 +170,11 @@ export default function InvoicesDashboardClient({
         <article className="admin-metric-card">
           <span>Offener Umsatz</span>
           <strong>{formatCurrency(metrics.openRevenue)}</strong>
-          <small>Gesendete, noch offene Rechnungen</small>
+          <small>
+            {isReceipt
+              ? "Gesendete, noch offene Quittungen"
+              : "Gesendete, noch offene Rechnungen"}
+          </small>
         </article>
 
         <article className="admin-metric-card is-success">
@@ -183,7 +192,11 @@ export default function InvoicesDashboardClient({
 
       <div className="admin-panel admin-invoice-bookings">
         <div className="admin-panel-head">
-          <h2>Wähle eine Buchung zum Bearbeiten</h2>
+          <h2>
+            {isReceipt
+              ? "Wähle eine Buchung für eine Quittung"
+              : "Wähle eine Buchung zum Bearbeiten"}
+          </h2>
         </div>
 
         <div className="admin-table-wrap">
@@ -219,7 +232,9 @@ export default function InvoicesDashboardClient({
                     >
                       {booking.invoice
                         ? statusLabels[booking.invoice.status]
-                        : "Keine Rechnung"}
+                        : isReceipt
+                          ? "Keine Quittung"
+                          : "Keine Rechnung"}
                     </span>
 
                     {booking.invoice && (
@@ -321,7 +336,7 @@ export default function InvoicesDashboardClient({
           className="admin-modal-backdrop"
           role="dialog"
           aria-modal="true"
-          aria-label="Rechnung bearbeiten"
+          aria-label={isReceipt ? "Quittung bearbeiten" : "Rechnung bearbeiten"}
         >
           <div className="admin-modal admin-invoice-modal">
             <button
@@ -335,6 +350,8 @@ export default function InvoicesDashboardClient({
 
             <InvoiceEditor
               key={selectedBooking.bookingId || selectedBooking.invoice?.id}
+              customerType={customerType}
+              documentKind={documentKind}
               onSaved={() => {
                 setSelectedBooking(null);
                 router.refresh();

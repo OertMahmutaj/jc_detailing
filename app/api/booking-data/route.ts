@@ -52,6 +52,7 @@ async function loadBookingCatalogData() {
   const [services, categories, addOns] = await Promise.all([
     prisma.service.findMany({
       where: {
+        audience: "PRIVATE",
         isActive: true,
       },
       select: {
@@ -70,6 +71,7 @@ async function loadBookingCatalogData() {
           some: {
             isActive: true,
             service: {
+              audience: "PRIVATE",
               isActive: true,
             },
           },
@@ -90,6 +92,7 @@ async function loadBookingCatalogData() {
           where: {
             isActive: true,
             service: {
+              audience: "PRIVATE",
               isActive: true,
             },
           },
@@ -104,6 +107,7 @@ async function loadBookingCatalogData() {
           some: {
             isActive: true,
             service: {
+              audience: "PRIVATE",
               isActive: true,
             },
           },
@@ -125,6 +129,7 @@ async function loadBookingCatalogData() {
           where: {
             isActive: true,
             service: {
+              audience: "PRIVATE",
               isActive: true,
             },
           },

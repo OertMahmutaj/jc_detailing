@@ -18,6 +18,7 @@ type CalendarBooking = {
   clientPhone: string;
   endTime: string;
   id: string;
+  notes: string | null;
   serviceName: string;
   startTime: string;
   status: string;
@@ -50,15 +51,27 @@ type CatalogOption = {
   }>;
 };
 
+type CompanyClient = {
+  address: string | null;
+  email: string;
+  id: string;
+  name: string;
+  phone: string;
+};
+
 type CalendarProps = {
   addOns: CatalogOption[];
   blocks: CalendarBlock[];
   bookings: CalendarBooking[];
-  initialDate?: string;
   categories: CatalogOption[];
+  companyAddOns: CatalogOption[];
+  companyCategories: CatalogOption[];
+  companyClients: CompanyClient[];
+  companyServices: CatalogOption[];
   createBookingAction: (formData: FormData) => Promise<ActionResult>;
   createBlockAction: (formData: FormData) => Promise<void>;
   deleteBlockAction: (formData: FormData) => Promise<void>;
+  initialDate?: string;
   services: CatalogOption[];
 };
 
@@ -174,11 +187,15 @@ export function AdminCalendarClient({
   addOns,
   blocks,
   bookings,
-  initialDate,
   categories,
+  companyAddOns,
+  companyCategories,
+  companyClients,
+  companyServices,
   createBookingAction,
   createBlockAction,
   deleteBlockAction,
+  initialDate,
   services,
 }: CalendarProps) {
   const router = useRouter();
@@ -364,13 +381,24 @@ export function AdminCalendarClient({
             Zeit blockieren
           </button>
 
-          <AdminBookingCreator
-            action={createBookingAction}
-            addOns={addOns}
-            categories={categories}
-            defaultDate={selectedDate}
-            services={services}
-          />
+          <div className="admin-booking-create-actions">
+            <AdminBookingCreator
+              action={createBookingAction}
+              addOns={addOns}
+              categories={categories}
+              defaultDate={selectedDate}
+              services={services}
+            />
+            <AdminBookingCreator
+              action={createBookingAction}
+              addOns={companyAddOns}
+              categories={companyCategories}
+              companyClients={companyClients}
+              defaultDate={selectedDate}
+              mode="COMPANY"
+              services={companyServices}
+            />
+          </div>
         </div>
 
         <div className="admin-calendar-events">
@@ -539,6 +567,13 @@ export function AdminCalendarClient({
                 <span>
                   Extras: {editingBooking.addOns.join(", ")}
                 </span>
+              )}
+
+              {editingBooking.notes && (
+                <div className="admin-calendar-booking-notes">
+                  <strong>Notizen</strong>
+                  <span>{editingBooking.notes}</span>
+                </div>
               )}
             </div>
 

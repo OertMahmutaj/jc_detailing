@@ -172,6 +172,8 @@ class PromoCodeValidationError extends Error {
   }
 }
 
+class PublicClientTypeError extends Error {}
+
 function getClientIp(request: Request) {
   const forwardedFor = request.headers
     .get("x-forwarded-for")
@@ -829,7 +831,11 @@ export async function POST(request: Request) {
     const uniqueAddOnIds = [...new Set(addOnIds)];
     const [dbServices, dbCategory, dbAddOns] = await Promise.all([
       prisma.service.findMany({
-        where: { id: { in: uniqueServiceIds }, isActive: true },
+        where: {
+          audience: "PRIVATE",
+          id: { in: uniqueServiceIds },
+          isActive: true,
+        },
         include: {
           vehicleOptions: {
             where: { isActive: true, vehicleCategoryId },
@@ -1018,11 +1024,22 @@ export async function POST(request: Request) {
 
     try {
       const createdBooking = await prisma.$transaction(async (tx) => {
-        const client = await tx.client.upsert({
+        const existingClient = await tx.client.findUnique({
           where: { email },
-          update: { address, name, phone },
-          create: { address, name, email, phone },
         });
+
+        if (existingClient?.type === "COMPANY") {
+          throw new PublicClientTypeError();
+        }
+
+        const client = existingClient
+          ? await tx.client.update({
+              where: { id: existingClient.id },
+              data: { address, name, phone },
+            })
+          : await tx.client.create({
+              data: { address, name, email, phone, type: "PRIVATE" },
+            });
 
         let promoCodeId: string | null = null;
 
@@ -1108,6 +1125,13 @@ export async function POST(request: Request) {
       if (createError instanceof PromoCodeValidationError) {
         return Response.json(
           { message: bookingApiMessage(language, createError.key) },
+          { status: 400 },
+        );
+      }
+
+      if (createError instanceof PublicClientTypeError) {
+        return Response.json(
+          { message: bookingApiMessage(language, "invalidContact") },
           { status: 400 },
         );
       }

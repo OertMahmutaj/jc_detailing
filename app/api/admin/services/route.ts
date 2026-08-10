@@ -32,9 +32,14 @@ function parseActive(value: unknown) {
   return value === undefined ? true : value === true;
 }
 
-async function hasDuplicateName(name: string, currentId?: string) {
+async function hasDuplicateName(
+  name: string,
+  audience: "PRIVATE" | "COMPANY",
+  currentId?: string,
+) {
   const services = await prisma.service.findMany({
     select: { id: true, name: true },
+    where: { audience },
   });
   const normalizedName = name.toLocaleLowerCase("de-CH");
 
@@ -81,12 +86,13 @@ export async function POST(request: Request) {
     const basePrice = parsePrice(body.basePrice);
     const durationMinutes = parseDuration(body.durationMinutes);
     const isActive = parseActive(body.isActive);
+    const audience = body.audience === "COMPANY" ? "COMPANY" : "PRIVATE";
 
     if (!name || basePrice === null || durationMinutes === null) {
       return serviceResponseError("Bitte Name, Preis und Dauer prüfen.");
     }
 
-    if (await hasDuplicateName(name)) {
+    if (await hasDuplicateName(name, audience)) {
       return serviceResponseError("Eine Leistung mit diesem Namen existiert bereits.", 409);
     }
 
@@ -112,6 +118,7 @@ export async function POST(request: Request) {
         durationMinutes,
         isActive,
         name,
+        audience,
         ...(vehicleOptions ? { vehicleOptions } : {}),
       },
     });
@@ -142,23 +149,27 @@ export async function PATCH(request: Request) {
       return serviceResponseError("Bitte Name, Preis und Dauer prüfen.");
     }
 
-    const [existingService, activeServiceCount] = await Promise.all([
-      prisma.service.findUnique({
-        where: { id },
-        select: { id: true, isActive: true },
-      }),
-      prisma.service.count({ where: { isActive: true } }),
-    ]);
+    const existingService = await prisma.service.findUnique({
+      where: { id },
+      select: { audience: true, id: true, isActive: true },
+    });
 
     if (!existingService) {
       return serviceResponseError("Diese Leistung existiert nicht mehr.", 404);
     }
 
+    const activeServiceCount = await prisma.service.count({
+      where: {
+        audience: existingService.audience,
+        isActive: true,
+      },
+    });
+
     if (!isActive && existingService.isActive && activeServiceCount <= 1) {
       return serviceResponseError("Mindestens eine sichtbare Leistung muss bestehen bleiben.", 409);
     }
 
-    if (await hasDuplicateName(name, id)) {
+    if (await hasDuplicateName(name, existingService.audience, id)) {
       return serviceResponseError("Eine Leistung mit diesem Namen existiert bereits.", 409);
     }
 
@@ -194,12 +205,22 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const [existingService, activeServiceCount, bookingUsage] = await Promise.all([
-      prisma.service.findUnique({
-        where: { id },
-        select: { id: true, isActive: true },
+    const existingService = await prisma.service.findUnique({
+      where: { id },
+      select: { audience: true, id: true, isActive: true },
+    });
+
+    if (!existingService) {
+      return serviceResponseError("Diese Leistung existiert nicht mehr.", 404);
+    }
+
+    const [activeServiceCount, bookingUsage] = await Promise.all([
+      prisma.service.count({
+        where: {
+          isActive: true,
+          audience: existingService.audience,
+        },
       }),
-      prisma.service.count({ where: { isActive: true } }),
       prisma.booking.count({
         where: {
           OR: [
@@ -213,10 +234,6 @@ export async function DELETE(request: Request) {
         },
       }),
     ]);
-
-    if (!existingService) {
-      return serviceResponseError("Diese Leistung existiert nicht mehr.", 404);
-    }
 
     if (existingService.isActive && activeServiceCount <= 1) {
       return serviceResponseError("Mindestens eine Leistung muss bestehen bleiben.", 409);

@@ -3,15 +3,17 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   ArrowUpRight,
+  Building2,
   CalendarDays,
   CalendarOff,
   FileText,
   Images,
   LayoutDashboard,
   LogOut,
+  ReceiptText,
   TicketPercent,
   Users,
   Wrench,
@@ -35,6 +37,36 @@ const adminGroups = [
     links: [
       { href: "/admin/services", label: "Leistungen", icon: Wrench },
       { href: "/admin/invoices", label: "Rechnungen", icon: FileText },
+      {
+        href: "/admin/invoices?document=receipt",
+        label: "Quittung",
+        icon: ReceiptText,
+      },
+    ],
+  },
+  {
+    title: "Firmenkunden",
+    links: [
+      {
+        href: "/admin/clients?clientType=company",
+        label: "Firmenkunden",
+        icon: Building2,
+      },
+      {
+        href: "/admin/services?audience=company",
+        label: "Leistungen",
+        icon: Wrench,
+      },
+      {
+        href: "/admin/invoices?customer=company",
+        label: "Rechnungen",
+        icon: FileText,
+      },
+      {
+        href: "/admin/invoices?document=receipt&customer=company",
+        label: "Quittung",
+        icon: ReceiptText,
+      },
     ],
   },
   {
@@ -57,6 +89,7 @@ export default function AdminSidebar({
   onClose?: () => void;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -121,11 +154,23 @@ export default function AdminSidebar({
               >
                 {group.links.map((item) => {
                   const Icon = item.icon;
-
-                  const isActive =
-                    pathname === item.href ||
-                    (item.href !== "/admin/dashboard" &&
-                      pathname?.startsWith(item.href));
+                  const itemUrl = new URL(item.href, "https://admin.local");
+                  const itemPath = itemUrl.pathname;
+                  const matchesPath =
+                    pathname === itemPath ||
+                    (itemPath !== "/admin/dashboard" &&
+                      pathname?.startsWith(`${itemPath}/`));
+                  const queryKeys = [
+                    "document",
+                    "customer",
+                    "clientType",
+                    "audience",
+                  ];
+                  const queryMatches = queryKeys.every(
+                    (key) =>
+                      itemUrl.searchParams.get(key) === searchParams.get(key),
+                  );
+                  const isActive = matchesPath && queryMatches;
 
                   return (
                     <Link

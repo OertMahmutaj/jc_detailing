@@ -19,6 +19,8 @@ type InvoiceSort =
   | "amount-desc"
   | "amount-asc";
 
+type BillingDocumentKind = "invoice" | "receipt";
+
 function cleanStatus(value: unknown): InvoiceStatusFilter {
   return value === "missing" ||
     value === "sent" ||
@@ -37,11 +39,15 @@ function cleanSort(value: unknown): InvoiceSort {
 }
 
 function pageHref({
+  customerType,
+  documentKind,
   page,
   query,
   sort,
   status,
 }: {
+  customerType: "PRIVATE" | "COMPANY";
+  documentKind: BillingDocumentKind;
   page: number;
   query: string;
   sort: InvoiceSort;
@@ -50,6 +56,8 @@ function pageHref({
   const params = new URLSearchParams();
 
   params.set("page", String(page));
+  if (documentKind === "receipt") params.set("document", "receipt");
+  if (customerType === "COMPANY") params.set("customer", "company");
 
   if (query) params.set("q", query);
   if (status !== "all") params.set("status", status);
@@ -111,12 +119,16 @@ function addOnPrice(addOn: LinkedAddOn, serviceIds: string[]) {
 function bookingAmount(booking: {
   addOns: LinkedAddOn[];
   invoice: { totalAmount: number } | null;
+  receipt: { totalAmount: number } | null;
   promoDiscountAmount: number;
   service: LinkedService;
   services: LinkedService[];
   vehicleCategoryId: string;
-}) {
-  if (booking.invoice) return booking.invoice.totalAmount;
+}, documentKind: BillingDocumentKind) {
+  const document =
+    documentKind === "receipt" ? booking.receipt : booking.invoice;
+
+  if (document) return document.totalAmount;
 
   const services = bookingServices(booking);
   const serviceIds = services.map((service) => service.id);
@@ -140,6 +152,8 @@ export default async function AdminInvoicesPage({
     q?: string;
     sort?: string;
     status?: string;
+    document?: string;
+    customer?: string;
   }>;
 }) {
   const params = (await searchParams) ?? {};
@@ -147,10 +161,22 @@ export default async function AdminInvoicesPage({
   const status = cleanStatus(params.status);
   const sort = cleanSort(params.sort);
   const page = Math.max(1, Number(params.page ?? "1") || 1);
+  const documentKind: BillingDocumentKind =
+    params.document === "receipt" ? "receipt" : "invoice";
+  const customerType: "PRIVATE" | "COMPANY" =
+    params.customer === "company" ? "COMPANY" : "PRIVATE";
+  const documentType = documentKind === "receipt" ? "RECEIPT" : "INVOICE";
+  const documentRelation = documentKind === "receipt" ? "receipt" : "invoice";
   const skip = (page - 1) * PAGE_SIZE;
   const now = new Date();
 
-  const whereParts: Prisma.BookingWhereInput[] = [];
+  const whereParts: Prisma.BookingWhereInput[] = [
+    {
+      client: {
+        type: customerType,
+      },
+    },
+  ];
 
   if (query) {
     whereParts.push({
@@ -186,7 +212,7 @@ export default async function AdminInvoicesPage({
           },
         },
         {
-          invoice: {
+          [documentRelation]: {
             is: {
               invoiceNumber: {
                 contains: query,
@@ -201,7 +227,7 @@ export default async function AdminInvoicesPage({
 
   if (status === "missing") {
     whereParts.push({
-      invoice: {
+      [documentRelation]: {
         is: null,
       },
     });
@@ -209,7 +235,7 @@ export default async function AdminInvoicesPage({
 
   if (status === "sent") {
     whereParts.push({
-      invoice: {
+      [documentRelation]: {
         is: {
           status: "SENT",
         },
@@ -219,7 +245,7 @@ export default async function AdminInvoicesPage({
 
   if (status === "paid") {
     whereParts.push({
-      invoice: {
+      [documentRelation]: {
         is: {
           status: "PAID",
         },
@@ -229,7 +255,7 @@ export default async function AdminInvoicesPage({
 
   if (status === "overdue") {
     whereParts.push({
-      invoice: {
+      [documentRelation]: {
         is: {
           status: "SENT",
           dueDate: {
@@ -296,10 +322,15 @@ export default async function AdminInvoicesPage({
             items: true,
           },
         },
+        receipt: {
+          include: {
+            items: true,
+          },
+        },
       },
       where,
     }),
-    prisma.invoice.findMany(),
+    prisma.invoice.findMany({ where: { customerType, documentType } }),
   ]);
 
   const sortedBookings = [...allBookings].sort((a, b) => {
@@ -308,11 +339,11 @@ export default async function AdminInvoicesPage({
     }
 
     if (sort === "amount-desc") {
-      return bookingAmount(b) - bookingAmount(a);
+      return bookingAmount(b, documentKind) - bookingAmount(a, documentKind);
     }
 
     if (sort === "amount-asc") {
-      return bookingAmount(a) - bookingAmount(b);
+      return bookingAmount(a, documentKind) - bookingAmount(b, documentKind);
     }
 
     return b.dateTime.getTime() - a.dateTime.getTime();
@@ -341,6 +372,8 @@ export default async function AdminInvoicesPage({
     .reduce((sum, invoice) => sum + invoice.totalAmount, 0);
 
   const formattedBookings = bookings.map((booking) => {
+    const billingDocument =
+      documentKind === "receipt" ? booking.receipt : booking.invoice;
     const services = bookingServices(booking);
     const serviceIds = services.map((service) => service.id);
     const invoiceLanguage = normalizeInvoiceLanguage(booking.language);
@@ -354,10 +387,10 @@ export default async function AdminInvoicesPage({
       basePrice: services.reduce((sum, service) => sum + service.basePrice, 0),
       bookingId: booking.id,
       businessAddress:
-        booking.invoice?.businessAddress || "Sternmatt 4, 6242 Wauwil",
+        billingDocument?.businessAddress || "Sternmatt 4, 6242 Wauwil",
       clientAddress:
-        booking.invoice?.clientAddress || booking.client.address || "",
-      clientEmail: booking.invoice?.emailOverride || booking.client.email,
+        billingDocument?.clientAddress || booking.client.address || "",
+      clientEmail: billingDocument?.emailOverride || booking.client.email,
       clientName: booking.client.name,
       dateTime: booking.dateTime,
       draftItems: [
@@ -393,18 +426,18 @@ export default async function AdminInvoicesPage({
           unit: "Stk.",
         })),
       ],
-      invoice: booking.invoice,
+      invoice: billingDocument,
       language: booking.language,
       modifierPrice: vehiclePrice,
       promoCode: booking.promoCode?.code || null,
       promoDiscountAmount: booking.promoDiscountAmount,
       promoDiscountPercent: booking.promoDiscountPercent,
       serviceName: services.map((service) => service.name).join(", "),
-      suggestedInvoiceNumber: `RE-${booking.id
+      suggestedInvoiceNumber: `${documentKind === "receipt" ? "QU" : "RE"}-${booking.id
         .replace(/-/g, "")
         .slice(0, 10)
         .toUpperCase()}`,
-      totalAmount: bookingAmount(booking),
+      totalAmount: bookingAmount(booking, documentKind),
     };
   });
 
@@ -419,23 +452,40 @@ export default async function AdminInvoicesPage({
   return (
     <div className="admin-page">
       <header className="admin-page-header">
-        <h1>Rechnungen</h1>
+        <h1>
+          {customerType === "COMPANY" ? "Firmenkunden " : ""}
+          {documentKind === "receipt" ? "Quittung" : "Rechnungen"}
+        </h1>
       </header>
 
       <section className="admin-panel admin-search-panel">
         <div className="admin-panel-head">
-          <h2>Rechnungen suchen</h2>
+          <h2>
+            {documentKind === "receipt" ? "Quittungen suchen" : "Rechnungen suchen"}
+          </h2>
 
-          <InvoiceFilters query={query} status={status} sort={sort} />
+          <InvoiceFilters
+            documentKind={documentKind}
+            query={query}
+            status={status}
+            sort={sort}
+          />
         </div>
       </section>
 
-      <InvoicesDashboardClient bookings={formattedBookings} metrics={metrics} />
+      <InvoicesDashboardClient
+        bookings={formattedBookings}
+        customerType={customerType}
+        documentKind={documentKind}
+        metrics={metrics}
+      />
 
       <div className="admin-pagination">
         <Link
           aria-disabled={page <= 1}
           href={pageHref({
+            customerType,
+            documentKind,
             page: Math.max(1, page - 1),
             query,
             sort,
@@ -452,6 +502,8 @@ export default async function AdminInvoicesPage({
         <Link
           aria-disabled={page >= totalPages}
           href={pageHref({
+            customerType,
+            documentKind,
             page: Math.min(totalPages, page + 1),
             query,
             sort,

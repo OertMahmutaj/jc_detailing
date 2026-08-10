@@ -101,7 +101,14 @@ export default async function AdminServiceOptionsPage({ params }: PageProps) {
     <div className="admin-page admin-service-options-page">
       <header className="admin-page-header">
         <div>
-          <Link className="admin-back-link" href="/admin/services">
+          <Link
+            className="admin-back-link"
+            href={
+              service.audience === "COMPANY"
+                ? "/admin/services?audience=company"
+                : "/admin/services"
+            }
+          >
             Zurueck zu Leistungen
           </Link>
           <span className="admin-page-kicker">Leistungen</span>

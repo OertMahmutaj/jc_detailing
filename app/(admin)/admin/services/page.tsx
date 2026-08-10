@@ -29,14 +29,22 @@ function sortServices<T extends { name: string }>(services: T[]) {
   });
 }
 
-export default async function AdminServicesPage() {
-  const serviceCount = await prisma.service.count();
+export default async function AdminServicesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ audience?: string }>;
+}) {
+  const params = (await searchParams) ?? {};
+  const audience = params.audience === "company" ? "COMPANY" : "PRIVATE";
+  const serviceCount = await prisma.service.count({ where: { audience } });
 
-  if (serviceCount === 0) {
+  if (audience === "PRIVATE" && serviceCount === 0) {
     await ensureBookingCatalog(prisma, { includeServices: true });
   }
 
-  const services = sortServices(await prisma.service.findMany());
+  const services = sortServices(
+    await prisma.service.findMany({ where: { audience } }),
+  );
   const sortedServices: Array<{
     id: string;
     basePrice: number;
@@ -74,13 +82,21 @@ export default async function AdminServicesPage() {
     <div className="admin-page admin-services-page">
       <header className="admin-page-header">
         <div>
-          <span className="admin-page-kicker">Verwaltung</span>
-          <h1>Leistungen</h1>
-          <p>Bearbeite Preise, Dauer und verfügbare Leistungen für das Buchungsformular.</p>
+          <span className="admin-page-kicker">
+            {audience === "COMPANY" ? "Firmenkunden" : "Verwaltung"}
+          </span>
+          <h1>
+            {audience === "COMPANY" ? "Firmenleistungen" : "Leistungen"}
+          </h1>
+          <p>
+            {audience === "COMPANY"
+              ? "Verwalte separate Leistungen, Preise und Dauer für Firmenkunden."
+              : "Bearbeite Preise, Dauer und verfügbare Leistungen für das Buchungsformular."}
+          </p>
         </div>
       </header>
 
-      <ServicesClient services={sortedServices} />
+      <ServicesClient audience={audience} services={sortedServices} />
     </div>
   );
 }

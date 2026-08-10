@@ -30,7 +30,9 @@ export type AdminCatalogAddOn = {
   serviceOptions: AdminCatalogServiceLink[];
 };
 
-export async function getAdminBookingCatalog() {
+export async function getAdminBookingCatalog(
+  audience: "PRIVATE" | "COMPANY" = "PRIVATE",
+) {
   const [services, categories, addOns] = await Promise.all([
     prisma.service.findMany({
       orderBy: {
@@ -43,6 +45,7 @@ export async function getAdminBookingCatalog() {
         name: true,
       },
       where: {
+        audience,
         isActive: true,
       },
     }),
@@ -63,6 +66,7 @@ export async function getAdminBookingCatalog() {
           where: {
             isActive: true,
             service: {
+              audience,
               isActive: true,
             },
           },
@@ -74,6 +78,7 @@ export async function getAdminBookingCatalog() {
           some: {
             isActive: true,
             service: {
+              audience,
               isActive: true,
             },
           },
@@ -99,6 +104,7 @@ export async function getAdminBookingCatalog() {
           where: {
             isActive: true,
             service: {
+              audience,
               isActive: true,
             },
           },
@@ -110,6 +116,7 @@ export async function getAdminBookingCatalog() {
           some: {
             isActive: true,
             service: {
+              audience,
               isActive: true,
             },
           },
@@ -119,4 +126,18 @@ export async function getAdminBookingCatalog() {
   ]);
 
   return { addOns, categories, services };
+}
+
+export async function getAdminCompanyClients() {
+  return prisma.client.findMany({
+    orderBy: { name: "asc" },
+    select: {
+      address: true,
+      email: true,
+      id: true,
+      name: true,
+      phone: true,
+    },
+    where: { type: "COMPANY" },
+  });
 }
