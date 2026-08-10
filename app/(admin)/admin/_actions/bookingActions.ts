@@ -1006,25 +1006,27 @@ export async function createAdminBooking(formData: FormData): Promise<{
     //   ],
     // });
 
-    const confirmationEmail = bookingConfirmedEmail(language, {
-      addOns: getNameList(addOns),
-      clientEmail: bookingClient.email,
-      clientName: bookingClient.name,
-      clientPhone: bookingClient.phone,
-      dateTime,
-      endTime,
-      services: service.name,
-      totalAmount,
-      vehicleCategory: category.name,
-      vehicleModel,
-    });
+    if (serviceAudience !== "COMPANY") {
+      const confirmationEmail = bookingConfirmedEmail(language, {
+        addOns: getNameList(addOns),
+        clientEmail: bookingClient.email,
+        clientName: bookingClient.name,
+        clientPhone: bookingClient.phone,
+        dateTime,
+        endTime,
+        services: service.name,
+        totalAmount,
+        vehicleCategory: category.name,
+        vehicleModel,
+      });
 
-    await sendEmail({
-      to: bookingClient.email,
-      subject: confirmationEmail.subject,
-      text: confirmationEmail.text,
-      html: confirmationEmail.html,
-    });
+      await sendEmail({
+        to: bookingClient.email,
+        subject: confirmationEmail.subject,
+        text: confirmationEmail.text,
+        html: confirmationEmail.html,
+      });
+    }
 
     revalidatePath("/admin/bookings");
     revalidatePath("/admin/clients");
