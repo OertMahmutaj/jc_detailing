@@ -36,6 +36,17 @@ enum ServiceAudience {
   COMPANY
 }
 
+enum CompanyContactRole {
+  BOOKING
+  BILLING
+  OPERATIONS
+}
+
+enum RecurrenceFrequency {
+  WEEKLY
+  MONTHLY
+}
+
 enum BookingPhotoCategory {
   BEFORE
   AFTER
@@ -75,7 +86,13 @@ model Client {
   address   String?
   type      ClientType @default(PRIVATE)
   bookings  Booking[]
+  companyVehicles CompanyVehicle[]
+  companyContacts CompanyContact[]
+  companyServicePrices CompanyServicePrice[]
+  recurringBookingSeries RecurringBookingSeries[]
+  companyInvoices Invoice[] @relation("InvoiceClient")
   promoCodeUsages PromoCodeUsage[]
+  paymentTermsDays Int       @default(30)
   createdAt DateTime  @default(now())
 
   @@index([type])
@@ -123,6 +140,8 @@ model Service {
   bookings        Booking[]                @relation("BookingToServices")
   vehicleOptions  ServiceVehicleCategory[]
   addOnOptions    ServiceAddOn[]
+  companyPrices   CompanyServicePrice[]
+  recurringBookingSeries RecurringBookingSeries[]
 
   @@index([audience])
 }
@@ -135,6 +154,8 @@ model VehicleCategory {
   isActive       Boolean                  @default(true)
   bookings       Booking[]
   serviceOptions ServiceVehicleCategory[]
+  companyVehicles CompanyVehicle[]
+  recurringBookingSeries RecurringBookingSeries[]
 }
 
 model AddOn {
@@ -145,6 +166,86 @@ model AddOn {
   isActive           Boolean        @default(true)
   bookings           Booking[]      @relation("BookingToAddOns")
   serviceOptions     ServiceAddOn[]
+  recurringBookingSeries RecurringBookingSeries[] @relation("RecurringBookingAddOns")
+}
+
+model CompanyVehicle {
+  id                String          @id @default(uuid())
+  clientId          String
+  client            Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  licensePlate      String
+  model             String
+  vehicleCategoryId String
+  vehicleCategory   VehicleCategory @relation(fields: [vehicleCategoryId], references: [id])
+  isActive          Boolean         @default(true)
+  notes             String?
+  bookings          Booking[]
+  recurringBookingSeries RecurringBookingSeries[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([clientId, licensePlate])
+  @@index([clientId, isActive])
+}
+
+model CompanyContact {
+  id        String             @id @default(uuid())
+  clientId  String
+  client    Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name      String
+  email     String?
+  phone     String?
+  role      CompanyContactRole
+  isPrimary Boolean            @default(false)
+  isActive  Boolean            @default(true)
+  invoices  Invoice[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([clientId, role, isActive])
+}
+
+model CompanyServicePrice {
+  id        String   @id @default(uuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  price     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clientId, serviceId])
+  @@index([serviceId])
+}
+
+model RecurringBookingSeries {
+  id                String              @id @default(uuid())
+  clientId          String
+  client            Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  companyVehicleId  String?
+  companyVehicle    CompanyVehicle?     @relation(fields: [companyVehicleId], references: [id], onDelete: SetNull)
+  serviceId         String
+  service           Service             @relation(fields: [serviceId], references: [id])
+  vehicleCategoryId String
+  vehicleCategory   VehicleCategory     @relation(fields: [vehicleCategoryId], references: [id])
+  frequency         RecurrenceFrequency
+  interval          Int                 @default(1)
+  startDate         DateTime
+  untilDate         DateTime
+  startTimeMinutes  Int
+  notes             String?
+  orderNumber       String?
+  costCenter        String?
+  internalReference String?
+  serviceLocation   String?
+  isActive          Boolean             @default(true)
+  addOns            AddOn[]             @relation("RecurringBookingAddOns")
+  bookings          Booking[]
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@index([clientId, isActive])
 }
 
 model ServiceVehicleCategory {
@@ -204,6 +305,19 @@ model Booking {
   addOns            AddOn[]         @relation("BookingToAddOns")
   invoice           Invoice?        @relation("BookingInvoice")
   receipt           Invoice?        @relation("BookingReceipt")
+  collectiveInvoiceId String?
+  collectiveInvoice Invoice?        @relation("CollectiveInvoiceBookings", fields: [collectiveInvoiceId], references: [id], onDelete: SetNull)
+
+  companyVehicleId String?
+  companyVehicle   CompanyVehicle? @relation(fields: [companyVehicleId], references: [id], onDelete: SetNull)
+  recurringSeriesId String?
+  recurringSeries  RecurringBookingSeries? @relation(fields: [recurringSeriesId], references: [id], onDelete: SetNull)
+  orderNumber       String?
+  costCenter        String?
+  internalReference String?
+  serviceLocation   String?
+  agreedBasePrice   Float?
+  agreedTotalAmount Float?
 
   promoCodeId            String?
   promoCode              PromoCode?      @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
@@ -215,6 +329,9 @@ model Booking {
   updatedAt         DateTime        @updatedAt
 
   @@index([promoCodeId])
+  @@index([companyVehicleId])
+  @@index([recurringSeriesId])
+  @@index([collectiveInvoiceId])
 }
 
 model Invoice {
@@ -243,16 +360,31 @@ model Invoice {
   promoDiscountPercent Float?
   promoDiscountAmount  Float  @default(0)
   companyUid    String?       @default("CHE-122.222.222") // The UID shown in your invoice mock
+  clientId      String?
+  client        Client?       @relation("InvoiceClient", fields: [clientId], references: [id], onDelete: SetNull)
+  billingContactId String?
+  billingContact CompanyContact? @relation(fields: [billingContactId], references: [id], onDelete: SetNull)
+  orderNumber   String?
+  costCenter    String?
+  internalReference String?
+  serviceLocation String?
+  periodStart   DateTime?
+  periodEnd     DateTime?
+  isCollective  Boolean       @default(false)
+  paymentTermsDays Int        @default(30)
 
   bookingId     String?       @unique
   booking       Booking?      @relation("BookingInvoice", fields: [bookingId], references: [id], onDelete: Cascade)
   receiptBookingId String?    @unique
   receiptBooking Booking?     @relation("BookingReceipt", fields: [receiptBookingId], references: [id], onDelete: Cascade)
+  collectiveBookings Booking[] @relation("CollectiveInvoiceBookings")
   items         InvoiceItem[]
 
   updatedAt     DateTime      @updatedAt
 
   @@index([documentType, customerType])
+  @@index([clientId, isCollective])
+  @@index([billingContactId])
 }
 
 model InvoiceItem {

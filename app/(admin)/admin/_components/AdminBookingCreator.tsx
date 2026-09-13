@@ -6,22 +6,42 @@ import { useRouter } from "next/navigation";
 import { useAdminNotification } from "../_components/AdminNotificationProvider";
 
 type Option = {
+  basePrice?: number;
   id: string;
   name: string;
   price?: number;
   serviceOptions?: Array<{
-    serviceId: string;
     isActive?: boolean;
     price?: number;
+    serviceId: string;
   }>;
 };
 
 type ExistingClient = {
   address?: string | null;
+  companyServicePrices?: Array<{
+    price: number;
+    serviceId: string;
+  }>;
+  companyVehicles?: Array<{
+    id: string;
+    licensePlate: string;
+    model: string;
+    vehicleCategory: {
+      id: string;
+      name: string;
+    };
+  }>;
+  email: string;
   id: string;
   name: string;
-  email: string;
+  paymentTermsDays?: number;
   phone: string;
+};
+
+type ActionResult = {
+  error?: string;
+  success: boolean;
 };
 
 export function AdminBookingCreator({
@@ -34,10 +54,7 @@ export function AdminBookingCreator({
   mode = "PRIVATE",
   services,
 }: {
-  action: (formData: FormData) => Promise<{
-    success: boolean;
-    error?: string;
-  }>;
+  action: (formData: FormData) => Promise<ActionResult>;
   addOns: Option[];
   categories: Option[];
   client?: ExistingClient;
@@ -46,16 +63,22 @@ export function AdminBookingCreator({
   mode?: "PRIVATE" | "COMPANY";
   services: Option[];
 }) {
+  const isCompanyBooking = mode === "COMPANY";
+  const companyOptions = client && isCompanyBooking ? [client] : companyClients;
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState("");
-
+  const [selectedCompanyId, setSelectedCompanyId] = useState(
+    isCompanyBooking ? client?.id || "" : "",
+  );
   const router = useRouter();
   const { showNotification } = useAdminNotification();
 
-  const isCompanyBooking = mode === "COMPANY";
   const isExistingClientBooking = Boolean(client);
-  const hasCompanyClients = companyClients.length > 0;
+  const hasCompanyClients = companyOptions.length > 0;
+  const selectedCompany = companyOptions.find(
+    (company) => company.id === selectedCompanyId,
+  );
   const filteredCategories = selectedServiceId
     ? categories.filter((category) =>
         category.serviceOptions?.some(
@@ -80,11 +103,22 @@ export function AdminBookingCreator({
     )?.price;
   }
 
+  function servicePrice(service: Option) {
+    return (
+      selectedCompany?.companyServicePrices?.find(
+        (price) => price.serviceId === service.id,
+      )?.price ??
+      service.basePrice ??
+      service.price
+    );
+  }
+
   useEffect(() => {
     if (!open) {
       setSelectedServiceId("");
+      setSelectedCompanyId(isCompanyBooking ? client?.id || "" : "");
     }
-  }, [open]);
+  }, [client?.id, isCompanyBooking, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -103,34 +137,28 @@ export function AdminBookingCreator({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (isSubmitting) return;
-
-    const formData = new FormData(event.currentTarget);
 
     try {
       setIsSubmitting(true);
-
-      const result = await action(formData);
+      const result = await action(new FormData(event.currentTarget));
 
       if (!result.success) {
         showNotification(
           result.error || "Die Buchung konnte nicht gespeichert werden.",
-          "error"
+          "error",
         );
         return;
       }
 
       setOpen(false);
       router.refresh();
-
       showNotification("Buchung wurde erfolgreich erstellt.", "success");
     } catch (error) {
       console.error("Booking creation failed:", error);
-
       showNotification(
         "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
-        "error"
+        "error",
       );
     } finally {
       setIsSubmitting(false);
@@ -154,10 +182,10 @@ export function AdminBookingCreator({
 
       {open && (
         <div
-          className="admin-modal-backdrop"
-          role="dialog"
           aria-label={isCompanyBooking ? "Neue Firmenbuchung" : "Neue Buchung"}
           aria-modal="true"
+          className="admin-modal-backdrop"
+          role="dialog"
         >
           <form
             className="admin-modal admin-calendar-modal"
@@ -173,7 +201,9 @@ export function AdminBookingCreator({
             </button>
 
             <input name="bookingMode" type="hidden" value={mode} />
-            {client && <input name="clientId" type="hidden" value={client.id} />}
+            {client && !isCompanyBooking && (
+              <input name="clientId" type="hidden" value={client.id} />
+            )}
 
             <div className="admin-panel-head">
               <div>
@@ -190,19 +220,32 @@ export function AdminBookingCreator({
               {isCompanyBooking ? (
                 <label className="admin-form-wide">
                   Firma
-                  <select defaultValue="" name="clientId" required>
-                    <option disabled value="">
-                      {hasCompanyClients
-                        ? "Firmenkunde wählen"
-                        : "Keine Firmenkunden vorhanden"}
-                    </option>
-
-                    {companyClients.map((company) => (
-                      <option key={company.id} value={company.id}>
-                        {company.name} ({company.email})
+                  {client ? (
+                    <>
+                      <input name="clientId" type="hidden" value={client.id} />
+                      <input readOnly value={client.name} />
+                    </>
+                  ) : (
+                    <select
+                      name="clientId"
+                      onChange={(event) =>
+                        setSelectedCompanyId(event.target.value)
+                      }
+                      required
+                      value={selectedCompanyId}
+                    >
+                      <option disabled value="">
+                        {hasCompanyClients
+                          ? "Firmenkunde wählen"
+                          : "Keine Firmenkunden vorhanden"}
                       </option>
-                    ))}
-                  </select>
+                      {companyOptions.map((company) => (
+                        <option key={company.id} value={company.id}>
+                          {company.name} ({company.email})
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </label>
               ) : client ? (
                 <>
@@ -210,25 +253,22 @@ export function AdminBookingCreator({
                     Name
                     <input readOnly type="text" value={client.name} />
                   </label>
-
                   <label>
                     E-Mail
                     <input readOnly type="email" value={client.email} />
                   </label>
-
                   <label>
                     Telefon
                     <input readOnly type="tel" value={client.phone} />
                   </label>
-
                   <label className="admin-form-wide">
                     Adresse
                     <input
+                      defaultValue={client.address || ""}
                       name="address"
                       placeholder="Strasse, PLZ Ort"
                       required
                       type="text"
-                      defaultValue={client.address || ""}
                     />
                   </label>
                 </>
@@ -238,17 +278,14 @@ export function AdminBookingCreator({
                     Name
                     <input name="name" required type="text" />
                   </label>
-
                   <label>
                     E-Mail
                     <input name="email" required type="email" />
                   </label>
-
                   <label>
                     Telefon
                     <input name="phone" required type="tel" />
                   </label>
-
                   <label className="admin-form-wide">
                     Adresse
                     <input
@@ -261,10 +298,41 @@ export function AdminBookingCreator({
                 </>
               )}
 
-              <label>
-                Fahrzeug
-                <input name="vehicleModel" required type="text" />
-              </label>
+              {isCompanyBooking ? (
+                <label className="admin-form-wide">
+                  Gespeichertes Firmenfahrzeug
+                  <select
+                    defaultValue=""
+                    disabled={!selectedCompany}
+                    key={selectedCompanyId || "no-company"}
+                    name="companyVehicleId"
+                    required
+                  >
+                    <option disabled value="">
+                      {selectedCompany
+                        ? "Fahrzeug wählen"
+                        : "Zuerst eine Firma wählen"}
+                    </option>
+                    {selectedCompany?.companyVehicles?.map((vehicle) => (
+                      <option key={vehicle.id} value={vehicle.id}>
+                        {vehicle.licensePlate} · {vehicle.model} ·{" "}
+                        {vehicle.vehicleCategory.name}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedCompany &&
+                    (selectedCompany.companyVehicles?.length || 0) === 0 && (
+                      <small>
+                        Für diese Firma ist noch kein aktives Fahrzeug gespeichert.
+                      </small>
+                    )}
+                </label>
+              ) : (
+                <label>
+                  Fahrzeug
+                  <input name="vehicleModel" required type="text" />
+                </label>
+              )}
 
               <label>
                 Leistung
@@ -277,77 +345,84 @@ export function AdminBookingCreator({
                   <option disabled value="">
                     Leistung wählen
                   </option>
-
-                  {services.map((service) => (
-                    <option key={service.id} value={service.id}>
-                      {service.name}
-                    </option>
-                  ))}
+                  {services.map((service) => {
+                    const price = servicePrice(service);
+                    return (
+                      <option key={service.id} value={service.id}>
+                        {service.name}
+                        {typeof price === "number"
+                          ? ` · CHF ${price.toFixed(2)}`
+                          : ""}
+                      </option>
+                    );
+                  })}
                 </select>
               </label>
 
-              <label>
-                Fahrzeugklasse
-                <select
-                  defaultValue=""
-                  disabled={!selectedServiceId}
-                  key={selectedServiceId || "no-service"}
-                  name="vehicleCategoryId"
-                  required
-                >
-                  <option disabled value="">
-                    Fahrzeugklasse wählen
-                  </option>
-
-                  {filteredCategories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
+              {!isCompanyBooking && (
+                <label>
+                  Fahrzeugklasse
+                  <select
+                    defaultValue=""
+                    disabled={!selectedServiceId}
+                    key={selectedServiceId || "no-service"}
+                    name="vehicleCategoryId"
+                    required
+                  >
+                    <option disabled value="">
+                      Fahrzeugklasse wählen
                     </option>
-                  ))}
-                </select>
-              </label>
+                    {filteredCategories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
 
               <label>
                 Sprache
-                <select name="language" defaultValue="de">
+                <select defaultValue="de" name="language">
                   <option value="de">Deutsch</option>
                   <option value="en">English</option>
                   <option value="fr">Français</option>
                   <option value="it">Italiano</option>
                 </select>
               </label>
-
               <label>
                 Datum
-                <input
-                  name="date"
-                  required
-                  type="date"
-                  defaultValue={defaultDate}
-                />
+                <input defaultValue={defaultDate} name="date" required type="date" />
               </label>
-
               <label>
                 Von
-                <input
-                  name="start"
-                  required
-                  step="1800"
-                  type="time"
-                  defaultValue="08:00"
-                />
+                <input defaultValue="08:00" name="start" required step="1800" type="time" />
               </label>
-
               <label>
                 Bis
-                <input
-                  name="end"
-                  required
-                  step="1800"
-                  type="time"
-                  defaultValue="10:00"
-                />
+                <input defaultValue="10:00" name="end" required step="1800" type="time" />
               </label>
+
+              {isCompanyBooking && (
+                <>
+                  <label>
+                    Bestellnummer
+                    <input name="orderNumber" type="text" />
+                  </label>
+                  <label>
+                    Kostenstelle
+                    <input name="costCenter" type="text" />
+                  </label>
+                  <label>
+                    Interne Referenz
+                    <input name="internalReference" type="text" />
+                  </label>
+                  <label>
+                    Einsatzort
+                    <input name="serviceLocation" type="text" />
+                  </label>
+                </>
+              )}
 
               <label className="admin-form-wide admin-textarea-label">
                 Notizen
@@ -362,10 +437,8 @@ export function AdminBookingCreator({
             {filteredAddOns.length > 0 && (
               <div className="admin-addon-checks" key={selectedServiceId}>
                 <span>Extras</span>
-
                 {filteredAddOns.map((addOn) => {
                   const price = addOnPrice(addOn) ?? addOn.price;
-
                   return (
                     <label className="admin-check-row" key={addOn.id}>
                       <input name="addOnIds" type="checkbox" value={addOn.id} />

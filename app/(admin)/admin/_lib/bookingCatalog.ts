@@ -30,6 +30,32 @@ export type AdminCatalogAddOn = {
   serviceOptions: AdminCatalogServiceLink[];
 };
 
+export type AdminCompanyVehicle = {
+  id: string;
+  licensePlate: string;
+  model: string;
+  vehicleCategory: {
+    id: string;
+    name: string;
+  };
+};
+
+export type AdminCompanyServicePrice = {
+  price: number;
+  serviceId: string;
+};
+
+export type AdminCompanyClient = {
+  address: string | null;
+  companyServicePrices: AdminCompanyServicePrice[];
+  companyVehicles: AdminCompanyVehicle[];
+  email: string;
+  id: string;
+  name: string;
+  paymentTermsDays: number;
+  phone: string;
+};
+
 export async function getAdminBookingCatalog(
   audience: "PRIVATE" | "COMPANY" = "PRIVATE",
 ) {
@@ -133,9 +159,31 @@ export async function getAdminCompanyClients() {
     orderBy: { name: "asc" },
     select: {
       address: true,
+      companyServicePrices: {
+        select: {
+          price: true,
+          serviceId: true,
+        },
+      },
+      companyVehicles: {
+        orderBy: [{ model: "asc" }, { licensePlate: "asc" }],
+        select: {
+          id: true,
+          licensePlate: true,
+          model: true,
+          vehicleCategory: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        where: { isActive: true },
+      },
       email: true,
       id: true,
       name: true,
+      paymentTermsDays: true,
       phone: true,
     },
     where: { type: "COMPANY" },

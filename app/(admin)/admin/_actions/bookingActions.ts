@@ -1462,7 +1462,10 @@ export async function updateAdminBooking(
 
     let emailStatusMessage = "";
 
-    if (shouldSendConfirmationEmail) {
+    const shouldSendAutomaticEmails =
+      currentBooking.client.type !== "COMPANY";
+
+    if (shouldSendAutomaticEmails && shouldSendConfirmationEmail) {
       const bookingLanguage = normalizeLanguage(currentBooking.language);
 
       const confirmationEmail = bookingConfirmedEmail(bookingLanguage, {
@@ -1489,7 +1492,7 @@ export async function updateAdminBooking(
       emailStatusMessage = emailSent
         ? " Bestätigungs-E-Mail wurde gesendet."
         : " Bestätigungs-E-Mail konnte nicht gesendet werden.";
-    } else if (shouldSendCancellationEmail) {
+    } else if (shouldSendAutomaticEmails && shouldSendCancellationEmail) {
       const bookingLanguage = normalizeLanguage(currentBooking.language);
 
       const cancelledEmail = bookingCancelledEmail(bookingLanguage, {
@@ -1516,7 +1519,10 @@ export async function updateAdminBooking(
       emailStatusMessage = emailSent
         ? " Stornierungs-E-Mail wurde gesendet."
         : " Stornierungs-E-Mail konnte nicht gesendet werden.";
-    } else if (shouldSendUpdatedAppointmentEmail) {
+    } else if (
+      shouldSendAutomaticEmails &&
+      shouldSendUpdatedAppointmentEmail
+    ) {
       const bookingLanguage = normalizeLanguage(currentBooking.language);
 
       const updatedEmail = bookingUpdatedEmail(bookingLanguage, {
@@ -1657,7 +1663,13 @@ export async function updateBookingStatus(
 
     let emailStatusMessage = "";
 
-    if (oldStatus !== "CONFIRMED" && statusValue === "CONFIRMED") {
+    const shouldSendAutomaticEmails = booking.client.type !== "COMPANY";
+
+    if (
+      shouldSendAutomaticEmails &&
+      oldStatus !== "CONFIRMED" &&
+      statusValue === "CONFIRMED"
+    ) {
       const confirmationEmail = bookingConfirmedEmail(
         language,
         bookingEmailDetails(booking),
@@ -1675,7 +1687,11 @@ export async function updateBookingStatus(
         : " Bestätigungs-E-Mail konnte nicht gesendet werden.";
     }
 
-    if (oldStatus !== "CANCELLED" && statusValue === "CANCELLED") {
+    if (
+      shouldSendAutomaticEmails &&
+      oldStatus !== "CANCELLED" &&
+      statusValue === "CANCELLED"
+    ) {
       const cancelledEmail = bookingCancelledEmail(
         language,
         bookingEmailDetails(booking),

@@ -503,10 +503,10 @@ function getPaymentDetails() {
 
   return {
     iban,
-    name: process.env.INVOICE_PAYABLE_NAME ?? "JC Detailing",
-    street: process.env.INVOICE_PAYABLE_STREET ?? "Sternmatt 4",
-    postCode: process.env.INVOICE_PAYABLE_POSTCODE ?? "6242",
-    city: process.env.INVOICE_PAYABLE_CITY ?? "Wauwil",
+    name: process.env.INVOICE_PAYABLE_NAME ?? "Juljan Cela",
+    street: process.env.INVOICE_PAYABLE_STREET ?? "Dornacherstrasse 4",
+    postCode: process.env.INVOICE_PAYABLE_POSTCODE ?? "6003",
+    city: process.env.INVOICE_PAYABLE_CITY ?? "Luzern",
     country: process.env.INVOICE_PAYABLE_COUNTRY ?? "CH",
   };
 }
