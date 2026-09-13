@@ -14,6 +14,7 @@ const contentSecurityPolicy = `
     ${isDevelopment ? "'unsafe-eval'" : ""}
     https://maps.googleapis.com
     https://maps.gstatic.com
+    https://googleads.g.doubleclick.net
     https://www.googletagmanager.com;
 
   style-src
@@ -29,6 +30,7 @@ const contentSecurityPolicy = `
     https://maps.gstatic.com
     https://www.google.com
     https://www.google-analytics.com
+    https://googleads.g.doubleclick.net
     https://www.googletagmanager.com
     https://lh3.googleusercontent.com
     https://lh4.googleusercontent.com
@@ -51,6 +53,7 @@ const contentSecurityPolicy = `
     https://www.google.com
     https://www.google-analytics.com
     https://*.google-analytics.com
+    https://googleads.g.doubleclick.net
     https://www.googletagmanager.com;
 
   frame-src
